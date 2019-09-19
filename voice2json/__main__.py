@@ -29,13 +29,13 @@ def main():
     sub_parsers.required = True
     sub_parsers.dest = "command"
 
-    # train
+    # train-profile
     train_parser = sub_parsers.add_parser(
         "train-profile", help="Train voice2json profile"
     )
     train_parser.set_defaults(func=train)
 
-    # transcribe
+    # transcribe-wav
     transcribe_parser = sub_parsers.add_parser(
         "transcribe-wav", help="Transcribe WAV file to text"
     )
@@ -44,7 +44,7 @@ def main():
         "wav_file", nargs="*", default=[], help="Path(s) to WAV file(s)"
     )
 
-    # recognized
+    # recognize-text
     recognize_parser = sub_parsers.add_parser(
         "recognize-text", help="Recognize JSON intent from text"
     )
@@ -62,6 +62,12 @@ def main():
         help="Record voice command from stdin audio, write WAV to stdout",
     )
     command_parser.set_defaults(func=record_command)
+
+    # wait-wake
+    wake_parser = sub_parsers.add_parser(
+        "wait-wake", help="Listen to audio from stdin, wait until wake word is spoken"
+    )
+    wake_parser.set_defaults(func=wake)
 
     # -------------------------------------------------------------------------
 
@@ -244,6 +250,46 @@ def record_command(args: argparse.Namespace, profile_dir: Path, profile) -> None
     audio_buffer = wait_for_command(sys.stdin.buffer)
     wav_bytes = buffer_to_wav(audio_buffer)
     sys.stdout.buffer.write(wav_bytes)
+
+
+# -----------------------------------------------------------------------------
+
+
+def wake(args: argparse.Namespace, profile_dir: Path, profile) -> None:
+    import struct
+    from voice2json.wake.porcupine import Porcupine
+
+    # Load settings
+    library_path = ppath(profile, profile_dir, "wake-word.library-file")
+    params_path = ppath(profile, profile_dir, "wake-word.params-file")
+    keyword_path = ppath(profile, profile_dir, "wake-word.keyword-file")
+    sensitivity = float(pydash.get(profile, "wake-word.sensitivity", 0.5))
+
+    # Load porcupine
+    handle = Porcupine(
+        str(library_path),
+        str(params_path),
+        keyword_file_paths=[str(keyword_path)],
+        sensitivities=[sensitivity],
+    )
+
+    chunk_size = handle.frame_length * 2
+    chunk_format = "h" * handle.frame_length
+
+    # Process audio
+    logger.debug("Recording raw 16-bit 16Khz mono audio from stdin")
+
+    chunk = sys.stdin.buffer.read(chunk_size)
+    while len(chunk) == chunk_size:
+        # Process audio chunk
+        chunk = struct.unpack_from(chunk_format, chunk)
+        keyword_index = handle.process(chunk)
+
+        if keyword_index:
+            result = {"keyword": str(keyword_path)}
+            print_json(result)
+
+        chunk = sys.stdin.buffer.read(chunk_size)
 
 
 # -----------------------------------------------------------------------------
