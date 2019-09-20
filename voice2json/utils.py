@@ -2,8 +2,9 @@ import re
 import io
 import wave
 import subprocess
+from collections import defaultdict
 from pathlib import Path
-from typing import Optional, Iterable, Callable, Dict, List
+from typing import Optional, Iterable, Callable, Dict, List, TextIO, Any
 
 import pydash
 
@@ -69,6 +70,7 @@ def buffer_to_wav(buffer: bytes) -> bytes:
 def ppath(
     profile, profile_dir: Path, query: str, default: Optional[str] = None
 ) -> Optional[Path]:
+    """Returns a Path from a profile or a default Path relative to the profile directory."""
     result = pydash.get(profile, query)
     if result is None:
         if default is not None:
@@ -118,3 +120,52 @@ def read_dict(
             logger.warning(f"read_dict: {e}")
 
     return word_dict
+
+
+# -----------------------------------------------------------------------------
+
+
+def align2json(align_file: TextIO) -> Dict[str, Any]:
+    """Converts a word_align.pl word error rate text file to JSON."""
+    STATE_EXPECTED = 0
+    STATE_ACTUAL = 1
+    STATE_ACCURACY = 2
+    STATE_STATS = 3
+
+    pattern_utterance = re.compile(r"\s*([^(]+)\s*\(([^)]+)\)\s*$")
+    pattern_errors = re.compile(
+        r"words:\s*([0-9]+)\s+correct:\s*([0-9]+)\s+errors:\s*([0-9]+)", re.IGNORECASE
+    )
+    results = defaultdict(dict)
+
+    state = STATE_EXPECTED
+    utterance_id = None
+    for line in align_file:
+        line = line.strip()
+        if line.startswith("TOTAL"):
+            continue
+
+        if state == STATE_EXPECTED:
+            match = pattern_utterance.match(line)
+            utterance_id = match.group(2).strip()
+            results[utterance_id]["expected"] = match.group(1).strip()
+            state = STATE_ACTUAL
+        elif state == STATE_ACTUAL:
+            match = pattern_utterance.match(line)
+            assert utterance_id == match.group(2).strip()
+            results[utterance_id]["actual"] = match.group(1).strip()
+            state = STATE_ACCURACY
+        elif state == STATE_ACCURACY:
+            match = pattern_errors.search(line)
+            words = int(match.group(1))
+            correct = int(match.group(2))
+            errors = int(match.group(3))
+            results[utterance_id]["words"] = words
+            results[utterance_id]["correct"] = correct
+            results[utterance_id]["errors"] = errors
+            state = STATE_STATS
+        elif state == STATE_STATS:
+            state = STATE_EXPECTED
+            utterance_id = None
+
+    return results

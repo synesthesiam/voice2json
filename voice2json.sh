@@ -9,4 +9,6 @@ if [[ -d "${venv}" ]]; then
 fi
 
 export PYTHONPATH="${this_dir}"
+export PATH="${this_dir}/bin:${PATH}"
+
 python3 -m voice2json "$@"

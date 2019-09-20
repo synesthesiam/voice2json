@@ -2,6 +2,7 @@
 
 import sys
 import re
+import io
 import os
 import json
 import time
@@ -9,9 +10,11 @@ import argparse
 import logging
 import tempfile
 import subprocess
+import threading
+import shutil
 from pathlib import Path
 from collections import defaultdict
-from typing import Set, Dict, Optional, List
+from typing import Set, Dict, Optional, List, Any, BinaryIO
 
 logger = logging.getLogger("voice2json")
 
@@ -101,6 +104,37 @@ def main():
     )
     generate_parser.set_defaults(func=generate)
 
+    # record-examples
+    record_examples_parser = sub_parsers.add_parser(
+        "record-examples",
+        help="Randomly generate example prompts and have the user record them",
+    )
+    record_examples_parser.add_argument(
+        "--directory", help="Directory to save recorded WAV files and transcriptions"
+    )
+    record_examples_parser.add_argument(
+        "--audio_source", help="File to read raw 16-bit 16Khz mono audio from"
+    )
+    record_examples_parser.add_argument(
+        "--chunk-size",
+        type=int,
+        default=1024,
+        help="Number of bytes to read at a time from stdin",
+    )
+    record_examples_parser.set_defaults(func=record_examples)
+
+    # test-examples
+    test_examples_parser = sub_parsers.add_parser(
+        "test-examples", help="Test performance on previously recorded examples"
+    )
+    test_examples_parser.add_argument(
+        "--directory", help="Directory with recorded examples"
+    )
+    test_examples_parser.add_argument(
+        "--results", help="Directory to save test results"
+    )
+    test_examples_parser.set_defaults(func=test_examples)
+
     # -------------------------------------------------------------------------
 
     args = parser.parse_args()
@@ -141,7 +175,7 @@ def main():
 # -----------------------------------------------------------------------------
 
 
-def train(args: argparse.Namespace, profile_dir: Path, profile) -> None:
+def train(args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]) -> None:
     from voice2json.train import train_profile
 
     # Strip voice2json command-line arguments so doit won't pick them up
@@ -153,86 +187,50 @@ def train(args: argparse.Namespace, profile_dir: Path, profile) -> None:
 # -----------------------------------------------------------------------------
 
 
-def transcribe(args: argparse.Namespace, profile_dir: Path, profile) -> None:
-    from voice2json.speech.pocketsphinx import get_decoder, transcribe
-    from voice2json.utils import maybe_convert_wav
+def transcribe(
+    args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]
+) -> None:
+    from voice2json import get_transcriber
 
-    # Load settings
-    acoustic_model = ppath(
-        profile, profile_dir, "speech-to-text.acoustic-model", "acoustic_model"
-    )
-    dictionary = ppath(
-        profile, profile_dir, "speech-to-text.dictionary", "dictionary.txt"
-    )
-    language_model = ppath(
-        profile, profile_dir, "speech-to-text.language-model", "language_model.txt"
-    )
-    mllr_matrix = ppath(profile, profile_dir, "speech-to-text.mllr-matrix")
-
-    # Load deocder
-    decoder = get_decoder(
-        acoustic_model, dictionary, language_model, mllr_matrix, debug=args.debug
-    )
+    transcriber = get_transcriber(profile_dir, profile, debug=args.debug)
 
     if len(args.wav_file) > 0:
-        pass
+        for wav_path_str in args.wav_file:
+            # Load and convert
+            wav_path = Path(wav_path_str)
+            logger.debug(f"Transcribing {wav_path}")
+
+            wav_data = wav_path.read_bytes()
+
+            # Transcribe
+            result = transcriber.transcribe_wav(wav_data)
+
+            # Add name of WAV file to result
+            result["wav_name"] = wav_path.name
+
+            print_json(result)
     else:
         # Read WAV data from stdin
         logger.debug("Reading WAV data from stdin")
+
+        # Load and convert
         wav_data = sys.stdin.buffer.read()
-        audio_data = maybe_convert_wav(wav_data)
-        result = transcribe(decoder, audio_data)
+
+        # Transcribe
+        result = transcriber.transcribe_wav(wav_data)
         print_json(result)
 
 
 # -----------------------------------------------------------------------------
 
 
-def recognize(args: argparse.Namespace, profile_dir: Path, profile) -> None:
-    import pywrapfst as fst
-    import networkx as nx
-    from voice2json.intent.fsticuffs import (
-        recognize,
-        recognize_fuzzy,
-        empty_intent,
-        fst_to_graph,
-    )
+def recognize(
+    args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]
+) -> None:
+    from voice2json import get_recognizer
 
-    # Load settings
-    intent_fst_path = ppath(
-        profile, profile_dir, "intent-recognition.intent-fst", "intent.fst"
-    )
-    stop_words_path = ppath(profile, profile_dir, "intent-recognition.stop-words")
-    lower_case = pydash.get(profile, "intent-recognition.lower-case", False)
-    fuzzy = pydash.get(profile, "intent-recognition.fuzzy", True)
-    skip_unknown = pydash.get(profile, "intent-recognition.skip_unknown", True)
-
-    # Load intent finite state transducer
-    intent_fst = fst.Fst.read(str(intent_fst_path))
-
-    # Load stop words (common words that can be safely ignored)
-    stop_words: Set[str] = set()
-    if stop_words_path is not None:
-        stop_words.extend(w.strip() for w in stop_words_path.read_text().splitlines())
-
-    # Ignore words outside of input symbol table
-    known_tokens: Set[str] = set()
-    if skip_unknown:
-        in_symbols = intent_fst.input_symbols()
-        for i in range(in_symbols.num_symbols()):
-            key = in_symbols.get_nth_key(i)
-            token = in_symbols.find(i).decode()
-
-            # Exclude meta tokens and <eps>
-            if not (token.startswith("__") or token.startswith("<")):
-                known_tokens.add(token)
-
-    intent_graph: Optional[nx.DiGraph] = None
-    if fuzzy:
-        # Convert to graph for fuzzy searching
-        intent_graph = fst_to_graph(intent_fst)
-
-    # -------------------------------------------------------------------------
+    # Load intent recognizer
+    recognizer = get_recognizer(profile_dir, profile)
 
     if len(args.sentence) > 0:
         sentences = args.sentence
@@ -251,17 +249,7 @@ def recognize(args: argparse.Namespace, profile_dir: Path, profile) -> None:
             sentence_object = json.loads(sentence)
             text = sentence_object.get("text", "")
 
-        if lower_case:
-            text = text.lower()
-
-        if fuzzy:
-            # Fuzzy matching
-            intent = recognize_fuzzy(
-                intent_graph, text, known_tokens=known_tokens, stop_words=stop_words
-            )
-        else:
-            # Strict matching
-            intent = recognize(intent_fst, text, known_tokens)
+        intent = recognizer.recognize(text)
 
         # Merge with input object
         for key, value in intent.items():
@@ -273,7 +261,9 @@ def recognize(args: argparse.Namespace, profile_dir: Path, profile) -> None:
 # -----------------------------------------------------------------------------
 
 
-def record_command(args: argparse.Namespace, profile_dir: Path, profile) -> None:
+def record_command(
+    args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]
+) -> None:
     from voice2json.command.webrtcvad import wait_for_command
     from voice2json.utils import buffer_to_wav
 
@@ -287,7 +277,7 @@ def record_command(args: argparse.Namespace, profile_dir: Path, profile) -> None
 # -----------------------------------------------------------------------------
 
 
-def wake(args: argparse.Namespace, profile_dir: Path, profile) -> None:
+def wake(args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]) -> None:
     import struct
     from voice2json.wake.porcupine import Porcupine
 
@@ -327,7 +317,9 @@ def wake(args: argparse.Namespace, profile_dir: Path, profile) -> None:
 # -----------------------------------------------------------------------------
 
 
-def pronounce(args: argparse.Namespace, profile_dir: Path, profile) -> None:
+def pronounce(
+    args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]
+) -> None:
     from voice2json.utils import read_dict
 
     base_dictionary_path = ppath(
@@ -418,7 +410,9 @@ def pronounce(args: argparse.Namespace, profile_dir: Path, profile) -> None:
 # -----------------------------------------------------------------------------
 
 
-def generate(args: argparse.Namespace, profile_dir: Path, profile) -> None:
+def generate(
+    args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]
+) -> None:
     import pywrapfst as fst
     from voice2json.train.jsgf2fst import fstprintall
 
@@ -438,11 +432,313 @@ def generate(args: argparse.Namespace, profile_dir: Path, profile) -> None:
 
 
 # -----------------------------------------------------------------------------
+
+
+def record_examples(
+    args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]
+) -> None:
+    import pywrapfst as fst
+    from voice2json.utils import buffer_to_wav
+    from voice2json.train.jsgf2fst import fstprintall, symbols2intent
+
+    chunk_size = args.chunk_size
+    examples_dir = Path(args.directory) if args.directory is not None else Path.cwd()
+    examples_dir.mkdir(parents=True, exist_ok=True)
+
+    # Load settings
+    intent_fst_path = ppath(
+        profile, profile_dir, "intent-recognition.intent-fst", "intent.fst"
+    )
+
+    # Load intent finite state transducer
+    intent_fst = fst.Fst.read(str(intent_fst_path))
+
+    def generate_intent() -> Dict[str, Any]:
+        # Generate sample sentence
+        rand_fst = fst.randgen(intent_fst, npath=1)
+
+        # Convert to words/tokens
+        symbols = fstprintall(rand_fst, exclude_meta=False)[0]
+
+        # Convert to intent
+        return symbols2intent(symbols)
+
+    def get_wav_path(text: str, count: int) -> Path:
+        # /dir/the_transcription_text-000.wav
+        text = re.sub(r"\s+", "_", text)
+        return examples_dir / f"{text}-{count:03d}.wav"
+
+    # Expected raw 16-bit, 16Khz mono audio
+    if args.audio_source is None:
+        arecord_cmd = [
+            "arecord",
+            "-q",
+            "-r",
+            "16000",
+            "-c",
+            "1",
+            "-f",
+            "S16_LE",
+            "-t",
+            "raw",
+        ]
+        arecord_proc = subprocess.Popen(arecord_cmd, stdout=subprocess.PIPE)
+        audio_source = arecord_proc.stdout
+        logger.debug(f"Recording raw 16-bit 16Khz mono audio using arecord")
+    else:
+        audio_source: BinaryIO = open(args.audio_source, "rb")
+        logger.debug(f"Recording raw 16-bit 16Khz mono audio from {args.audio_source}")
+
+    # Recording thread
+    audio_data = bytes()
+    recording = False
+
+    def record_audio():
+        nonlocal audio_source, recording, audio_data
+        while audio_source is not None:
+            chunk = audio_source.read(chunk_size)
+            if recording:
+                audio_data += chunk
+
+    record_thread = threading.Thread(target=record_audio, daemon=True)
+    record_thread.start()
+
+    try:
+        while True:
+            # Generate random intent for prompt
+            random_intent = generate_intent()
+            text = random_intent["text"]
+
+            # Prompt
+            print("---")
+            print(text)
+
+            # Instructions
+            print("Press ENTER to start recording (CTRL+C to exit)")
+            input()
+
+            # Record
+            audio_data = bytes()
+            recording = True
+
+            # Instructions
+            print("Recording from stdin. Press ENTER to stop (CTRL+C to exit).")
+            input()
+
+            # Save WAV
+            recording = False
+            logging.debug(f"Recorded {len(audio_data)} byte(s) of audio data")
+
+            count = 0
+            wav_path = get_wav_path(text, count)
+            while wav_path.exists():
+                # Find unique name
+                count += 1
+                wav_path = get_wav_path(text, count)
+
+            wav_bytes = buffer_to_wav(audio_data)
+            wav_path.write_bytes(wav_bytes)
+
+            # Save transcription
+            transcript_path = examples_dir / f"{wav_path.stem}.txt"
+            transcript_path.write_text(text)
+
+            # Save intent
+            intent_path = examples_dir / f"{wav_path.stem}.json"
+            with open(intent_path, "w") as intent_file:
+                with jsonlines.Writer(intent_file) as out:
+                    out.write(random_intent)
+
+            # Response
+            print("Wrote", wav_path)
+            print("")
+
+    except KeyboardInterrupt:
+        audio_source = None
+        record_thread.join()
+
+
+# -----------------------------------------------------------------------------
+
+
+def test_examples(
+    args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]
+) -> None:
+    from voice2json import get_transcriber, get_recognizer
+
+    examples_dir = Path(args.directory) if args.directory is not None else Path.cwd()
+    logger.debug(f"Looking for examples in {examples_dir}")
+
+    results_dir = None
+    if args.results is not None:
+        results_dir = Path(args.results)
+
+    # Load WAV transcriber
+    transcriber = get_transcriber(profile_dir, profile, debug=args.debug)
+
+    # Optional intent recognizer
+    recognizer = None
+
+    # Statistics
+    num_wavs = 0
+    correct_transcriptions = 0
+    num_words = 0
+    correct_words = 0
+    correct_intent_names = 0
+    correct_entities = 0
+    num_entities = 0
+
+    # Expected/actual intents
+    expected: Dict[str, Dict[str, Any]] = {}
+    actual: Dict[str, Dict[str, Any]] = {}
+
+    # Process examples
+    for wav_path in examples_dir.glob("*.wav"):
+        logger.debug(f"Processing {wav_path}")
+
+        # Load expected transcription
+        transcript_path = examples_dir / f"{wav_path.stem}.txt"
+        expected_text = None
+
+        if transcript_path.exists():
+            expected_text = transcript_path.read_text().strip()
+
+        # Load expected intent (optional)
+        intent_path = examples_dir / f"{wav_path.stem}.json"
+        expected_intent = None
+        if intent_path.exists():
+            with open(intent_path, "r") as intent_file:
+                expected_intent = json.load(intent_file)
+
+            # Use full intent
+            expected[wav_path.name] = expected_intent
+        else:
+            # Use text only
+            expected[wav_path.name] = {"text": expected_text}
+
+        if (expected_text is None) and (expected_intent is None):
+            logger.warn(f"Skipping {wav_path} (no transcription or intent files)")
+            continue
+        elif expected_text is None:
+            # Use text from intent
+            expected_text = expected_intent["text"]
+
+        # Transcribe WAV
+        wav_data = wav_path.read_bytes()
+        actual_transcription = transcriber.transcribe_wav(wav_data)
+        actual_text = actual_transcription["text"]
+        logger.debug(actual_text)
+
+        if expected_text == actual_text:
+            correct_transcriptions += 1
+
+        # Do recognition
+        if expected_intent is not None:
+            if recognizer is None:
+                # Load recognizer on demand
+                recognizer = get_recognizer(profile_dir, profile)
+
+            actual_intent = recognizer.recognize(actual_text)
+            logger.debug(actual_intent)
+
+            if expected_intent["intent"]["name"] == actual_intent["intent"]["name"]:
+                correct_intent_names += 1
+
+                # Only check entities if intent was correct
+                expected_entities: List[Tuple[str, str]] = []
+                for entity_dict in expected_intent.get("entities", []):
+                    num_entities += 1
+                    entity_tuple = (entity_dict["entity"], entity_dict["value"])
+                    expected_entities.append(entity_tuple)
+
+                # Verify actual entities
+                for entity_dict in actual_intent.get("entities", []):
+                    entity_tuple = (entity_dict["entity"], entity_dict["value"])
+
+                    if entity_tuple in expected_entities:
+                        correct_entities += 1
+                        expected_entities.remove(entity_tuple)
+
+            # Record full intent
+            actual[wav_path.name] = actual_intent
+        else:
+            # Record transcription result only
+            actual[wav_path.name] = actual_transcription
+
+        num_wavs += 1
+
+    # Compute WER
+    align_results: Dict[str, Any] = {}
+    if shutil.which("word_align.pl"):
+        from voice2json.utils import align2json
+
+        with tempfile.NamedTemporaryFile(mode="w") as reference_file:
+            # Write references
+            for expected_key, expected_intent in expected.items():
+                print(expected_intent["text"], f"({expected_key})", file=reference_file)
+
+            with tempfile.NamedTemporaryFile(mode="w") as hypothesis_file:
+                # Write hypotheses
+                for actual_key, actual_intent in actual.items():
+                    print(
+                        actual_intent["text"], f"({actual_key})", file=hypothesis_file
+                    )
+
+                # Calculate WER
+                reference_file.seek(0)
+                hypothesis_file.seek(0)
+
+                align_cmd = ["word_align.pl", reference_file.name, hypothesis_file.name]
+                logger.debug(align_cmd)
+
+                align_output = subprocess.check_output(align_cmd).decode()
+                if results_dir is not None:
+                    align_output_path = results_dir / "word_align.txt"
+                    align_output_path.write_text(align_output)
+                    logger.debug(f"Wrote {align_output_path}")
+
+                # Convert to JSON
+                with io.StringIO(align_output) as align_file:
+                    align_results = align2json(align_file)
+
+    else:
+        logger.warn("word_align.pl not found in PATH. Not computing WER.")
+
+    # Merge WER results
+    for key, wer in align_results.items():
+        actual[key]["word_error"] = wer
+        num_words += wer["words"]
+        correct_words += wer["correct"]
+
+    # Summarize results
+    summary = {
+        "statistics": {
+            "num_wavs": num_wavs,
+            "num_words": num_words,
+            "num_entities": num_entities,
+            "correct_transcriptions": correct_transcriptions,
+            "correct_intent_names": correct_intent_names,
+            "correct_words": correct_words,
+            "correct_entities": correct_entities,
+            "transcription_accuracy": correct_words / num_words if num_words > 0 else 1,
+            "intent_accuracy": correct_intent_names / num_wavs if num_wavs > 0 else 1,
+            "entity_accuracy": correct_entities / num_entities
+            if num_entities > 0
+            else 1,
+        },
+        "actual": actual,
+        "expected": expected,
+    }
+
+    print_json(summary)
+
+
+# -----------------------------------------------------------------------------
 # Utilities
 # -----------------------------------------------------------------------------
 
 
-def print_json(value) -> None:
+def print_json(value: Any) -> None:
     """Prints a single line of JSON to stdout."""
     with jsonlines.Writer(sys.stdout) as out:
         out.write(value)

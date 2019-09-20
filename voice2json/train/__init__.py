@@ -6,7 +6,7 @@ import json
 import argparse
 import logging
 from pathlib import Path
-from typing import Dict, Set, Iterable
+from typing import Dict, Set, Iterable, Any
 from collections import deque
 
 import yaml
@@ -32,8 +32,9 @@ logger = logging.getLogger("train")
 # -----------------------------------------------------------------------------
 
 
-def train_profile(profile_dir: Path, profile) -> None:
+def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
 
+    # Compact
     def ppath(query, default):
         return utils_ppath(profile, profile_dir, query, default)
 
