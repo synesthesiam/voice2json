@@ -174,10 +174,11 @@ def fstprintall(
     in_fst: fst.Fst,
     out_file: Optional[TextIO] = None,
     exclude_meta: bool = True,
-    out_eps: int = 0,
+    eps: str = "<eps>",
 ) -> List[List[str]]:
     sentences = []
     output_symbols = in_fst.output_symbols()
+    out_eps = output_symbols.find(eps)
     zero_weight = fst.Weight.Zero(in_fst.weight_type())
     visited_states = set()
 
@@ -193,7 +194,7 @@ def fstprintall(
 
         if in_fst.final(state) != zero_weight:
             if out_file:
-                print("", file=out_file)
+                print(" ".join(sentence), file=out_file)
             else:
                 sentences.append(sentence)
 

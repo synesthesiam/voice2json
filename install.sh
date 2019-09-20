@@ -144,6 +144,12 @@ if [[ -z "${no_runtime}" ]]; then
         echo "Installing sox"
         install sox
     fi
+
+    # espeak
+    if [[ -z "$(which espeak)" ]]; then
+        echo "Installing espeak"
+        install espeak
+    fi
 fi
 
 # -----------------------------------------------------------------------------
@@ -278,8 +284,6 @@ if [[ ! -z "${no_kaldi}" || ! -d "${kaldi_dir}/build" ]]; then
     fi
 
     tar -C "${build_dir}" -xf "${kaldi_file}" && \
-        patch "${kaldi_dir}/tools/Makefile" "${this_dir}/etc/kaldi/tools.Makefile.patch" && \
-        cp "${download_dir}/kaldi/*" "${kaldi_dir}/tools/" && \
         cd "${kaldi_dir}/tools" && \
         make -j "${make_threads}" && \
         cd "${kaldi_dir}/src" &&

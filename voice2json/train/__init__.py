@@ -233,7 +233,7 @@ def train_profile(profile_dir: Path, profile) -> None:
         intent_fst = make_intent_fst(intent_fsts)
         intent_fst.write(targets[0])
 
-    @create_after(executed="grammars")
+    @create_after(executed="grammar_fsts")
     def task_intent_fst():
         """Merges grammar FSTs into single intent.fst."""
         return {
@@ -244,6 +244,7 @@ def train_profile(profile_dir: Path, profile) -> None:
 
     # -----------------------------------------------------------------------------
 
+    @create_after(executed="intent_fst")
     def task_language_model():
         """Creates an ARPA language model from intent.fst."""
 
@@ -306,6 +307,7 @@ def train_profile(profile_dir: Path, profile) -> None:
                 if not (symbol.startswith("__") or symbol.startswith("<")):
                     print(symbol, file=vocab_file)
 
+    @create_after(executed="intent_fst")
     def task_vocab():
         """Writes all vocabulary words to a file from intent.fst."""
         return {"file_dep": [intent_fst], "targets": [vocab], "actions": [do_vocab]}
@@ -318,6 +320,7 @@ def train_profile(profile_dir: Path, profile) -> None:
                 vocab, dictionary_paths, dictionary_file, unknown_path=unknown_words
             )
 
+    @create_after(executed="vocab")
     def task_vocab_dict():
         """Creates custom pronunciation dictionary based on desired vocabulary."""
         dictionary_paths = [base_dictionary]
@@ -360,6 +363,7 @@ def train_profile(profile_dir: Path, profile) -> None:
 
     # -----------------------------------------------------------------------------
 
+    @create_after(executed="language_model")
     def task_kaldi_train():
         """Creates HCLG.fst for a Kaldi nnet3 or gmm model."""
         if kaldi_model_type is not None:

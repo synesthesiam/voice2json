@@ -1,10 +1,17 @@
+#!/usr/bin/env python3
+
 import sys
+import re
 import os
 import json
+import time
 import argparse
 import logging
+import tempfile
+import subprocess
 from pathlib import Path
-from typing import Set, Dict, Optional
+from collections import defaultdict
+from typing import Set, Dict, Optional, List
 
 logger = logging.getLogger("voice2json")
 
@@ -68,6 +75,31 @@ def main():
         "wait-wake", help="Listen to audio from stdin, wait until wake word is spoken"
     )
     wake_parser.set_defaults(func=wake)
+
+    # pronounce-word
+    pronounce_parser = sub_parsers.add_parser(
+        "pronounce-word", help="Speak a word phonetically"
+    )
+    pronounce_parser.add_argument("word", nargs="*", help="Word(s) to prononunce")
+    pronounce_parser.add_argument(
+        "--quiet", action="store_true", help="Don't speak word; only print phonemes"
+    )
+    pronounce_parser.add_argument(
+        "--delay", type=float, default=0, help="Seconds to wait between words"
+    )
+    pronounce_parser.set_defaults(func=pronounce)
+
+    # generate-sentences
+    generate_parser = sub_parsers.add_parser(
+        "generate-sentences", help="Randomly generate sentences from profile"
+    )
+    generate_parser.add_argument(
+        "--samples", type=int, required=True, help="Number of sentences to generate"
+    )
+    generate_parser.add_argument(
+        "--meta", action="store_true", help="Include meta tags"
+    )
+    generate_parser.set_defaults(func=generate)
 
     # -------------------------------------------------------------------------
 
@@ -290,6 +322,119 @@ def wake(args: argparse.Namespace, profile_dir: Path, profile) -> None:
             print_json(result)
 
         chunk = sys.stdin.buffer.read(chunk_size)
+
+
+# -----------------------------------------------------------------------------
+
+
+def pronounce(args: argparse.Namespace, profile_dir: Path, profile) -> None:
+    from voice2json.utils import read_dict
+
+    base_dictionary_path = ppath(
+        profile, profile_dir, "training.base_dictionary", "base_dictionary.txt"
+    )
+    dictionary_path = ppath(
+        profile, profile_dir, "training.dictionary", "dictionary.txt"
+    )
+    g2p_path = ppath(profile, profile_dir, "training.g2p-model", "g2p.fst")
+    g2p_exists = g2p_path.exists()
+
+    map_path = ppath(
+        profile, profile_dir, "text-to-speech.phoneme-map", "espeak_phonemes.txt"
+    )
+    map_exists = map_path.exists()
+
+    # Load dictionaries
+    pronunciations: Dict[str, List[str]] = defaultdict(list)
+
+    for dict_path in [dictionary_path, base_dictionary_path]:
+        if dict_path.exists():
+            with open(dict_path, "r") as dict_file:
+                read_dict(dict_file, pronunciations)
+
+    if len(args.word) > 0:
+        words = args.word
+    else:
+        words = sys.stdin
+
+    # Process words
+    for word in words:
+        word = word.strip()
+        dict_phonemes = None
+
+        if word in pronunciations:
+            # Use first pronunciation in dictionary
+            dict_phonemes = re.split(r"\s+", pronunciations[word][0])
+        elif g2p_exists:
+            # Guess pronunciation with phonetisaurus
+            logger.debug(f"Guessing pronunciation for {word}")
+
+            with tempfile.NamedTemporaryFile(mode="w") as word_file:
+                print(word, file=word_file)
+                word_file.seek(0)
+
+                phonetisaurus_cmd = [
+                    "phonetisaurus-apply",
+                    "--model",
+                    str(g2p_path),
+                    "--word_list",
+                    word_file.name,
+                    "--nbest",
+                    "1",
+                ]
+
+                logger.debug(phonetisaurus_cmd)
+                output_lines = (
+                    subprocess.check_output(phonetisaurus_cmd).decode().splitlines()
+                )
+                dict_phonemes = re.split(r"\s+", output_lines[0].strip())[1:]
+        else:
+            logger.warn(f"No pronunciation for {word}")
+
+        if dict_phonemes is not None:
+            print(word, " ".join(dict_phonemes))
+
+        if not args.quiet:
+            if map_exists:
+                # Map to espeak phonemes
+                phoneme_map = dict(
+                    re.split(r"\s+", line.strip(), maxsplit=1)
+                    for line in map_path.read_text().splitlines()
+                )
+
+                espeak_phonemes = [phoneme_map[p] for p in dict_phonemes]
+            else:
+                espeak_phonemes = dict_phonemes
+
+            # Speak with espeak
+            espeak_str = "".join(espeak_phonemes)
+            espeak_cmd = ["espeak", "-s", "80", f"[[{espeak_str}]]"]
+            logger.debug(espeak_cmd)
+            subprocess.check_call(espeak_cmd)
+
+            time.sleep(args.delay)
+
+
+# -----------------------------------------------------------------------------
+
+
+def generate(args: argparse.Namespace, profile_dir: Path, profile) -> None:
+    import pywrapfst as fst
+    from voice2json.train.jsgf2fst import fstprintall
+
+    # Load settings
+    intent_fst_path = ppath(
+        profile, profile_dir, "intent-recognition.intent-fst", "intent.fst"
+    )
+
+    # Load intent finite state transducer
+    intent_fst = fst.Fst.read(str(intent_fst_path))
+
+    # Generate samples
+    rand_fst = fst.randgen(intent_fst, npath=args.samples)
+
+    # Print samples
+    fstprintall(rand_fst, out_file=sys.stdout, exclude_meta=(not args.meta))
 
 
 # -----------------------------------------------------------------------------

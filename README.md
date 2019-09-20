@@ -8,7 +8,6 @@
 * `recognize-text`
 * `wait-wake`
 * `record-command`
-* `add-words`
 * `pronounce-word`
 * `record-examples`
 * `test-examples`

@@ -1,10 +1,13 @@
+import re
 import io
 import wave
 import subprocess
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Iterable, Callable, Dict, List
 
 import pydash
+
+# -----------------------------------------------------------------------------
 
 
 def convert_wav(wav_data: bytes) -> bytes:
@@ -60,6 +63,9 @@ def buffer_to_wav(buffer: bytes) -> bytes:
         return wav_buffer.getvalue()
 
 
+# -----------------------------------------------------------------------------
+
+
 def ppath(
     profile, profile_dir: Path, query: str, default: Optional[str] = None
 ) -> Optional[Path]:
@@ -71,3 +77,44 @@ def ppath(
         result = Path(result)
 
     return result
+
+
+# -----------------------------------------------------------------------------
+
+
+def read_dict(
+    dict_file: Iterable[str],
+    word_dict: Optional[Dict[str, List[str]]] = None,
+    transform: Optional[Callable[[str], str]] = None,
+) -> Dict[str, List[str]]:
+    """
+    Loads a CMU word dictionary, optionally into an existing Python dictionary.
+    """
+    if word_dict is None:
+        word_dict = {}
+
+    for line in dict_file:
+        line = line.strip()
+        if len(line) == 0:
+            continue
+
+        try:
+            # Use explicit whitespace (avoid 0xA0)
+            word, pronounce = re.split(r"[ \t]+", line, maxsplit=1)
+
+            idx = word.find("(")
+            if idx > 0:
+                word = word[:idx]
+
+            if transform:
+                word = transform(word)
+
+            pronounce = pronounce.strip()
+            if word in word_dict:
+                word_dict[word].append(pronounce)
+            else:
+                word_dict[word] = [pronounce]
+        except Exception as e:
+            logger.warning(f"read_dict: {e}")
+
+    return word_dict
