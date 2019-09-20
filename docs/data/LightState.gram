@@ -1,0 +1,5 @@
+#JSGF V1.0;
+grammar LightState;
+
+public <LightState> = ((turn (<states>){state} [the] light));
+<states> = ((on | off));

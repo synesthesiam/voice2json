@@ -6,3 +6,4 @@ dist/
 .doit.db*
 debian/*.deb
 debian/**/usr/lib/
+.ipynb_checkpoints/
