@@ -4,7 +4,7 @@ import wave
 import subprocess
 from collections import defaultdict
 from pathlib import Path
-from typing import Optional, Iterable, Callable, Dict, List, TextIO, Any
+from typing import Optional, Iterable, Callable, Dict, List, TextIO, Any, BinaryIO
 
 import pydash
 
@@ -62,6 +62,17 @@ def buffer_to_wav(buffer: bytes) -> bytes:
             wav_file.writeframesraw(buffer)
 
         return wav_buffer.getvalue()
+
+
+def should_convert_wav(wav_io: BinaryIO) -> bool:
+    with wave.open(wav_io, "rb") as wav_file:
+        rate, width, channels = (
+            wav_file.getframerate(),
+            wav_file.getsampwidth(),
+            wav_file.getnchannels(),
+        )
+
+        return (rate != 16000) or (width != 2) or (channels != 1)
 
 
 # -----------------------------------------------------------------------------

@@ -135,6 +135,15 @@ def main():
     )
     test_examples_parser.set_defaults(func=test_examples)
 
+    # tune-examples
+    tune_examples_parser = sub_parsers.add_parser(
+        "tune-examples", help="Tune speech recognizer with previously recorded examples"
+    )
+    tune_examples_parser.add_argument(
+        "--directory", help="Directory with recorded examples"
+    )
+    tune_examples_parser.set_defaults(func=tune_examples)
+
     # -------------------------------------------------------------------------
 
     args = parser.parse_args()
@@ -579,13 +588,29 @@ def test_examples(
     # Optional intent recognizer
     recognizer = None
 
+    # ----------
     # Statistics
+    # ----------
+
+    # Total number of WAV files
     num_wavs = 0
+
+    # Number transcriptions that match *exactly*
     correct_transcriptions = 0
+
+    # Number of words in all transcriptions (as counted by word_align.pl)
     num_words = 0
+
+    # Number of correct words in all transcriptions (as computed by word_align.pl)
     correct_words = 0
+
+    # Number of recognized intents that match expectations
     correct_intent_names = 0
+
+    # Number of entity/value pairs that match *exactly* in all recognized intents
     correct_entities = 0
+
+    # Number of entity/value pairs all intents
     num_entities = 0
 
     # Expected/actual intents
@@ -667,7 +692,7 @@ def test_examples(
 
         num_wavs += 1
 
-    # Compute WER
+    # Compute word error rate (WER)
     align_results: Dict[str, Any] = {}
     if shutil.which("word_align.pl"):
         from voice2json.utils import align2json
@@ -731,6 +756,26 @@ def test_examples(
     }
 
     print_json(summary)
+
+
+# -----------------------------------------------------------------------------
+
+
+def tune_examples(
+    args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]
+) -> None:
+    from voice2json import get_tuner
+
+    examples_dir = Path(args.directory) if args.directory is not None else Path.cwd()
+    logger.debug(f"Looking for examples in {examples_dir}")
+
+    start_time = time.time()
+
+    tuner = get_tuner(profile_dir, profile)
+    tuner.tune(examples_dir)
+
+    end_time = time.time()
+    print("Tuning completed in", end_time - start_time, "second(s)")
 
 
 # -----------------------------------------------------------------------------
