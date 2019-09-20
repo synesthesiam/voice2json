@@ -36,7 +36,9 @@ def get_transcriber(
     language_model = ppath(
         profile, profile_dir, "speech-to-text.language-model", "language_model.txt"
     )
-    mllr_matrix = ppath(profile, profile_dir, "speech-to-text.mllr-matrix")
+    mllr_matrix = ppath(
+        profile, profile_dir, "speech-to-text.mllr-matrix", "mllr_matrix"
+    )
 
     # Load deocder
     decoder = get_decoder(

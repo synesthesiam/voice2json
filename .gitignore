@@ -1,4 +1,8 @@
 .venv/
 build/
 __pycache__/
+download/
+dist/
 .doit.db*
+debian/*.deb
+debian/**/usr/lib/

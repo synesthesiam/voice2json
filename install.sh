@@ -127,12 +127,6 @@ fi
 # -----------------------------------------------------------------------------
 
 if [[ -z "${no_runtime}" ]]; then
-    # gstreamer
-    if [[ -z "$(which gst-launch-1.0)" ]]; then
-        echo "Installing gstreamer"
-        install gstreamer1.0-pulseaudio gstreamer1.0-tools gstreamer1.0-plugins-good
-    fi
-
     # jq
     if [[ -z "$(which jq)" ]]; then
         echo "Installing jq"

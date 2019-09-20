@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+install_dir='/usr/lib/voice2json'
+
+# Check to see if sphinxtrain is installed (pocketsphinx acoustic model tuning)
+if [[ -d '/usr/lib/sphinxtrain' ]]; then
+    export PATH="/usr/lib/sphinxtrain:${PATH}"
+fi
+
+export PATH="${install_dir}:${PATH}"
+
+"${install_dir}/voice2json" "$@"

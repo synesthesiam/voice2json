@@ -35,7 +35,7 @@ def get_decoder(
     if not debug:
         decoder_config.set_string("-logfn", os.devnull)
 
-    if mllr_matrix is not None:
+    if (mllr_matrix is not None) and mllr_matrix.exists():
         decoder_config.set_string("-mllr", str(mllr_matrix))
 
     decoder = pocketsphinx.Decoder(decoder_config)

@@ -5,6 +5,8 @@ import sys
 import json
 import argparse
 import logging
+import tempfile
+import subprocess
 from pathlib import Path
 from typing import Dict, Set, Iterable, Any
 from collections import deque
@@ -317,9 +319,36 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
 
     def do_dict(dictionary_paths: Iterable[Path], targets):
         with open(targets[0], "w") as dictionary_file:
+            if unknown_words.exists():
+                unknown_words.unlink()
+
             make_dict(
                 vocab, dictionary_paths, dictionary_file, unknown_path=unknown_words
             )
+
+            if unknown_words.exists() and g2p_model.exists():
+                # Generate single pronunciation guesses
+                logger.debug("Guessing pronunciations for unknown word(s)")
+
+                g2p_proc = subprocess.Popen(
+                    [
+                        "phonetisaurus-apply",
+                        "--model",
+                        str(g2p_model),
+                        "--word_list",
+                        str(unknown_words),
+                        "--nbest",
+                        "1",
+                    ],
+                    stdout=subprocess.PIPE,
+                )
+
+                # Append to dictionary and custom words
+                with open(custom_words, "a") as words_file:
+                    for line in g2p_proc.stdout:
+                        line = line.decode().strip()
+                        print(line, file=dictionary_file)
+                        print(line, file=words_file)
 
     @create_after(executed="vocab")
     def task_vocab_dict():
@@ -333,60 +362,34 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
         return {
             "file_dep": [vocab] + dictionary_paths,
             "targets": [dictionary],
-            "actions": [["rm", "-f", unknown_words], (do_dict, [dictionary_paths])],
+            "actions": [(do_dict, [dictionary_paths])],
         }
 
     # -----------------------------------------------------------------------------
 
-    @create_after(executed="vocab_dict")
-    def task_vocab_g2p():
-        """Guesses the pronunciations of unknown words."""
-        if unknown_words.exists() and g2p_model.exists():
-            return {
-                "file_dep": [unknown_words, g2p_model],
-                "targets": [guess_words],
-                "actions": [
-                    ["rm", "-f", guess_words],
-                    [
-                        "rhasspy-vocab_g2p",
-                        "--unknown",
-                        unknown_words,
-                        "--model",
-                        g2p_model,
-                        "--nbest",
-                        "5",
-                        "--output",
-                        guess_words,
-                        "--debug",
-                    ],
-                ],
-            }
-
-    # -----------------------------------------------------------------------------
-
-    @create_after(executed="language_model")
-    def task_kaldi_train():
-        """Creates HCLG.fst for a Kaldi nnet3 or gmm model."""
-        if kaldi_model_type is not None:
-            return {
-                "file_dep": [dictionary, language_model],
-                "targets": [kaldi_graph_dir / "HCLG.fst"],
-                "actions": [
-                    [
-                        "rhasspy-kaldi-train",
-                        "--kaldi-dir",
-                        kaldi_dir,
-                        "--model-type",
-                        kaldi_model_type,
-                        "--model-dir",
-                        kaldi_model_dir,
-                        "--dictionary",
-                        dictionary,
-                        "--language-model",
-                        language_model,
-                    ]
-                ],
-            }
+    # @create_after(executed="language_model")
+    # def task_kaldi_train():
+    #     """Creates HCLG.fst for a Kaldi nnet3 or gmm model."""
+    #     if kaldi_model_type is not None:
+    #         return {
+    #             "file_dep": [dictionary, language_model],
+    #             "targets": [kaldi_graph_dir / "HCLG.fst"],
+    #             "actions": [
+    #                 [
+    #                     "kaldi-train",
+    #                     "--kaldi-dir",
+    #                     kaldi_dir,
+    #                     "--model-type",
+    #                     kaldi_model_type,
+    #                     "--model-dir",
+    #                     kaldi_model_dir,
+    #                     "--dictionary",
+    #                     dictionary,
+    #                     "--language-model",
+    #                     language_model,
+    #                 ]
+    #             ],
+    #         }
 
     # -----------------------------------------------------------------------------
 

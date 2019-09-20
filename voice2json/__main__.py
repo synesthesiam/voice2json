@@ -90,6 +90,9 @@ def main():
     pronounce_parser.add_argument(
         "--delay", type=float, default=0, help="Seconds to wait between words"
     )
+    pronounce_parser.add_argument(
+        "--wav-sink", help="File to write WAV data to"
+    )
     pronounce_parser.set_defaults(func=pronounce)
 
     # generate-sentences
@@ -113,7 +116,7 @@ def main():
         "--directory", help="Directory to save recorded WAV files and transcriptions"
     )
     record_examples_parser.add_argument(
-        "--audio_source", help="File to read raw 16-bit 16Khz mono audio from"
+        "--audio-source", help="File to read raw 16-bit 16Khz mono audio from"
     )
     record_examples_parser.add_argument(
         "--chunk-size",
@@ -361,11 +364,11 @@ def pronounce(
     # Process words
     for word in words:
         word = word.strip()
-        dict_phonemes = None
+        dict_phonemes = []
 
         if word in pronunciations:
-            # Use first pronunciation in dictionary
-            dict_phonemes = re.split(r"\s+", pronunciations[word][0])
+            # Use pronunciations from dictionary
+            dict_phonemes = [re.split(r"\s+", p) for p in pronunciations[word]]
         elif g2p_exists:
             # Guess pronunciation with phonetisaurus
             logger.debug(f"Guessing pronunciation for {word}")
@@ -381,39 +384,45 @@ def pronounce(
                     "--word_list",
                     word_file.name,
                     "--nbest",
-                    "1",
+                    "5",
                 ]
 
                 logger.debug(phonetisaurus_cmd)
                 output_lines = (
                     subprocess.check_output(phonetisaurus_cmd).decode().splitlines()
                 )
-                dict_phonemes = re.split(r"\s+", output_lines[0].strip())[1:]
+                dict_phonemes = [
+                    re.split(r"\s+", line.strip())[1:] for line in output_lines
+                ]
         else:
             logger.warn(f"No pronunciation for {word}")
 
-        if dict_phonemes is not None:
-            print(word, " ".join(dict_phonemes))
+        for phonemes in dict_phonemes:
+            print(word, " ".join(phonemes))
 
-        if not args.quiet:
-            if map_exists:
-                # Map to espeak phonemes
-                phoneme_map = dict(
-                    re.split(r"\s+", line.strip(), maxsplit=1)
-                    for line in map_path.read_text().splitlines()
-                )
+            if not args.quiet:
+                if map_exists:
+                    # Map to espeak phonemes
+                    phoneme_map = dict(
+                        re.split(r"\s+", line.strip(), maxsplit=1)
+                        for line in map_path.read_text().splitlines()
+                    )
 
-                espeak_phonemes = [phoneme_map[p] for p in dict_phonemes]
-            else:
-                espeak_phonemes = dict_phonemes
+                    espeak_phonemes = [phoneme_map[p] for p in phonemes]
+                else:
+                    espeak_phonemes = phonemes
 
-            # Speak with espeak
-            espeak_str = "".join(espeak_phonemes)
-            espeak_cmd = ["espeak", "-s", "80", f"[[{espeak_str}]]"]
-            logger.debug(espeak_cmd)
-            subprocess.check_call(espeak_cmd)
+                # Speak with espeak
+                espeak_str = "".join(espeak_phonemes)
+                espeak_cmd = ["espeak", "-s", "80", f"[[{espeak_str}]]"]
 
-            time.sleep(args.delay)
+                if args.wav_sink is not None:
+                    espeak_cmd.extend(["-w", args.wav_sink])
+
+                logger.debug(espeak_cmd)
+                subprocess.check_call(espeak_cmd)
+
+                time.sleep(args.delay)
 
 
 # -----------------------------------------------------------------------------
@@ -664,6 +673,12 @@ def test_examples(
                 recognizer = get_recognizer(profile_dir, profile)
 
             actual_intent = recognizer.recognize(actual_text)
+
+            # Merge with transcription
+            for key, value in actual_transcription.items():
+                if key not in actual_intent:
+                    actual_intent[key] = value
+
             logger.debug(actual_intent)
 
             if expected_intent["intent"]["name"] == actual_intent["intent"]["name"]:
