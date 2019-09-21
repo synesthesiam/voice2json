@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 this_dir="$( cd "$( dirname "$0" )" && pwd )"
+export voice2json_dir="$(realpath "${this_dir}")"
+
 venv="${this_dir}/.venv"
 
 if [[ -d "${venv}" ]]; then

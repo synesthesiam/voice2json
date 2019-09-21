@@ -3,6 +3,7 @@ import logging
 import tempfile
 import subprocess
 import shutil
+import wave
 from typing import Dict, Any
 from pathlib import Path
 
@@ -21,6 +22,23 @@ class Transcriber:
 
 
 def get_transcriber(
+    profile_dir: Path, profile: Dict[str, Any], open_transcription=False, debug=False
+) -> Transcriber:
+    # Load settings
+    kaldi_model_type = pydash.get(profile, "speech-to-text.kaldi.model-type", None)
+
+    if kaldi_model_type is None:
+        # Pocketsphinx
+        return get_pocketsphinx_transcriber(
+            profile_dir, profile, open_transcription=open_transcription, debug=debug
+        )
+    else:
+        return get_kaldi_transcriber(
+            profile_dir, profile, open_transcription=open_transcription, debug=debug
+        )
+
+
+def get_pocketsphinx_transcriber(
     profile_dir: Path, profile: Dict[str, Any], open_transcription=False, debug=False
 ) -> Transcriber:
     from voice2json.speech.pocketsphinx import get_decoder, transcribe
@@ -58,7 +76,7 @@ def get_transcriber(
         )
 
     mllr_matrix = ppath(
-        profile, profile_dir, "speech-to-text.mllr-matrix", "mllr_matrix"
+        profile, profile_dir, "speech-to-text.pocketsphinx.mllr-matrix", "mllr_matrix"
     )
 
     # Load deocder
@@ -75,6 +93,80 @@ def get_transcriber(
             return transcribe(self.decoder, audio_data)
 
     return PocketsphinxTranscriber(decoder)
+
+
+def get_kaldi_transcriber(
+    profile_dir: Path, profile: Dict[str, Any], open_transcription=False, debug=False
+) -> Transcriber:
+    from voice2json.utils import maybe_convert_wav
+
+    # Load settings
+    model_type = pydash.get(profile, "speech-to-text.kaldi.model-type")
+    acoustic_model = ppath(
+        profile, profile_dir, "speech-to-text.acoustic-model", "acoustic_model"
+    )
+
+    if open_transcription:
+        # Use base graph
+        graph_dir = ppath(
+            profile,
+            profile_dir,
+            "speech-to-text.kaldi.base-graph-directory",
+            "acoustic_model/model/graph",
+        )
+    else:
+        # Use custom graph
+        graph_dir = ppath(
+            profile,
+            profile_dir,
+            "speech-to-text.kaldi.graph-directory",
+            "acoustic_model/graph",
+        )
+
+    class KaldiTranscriber(Transcriber):
+        def __init__(self, model_type, model_dir, graph_dir):
+            self.model_type = model_type
+            self.model_dir = model_dir
+            self.graph_dir = graph_dir
+
+        def transcribe_wav(self, wav_data: bytes) -> Dict[str, Any]:
+            kaldi_cmd = [
+                "kaldi-decode",
+                "--model-type",
+                str(self.model_type),
+                "--model-dir",
+                str(self.model_dir),
+                "--graph-dir",
+                str(self.graph_dir),
+            ]
+
+            logger.debug(kaldi_cmd)
+
+            with tempfile.NamedTemporaryFile(suffix=".wav", mode="wb") as temp_file:
+                # Convert WAV to 16-bit, 16Khz mono
+                audio_data = maybe_convert_wav(wav_data)
+                with wave.open(temp_file, mode="wb") as wav_file:
+                    wav_file.setframerate(16000)
+                    wav_file.setsampwidth(2)
+                    wav_file.setnchannels(1)
+                    wav_file.writeframesraw(audio_data)
+
+                temp_file.seek(0)
+
+                kaldi_proc = subprocess.Popen(
+                    kaldi_cmd,
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    universal_newlines=True,
+                )
+
+                # Write path to WAV file
+                print(temp_file.name, file=kaldi_proc.stdin)
+                result_json, _ = kaldi_proc.communicate()
+
+                return json.loads(result_json)
+
+    return KaldiTranscriber(model_type, acoustic_model, graph_dir)
 
 
 # -----------------------------------------------------------------------------

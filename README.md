@@ -44,8 +44,9 @@ speech-to-text:
   # Path to custom pronunciation dictionary
   dictionary: !env "${profile_dir}/dictionary.txt"
   
-  # Path to tuned acoustic model matrix (pocketsphinx only)
-  mllr-matrix: !env "${profile_dir}/mllr_matrix"
+  pocketsphinx:
+    # Path to tuned acoustic model matrix (pocketsphinx only)
+    mllr-matrix: !env "${profile_dir}/mllr_matrix"
 
 intent-recognition:
   # Path to custom intent finite state transducer

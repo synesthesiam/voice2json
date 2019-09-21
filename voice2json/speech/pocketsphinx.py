@@ -3,6 +3,7 @@ import logging
 
 logger = logging.getLogger("pocketsphinx")
 
+import io
 import os
 import sys
 import jsonlines
@@ -10,6 +11,7 @@ import time
 import argparse
 import threading
 import json
+import wave
 from typing import Optional, Dict, Any
 from pathlib import Path
 
@@ -53,6 +55,14 @@ def transcribe(
     decoder: pocketsphinx.Decoder, audio_data: bytes, nbest: int = 0
 ) -> Dict[str, Any]:
     """Transcribes audio data to text."""
+
+    # Compute WAV duration
+    with io.BytesIO(audio_data) as wav_buffer:
+        with wave.open(wav_buffer) as wav_file:
+            frames = wav_file.getnframes()
+            rate = wav_file.getframerate()
+            wav_duration = frames / float(rate)
+
     # Process data as an entire utterance
     start_time = time.time()
     decoder.start_utt()
@@ -75,6 +85,7 @@ def transcribe(
     result = {
         "text": transcription,
         "transcribe_seconds": decode_seconds,
+        "wav_seconds": wav_duration,
         "likelihood": likelihood,
     }
 
