@@ -16,7 +16,7 @@ fi
 
 package_name="${name}_${version}_${arch}"
 package_dir="debian/${package_name}"
-output_dir="${package_dir}/usr/lib/${name}"
+output_dir="${package_dir}/usr/lib/${name}/${name}"
 mkdir -p "${output_dir}"
 
 # Copy PyInstaller-generated files
@@ -31,6 +31,14 @@ if [[ -d "dist/${name}" ]]; then
     # Remove executable bit from shared libs (Lintian warning)
     chmod -x "${output_dir}"/*.so* || true
 fi
+
+# Copy Kaldi
+kaldi_output_dir="${package_dir}/usr/lib/${name}/build/kaldi-master"
+mkdir -p "${kaldi_output_dir}"
+rsync -av --delete \
+      --files-from 'debian/kaldi_include.txt' \
+      "build/kaldi-master/" \
+      "${kaldi_output_dir}/"
 
 # Actually build the package
 cd 'debian' && fakeroot dpkg --build "${package_name}"
