@@ -91,19 +91,20 @@ def main():
         "--delay", type=float, default=0, help="Seconds to wait between words"
     )
     pronounce_parser.add_argument(
-        "--wav-sink", help="File to write WAV data to"
+        "--nbest",
+        type=int,
+        default=5,
+        help="Number of pronunciations to generate for unknown words",
     )
+    pronounce_parser.add_argument("--wav-sink", help="File to write WAV data to")
     pronounce_parser.set_defaults(func=pronounce)
 
-    # generate-sentences
+    # generate-examples
     generate_parser = sub_parsers.add_parser(
-        "generate-sentences", help="Randomly generate sentences from profile"
+        "generate-examples", help="Randomly generate example intents from profile"
     )
     generate_parser.add_argument(
-        "--samples", type=int, required=True, help="Number of sentences to generate"
-    )
-    generate_parser.add_argument(
-        "--meta", action="store_true", help="Include meta tags"
+        "--count", type=int, required=True, help="Number of examples to generate"
     )
     generate_parser.set_defaults(func=generate)
 
@@ -348,6 +349,12 @@ def pronounce(
     )
     map_exists = map_path.exists()
 
+    # True if audio will go to stdout.
+    # In this case, printing will go to stderr.
+    wav_stdout = args.wav_sink == "-"
+
+    print_file = sys.stderr if wav_stdout else sys.stdout
+
     # Load dictionaries
     pronunciations: Dict[str, List[str]] = defaultdict(list)
 
@@ -363,12 +370,17 @@ def pronounce(
 
     # Process words
     for word in words:
-        word = word.strip()
+        word_parts = re.split(r"\s+", word.strip())
+        word = word_parts[0]
         dict_phonemes = []
+
+        if len(word_parts) > 1:
+            # Pronunciation provided
+            dict_phonemes.append(word_parts[1:])
 
         if word in pronunciations:
             # Use pronunciations from dictionary
-            dict_phonemes = [re.split(r"\s+", p) for p in pronunciations[word]]
+            dict_phonemes.extend(re.split(r"\s+", p) for p in pronunciations[word])
         elif g2p_exists:
             # Guess pronunciation with phonetisaurus
             logger.debug(f"Guessing pronunciation for {word}")
@@ -384,21 +396,21 @@ def pronounce(
                     "--word_list",
                     word_file.name,
                     "--nbest",
-                    "5",
+                    str(args.nbest),
                 ]
 
                 logger.debug(phonetisaurus_cmd)
                 output_lines = (
                     subprocess.check_output(phonetisaurus_cmd).decode().splitlines()
                 )
-                dict_phonemes = [
+                dict_phonemes.extend(
                     re.split(r"\s+", line.strip())[1:] for line in output_lines
-                ]
+                )
         else:
             logger.warn(f"No pronunciation for {word}")
 
         for phonemes in dict_phonemes:
-            print(word, " ".join(phonemes))
+            print(word, " ".join(phonemes), file=print_file)
 
             if not args.quiet:
                 if map_exists:
@@ -416,8 +428,14 @@ def pronounce(
                 espeak_str = "".join(espeak_phonemes)
                 espeak_cmd = ["espeak", "-s", "80", f"[[{espeak_str}]]"]
 
+                # Determine where to output WAV data
                 if args.wav_sink is not None:
-                    espeak_cmd.extend(["-w", args.wav_sink])
+                    if args.wav_sink == "-":
+                        # stdout
+                        espeak_cmd.append("--stdout")
+                    else:
+                        # File output
+                        espeak_cmd.extend(["-w", args.wav_sink])
 
                 logger.debug(espeak_cmd)
                 subprocess.check_call(espeak_cmd)
@@ -432,7 +450,7 @@ def generate(
     args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]
 ) -> None:
     import pywrapfst as fst
-    from voice2json.train.jsgf2fst import fstprintall
+    from voice2json.train.jsgf2fst import fstprintall, symbols2intent
 
     # Load settings
     intent_fst_path = ppath(
@@ -443,10 +461,15 @@ def generate(
     intent_fst = fst.Fst.read(str(intent_fst_path))
 
     # Generate samples
-    rand_fst = fst.randgen(intent_fst, npath=args.samples)
+    rand_fst = fst.randgen(intent_fst, npath=args.count)
 
-    # Print samples
-    fstprintall(rand_fst, out_file=sys.stdout, exclude_meta=(not args.meta))
+    # Convert to words/tokens
+    for symbols in fstprintall(rand_fst, exclude_meta=False):
+        # Convert to intent
+        intent = symbols2intent(symbols)
+
+        # Write as jsonl
+        print_json(intent)
 
 
 # -----------------------------------------------------------------------------
