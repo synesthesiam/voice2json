@@ -66,7 +66,6 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
     intent_fst = ppath("training.intent-fst", "intent.fst")
     vocab = ppath("training.vocabulary-file", "vocab.txt")
     unknown_words = ppath("training.unknown-words-file", "unknown.txt")
-    guess_words = ppath("training.guess-words-file", "guess_words.json")
     grammar_dir = ppath("training.grammar-directory", "grammars")
     fsts_dir = ppath("training.fsts-directory", "fsts")
     slots_dir = ppath("training.slots-directory", "slots")

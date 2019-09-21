@@ -21,7 +21,7 @@ class Transcriber:
 
 
 def get_transcriber(
-    profile_dir: Path, profile: Dict[str, Any], debug=False
+    profile_dir: Path, profile: Dict[str, Any], open_transcription=False, debug=False
 ) -> Transcriber:
     from voice2json.speech.pocketsphinx import get_decoder, transcribe
     from voice2json.utils import maybe_convert_wav
@@ -30,12 +30,33 @@ def get_transcriber(
     acoustic_model = ppath(
         profile, profile_dir, "speech-to-text.acoustic-model", "acoustic_model"
     )
-    dictionary = ppath(
-        profile, profile_dir, "speech-to-text.dictionary", "dictionary.txt"
-    )
-    language_model = ppath(
-        profile, profile_dir, "speech-to-text.language-model", "language_model.txt"
-    )
+
+    if open_transcription:
+        # Use base dictionary/language model
+        dictionary = ppath(
+            profile,
+            profile_dir,
+            "speech-to-text.base_dictionary",
+            "base_dictionary.txt",
+        )
+
+        language_model = ppath(
+            profile,
+            profile_dir,
+            "speech-to-text.base_language-model",
+            "base_language_model.txt",
+        )
+
+    else:
+        # Use custom dictionary/language model
+        dictionary = ppath(
+            profile, profile_dir, "speech-to-text.dictionary", "dictionary.txt"
+        )
+
+        language_model = ppath(
+            profile, profile_dir, "speech-to-text.language-model", "language_model.txt"
+        )
+
     mllr_matrix = ppath(
         profile, profile_dir, "speech-to-text.mllr-matrix", "mllr_matrix"
     )

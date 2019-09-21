@@ -51,6 +51,11 @@ def main():
     )
     transcribe_parser.set_defaults(func=transcribe)
     transcribe_parser.add_argument(
+        "--open",
+        action="store_true",
+        help="Use large pre-built model for transcription",
+    )
+    transcribe_parser.add_argument(
         "wav_file", nargs="*", default=[], help="Path(s) to WAV file(s)"
     )
 
@@ -205,7 +210,9 @@ def transcribe(
 ) -> None:
     from voice2json import get_transcriber
 
-    transcriber = get_transcriber(profile_dir, profile, debug=args.debug)
+    transcriber = get_transcriber(
+        profile_dir, profile, open_transcription=args.open, debug=args.debug
+    )
 
     if len(args.wav_file) > 0:
         for wav_path_str in args.wav_file:
