@@ -76,6 +76,7 @@ steps_dir="${kaldi_dir}/egs/wsj/s5/steps"
 
 # Force create a symbolic link to the "utils" directory.
 # Some Kaldi scripts will crash without this.
+rm -rf "${model_dir}/utils"
 ln -fs "${utils_dir}" "${model_dir}/utils"
 
 # Set up paths for Kaldi programs

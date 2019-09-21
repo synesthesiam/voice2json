@@ -1,4 +1,3 @@
-egs/wsj/s5/utils
 egs/wsj/s5/steps/online/nnet3/decode.sh
 egs/wsj/s5/steps/online/nnet3/prepare_online_decoding.sh
 tools/openfst/lib/libfstscript.so.10.0.0
@@ -7,8 +6,6 @@ tools/openfst/lib/libfstscript.so
 tools/openfst/lib/libfst.so.10
 tools/openfst/lib/libfst.so.10.0.0
 tools/openfst/lib/libfst.so
-tools/openfst/bin
-src/lib
 src/featbin/add-deltas
 src/featbin/compute-cmvn-stats
 src/featbin/apply-cmvn

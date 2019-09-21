@@ -17,7 +17,7 @@ import pywrapfst as fst
 import networkx as nx
 import doit
 
-# from doit import create_after
+from doit import create_after
 
 from voice2json.train.jsgf2fst import (
     get_grammar_dependencies,
@@ -57,7 +57,7 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
     custom_words = ppath("training.custom-words-file", "custom_words.txt")
     g2p_model = ppath("training.grapheme-to-phoneme-model", "g2p.fst")
     kaldi_graph_dir = ppath("training.kaldi.graph-directory", "acoustic_model/graph")
-    kaldi_model_type = pydash.get(profile, "training.kaldi.model-type", None)
+    kaldi_model_type = pydash.get(profile, "training.kaldi.model-type", "")
     acoustic_model = ppath("speech-to-text.acoustic_model", "acoustic_model")
 
     # Outputs
@@ -170,6 +170,7 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
 
     # -----------------------------------------------------------------------------
 
+    @create_after(executed="grammar_dependencies")
     def task_grammar_fsts():
         """Creates grammar FSTs from JSGF grammars and relevant slots."""
         used_slots: Set[str] = set()
@@ -235,6 +236,7 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
         intent_fst = make_intent_fst(intent_fsts)
         intent_fst.write(targets[0])
 
+    @create_after(executed="grammar_fsts")
     def task_intent_fst():
         """Merges grammar FSTs into single intent.fst."""
         return {
@@ -245,6 +247,7 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
 
     # -----------------------------------------------------------------------------
 
+    @create_after(executed="intent_fst")
     def task_language_model():
         """Creates an ARPA language model from intent.fst."""
 
@@ -307,6 +310,7 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
                 if not (symbol.startswith("__") or symbol.startswith("<")):
                     print(symbol, file=vocab_file)
 
+    @create_after(executed="language_model")
     def task_vocab():
         """Writes all vocabulary words to a file from intent.fst."""
         return {"file_dep": [intent_fst], "targets": [vocab], "actions": [do_vocab]}
@@ -346,6 +350,7 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
                         print(line, file=dictionary_file)
                         print(line, file=words_file)
 
+    @create_after(executed="vocab")
     def task_vocab_dict():
         """Creates custom pronunciation dictionary based on desired vocabulary."""
         dictionary_paths = [base_dictionary]
@@ -362,9 +367,10 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
 
     # -----------------------------------------------------------------------------
 
+    @create_after(executed="vocab_dict")
     def task_kaldi_train():
         """Creates HCLG.fst for a Kaldi nnet3 or gmm model."""
-        if kaldi_model_type is not None:
+        if len(kaldi_model_type) > 0:
             return {
                 "file_dep": [dictionary, language_model],
                 "targets": [kaldi_graph_dir / "HCLG.fst"],

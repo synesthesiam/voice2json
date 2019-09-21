@@ -83,7 +83,8 @@ openfst_dir="${kaldi_dir}/tools/openfst"
 # Empty path.sh
 touch "${model_dir}/path.sh"
 
-# Link utils
+# Force create a symbolic link to the "utils" directory.
+# Some Kaldi scripts will crash without this.
 rm -rf "${model_dir}/utils"
 ln -fs "${utils_dir}" "${model_dir}/utils"
 

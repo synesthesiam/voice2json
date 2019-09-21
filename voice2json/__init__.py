@@ -1,3 +1,4 @@
+import sys
 import json
 import logging
 import tempfile
@@ -25,9 +26,9 @@ def get_transcriber(
     profile_dir: Path, profile: Dict[str, Any], open_transcription=False, debug=False
 ) -> Transcriber:
     # Load settings
-    kaldi_model_type = pydash.get(profile, "speech-to-text.kaldi.model-type", None)
+    kaldi_model_type = pydash.get(profile, "speech-to-text.kaldi.model-type", "")
 
-    if kaldi_model_type is None:
+    if len(kaldi_model_type) == 0:
         # Pocketsphinx
         return get_pocketsphinx_transcriber(
             profile_dir, profile, open_transcription=open_transcription, debug=debug
@@ -101,7 +102,7 @@ def get_kaldi_transcriber(
     from voice2json.utils import maybe_convert_wav
 
     # Load settings
-    model_type = pydash.get(profile, "speech-to-text.kaldi.model-type")
+    model_type = pydash.get(profile, "speech-to-text.kaldi.model-type", "")
     acoustic_model = ppath(
         profile, profile_dir, "speech-to-text.acoustic-model", "acoustic_model"
     )
@@ -268,6 +269,12 @@ def get_tuner(profile_dir: Path, profile: Dict[str, Any]) -> Tuner:
     from voice2json.utils import should_convert_wav, convert_wav
 
     # Load settings
+    kaldi_model_type = pydash.get(profile, "speech-to-text.kaldi.model-type", None)
+
+    if kaldi_model_type is not None:
+        logger.fatal("Acoustic model tuning is only availble for pocketsphinx for now.")
+        sys.exit(1)
+
     acoustic_model = ppath(
         profile, profile_dir, "speech-to-text.acoustic-model", "acoustic_model"
     )

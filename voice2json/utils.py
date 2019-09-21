@@ -2,9 +2,20 @@ import re
 import io
 import wave
 import subprocess
+import collections
 from collections import defaultdict
 from pathlib import Path
-from typing import Optional, Iterable, Callable, Dict, List, TextIO, Any, BinaryIO
+from typing import (
+    Optional,
+    Iterable,
+    Callable,
+    Dict,
+    List,
+    TextIO,
+    Any,
+    BinaryIO,
+    Mapping,
+)
 
 import pydash
 
@@ -197,3 +208,15 @@ def get_audio_source() -> BinaryIO:
     ]
     arecord_proc = subprocess.Popen(arecord_cmd, stdout=subprocess.PIPE)
     return arecord_proc.stdout
+
+
+# -----------------------------------------------------------------------------
+
+
+def recursive_update(base_dict: Dict[Any, Any], new_dict: Mapping[Any, Any]) -> None:
+    """Recursively overwrites values in base dictionary with values from new dictionary"""
+    for k, v in new_dict.items():
+        if isinstance(v, collections.Mapping) and (k in base_dict):
+            recursive_update(base_dict[k], v)
+        else:
+            base_dict[k] = v

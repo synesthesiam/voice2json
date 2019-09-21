@@ -23,7 +23,7 @@ import yaml
 import pydash
 import jsonlines
 
-from voice2json.utils import ppath
+from voice2json.utils import ppath, recursive_update
 
 # -----------------------------------------------------------------------------
 
@@ -39,6 +39,11 @@ def main():
     sub_parsers = parser.add_subparsers()
     sub_parsers.required = True
     sub_parsers.dest = "command"
+
+    print_parser = sub_parsers.add_parser(
+        "print-profile", help="Print profile JSON to stdout"
+    )
+    print_parser.set_defaults(func=print_profile)
 
     # train-profile
     train_parser = sub_parsers.add_parser(
@@ -74,8 +79,7 @@ def main():
 
     # record-command
     command_parser = sub_parsers.add_parser(
-        "record-command",
-        help="Record voice command and write WAV to stdout",
+        "record-command", help="Record voice command and write WAV to stdout"
     )
     command_parser.add_argument(
         "--audio-source", help="File to read raw 16-bit 16Khz mono audio from"
@@ -189,15 +193,36 @@ def main():
     # x86_64, armv7l, armv6l, ...
     os.environ["machine"] = platform.machine()
 
+    # Load profile defaults
+    defaults_yaml = (
+        Path(os.environ.get("voice2json_dir")) / "etc" / "profile.defaults.yml"
+    )
+    if defaults_yaml.exists():
+        logger.debug(f"Loading profile defaults from {defaults_yaml}")
+        with open(defaults_yaml, "r") as defaults_file:
+            profile = yaml.safe_load(defaults_file)
+    else:
+        # No defaults
+        profile = {}
+
     # Load profile
     profile_yaml = profile_dir / "profile.yml"
     logger.debug(f"Loading profile from {profile_yaml}")
 
     with open(profile_yaml, "r") as profile_file:
-        profile = yaml.safe_load(profile_file)
+        recursive_update(profile, yaml.safe_load(profile_file) or {})
 
     # Call sub-commmand
     args.func(args, profile_dir, profile)
+
+
+# -----------------------------------------------------------------------------
+
+
+def print_profile(
+    args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]
+) -> None:
+    json.dump(profile, sys.stdout, indent=4)
 
 
 # -----------------------------------------------------------------------------
@@ -322,9 +347,9 @@ def wake(args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]) -
     from voice2json.wake.porcupine import Porcupine
 
     # Load settings
-    library_path = ppath(profile, profile_dir, "wake-word.library-file")
-    params_path = ppath(profile, profile_dir, "wake-word.params-file")
-    keyword_path = ppath(profile, profile_dir, "wake-word.keyword-file")
+    library_path = ppath(profile, profile_dir, "wake-word.porcupine.library-file")
+    params_path = ppath(profile, profile_dir, "wake-word.porcupine.params-file")
+    keyword_path = ppath(profile, profile_dir, "wake-word.porcupine.keyword-file")
     sensitivity = float(pydash.get(profile, "wake-word.sensitivity", 0.5))
 
     # Load porcupine
