@@ -156,11 +156,7 @@ def wait_for_command(
     # -------------------------------------------------------------------------
 
     # Process a voice command immediately
-    chunk = audio_file.read(chunk_size)
-    while len(chunk) == chunk_size:
-        audio_chunks.put(chunk)
-        process_audio()
-        chunk = audio_file.read(chunk_size)
+    process_audio()
 
     # Merge before/during command audio data
     before_buffer = bytes()

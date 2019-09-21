@@ -12,6 +12,7 @@ import tempfile
 import subprocess
 import threading
 import shutil
+import platform
 from pathlib import Path
 from collections import defaultdict
 from typing import Set, Dict, Optional, List, Any, BinaryIO
@@ -74,13 +75,19 @@ def main():
     # record-command
     command_parser = sub_parsers.add_parser(
         "record-command",
-        help="Record voice command from stdin audio, write WAV to stdout",
+        help="Record voice command and write WAV to stdout",
+    )
+    command_parser.add_argument(
+        "--audio-source", help="File to read raw 16-bit 16Khz mono audio from"
     )
     command_parser.set_defaults(func=record_command)
 
     # wait-wake
     wake_parser = sub_parsers.add_parser(
-        "wait-wake", help="Listen to audio from stdin, wait until wake word is spoken"
+        "wait-wake", help="Listen to audio until wake word is spoken"
+    )
+    wake_parser.add_argument(
+        "--audio-source", help="File to read raw 16-bit 16Khz mono audio from"
     )
     wake_parser.set_defaults(func=wake)
 
@@ -178,6 +185,9 @@ def main():
 
     # Set environment variable usually referenced in profile
     os.environ["profile_dir"] = str(profile_dir)
+
+    # x86_64, armv7l, armv6l, ...
+    os.environ["machine"] = platform.machine()
 
     # Load profile
     profile_yaml = profile_dir / "profile.yml"
@@ -285,11 +295,20 @@ def record_command(
     args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]
 ) -> None:
     from voice2json.command.webrtcvad import wait_for_command
-    from voice2json.utils import buffer_to_wav
+    from voice2json.utils import buffer_to_wav, get_audio_source
 
-    logger.debug("Recording raw 16-bit 16Khz mono audio from stdin")
+    # Expecting raw 16-bit, 16Khz mono audio
+    if args.audio_source is None:
+        audio_source = get_audio_source()
+        logger.debug(f"Recording raw 16-bit 16Khz mono audio using arecord")
+    elif args.audio_source == "-":
+        audio_source = sys.stdin.buffer
+        logger.debug(f"Recording raw 16-bit 16Khz mono audio from stdin")
+    else:
+        audio_source: BinaryIO = open(args.audio_source, "rb")
+        logger.debug(f"Recording raw 16-bit 16Khz mono audio from {args.audio_source}")
 
-    audio_buffer = wait_for_command(sys.stdin.buffer)
+    audio_buffer = wait_for_command(audio_source)
     wav_bytes = buffer_to_wav(audio_buffer)
     sys.stdout.buffer.write(wav_bytes)
 
@@ -299,6 +318,7 @@ def record_command(
 
 def wake(args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]) -> None:
     import struct
+    from voice2json.utils import get_audio_source
     from voice2json.wake.porcupine import Porcupine
 
     # Load settings
@@ -318,20 +338,32 @@ def wake(args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]) -
     chunk_size = handle.frame_length * 2
     chunk_format = "h" * handle.frame_length
 
-    # Process audio
-    logger.debug("Recording raw 16-bit 16Khz mono audio from stdin")
+    # Expecting raw 16-bit, 16Khz mono audio
+    if args.audio_source is None:
+        audio_source = get_audio_source()
+        logger.debug(f"Recording raw 16-bit 16Khz mono audio using arecord")
+    elif args.audio_source == "-":
+        audio_source = sys.stdin.buffer
+        logger.debug(f"Recording raw 16-bit 16Khz mono audio from stdin")
+    else:
+        audio_source: BinaryIO = open(args.audio_source, "rb")
+        logger.debug(f"Recording raw 16-bit 16Khz mono audio from {args.audio_source}")
 
-    chunk = sys.stdin.buffer.read(chunk_size)
-    while len(chunk) == chunk_size:
-        # Process audio chunk
-        chunk = struct.unpack_from(chunk_format, chunk)
-        keyword_index = handle.process(chunk)
+    chunk = audio_source.read(chunk_size)
 
-        if keyword_index:
-            result = {"keyword": str(keyword_path)}
-            print_json(result)
+    try:
+        while len(chunk) == chunk_size:
+            # Process audio chunk
+            chunk = struct.unpack_from(chunk_format, chunk)
+            keyword_index = handle.process(chunk)
 
-        chunk = sys.stdin.buffer.read(chunk_size)
+            if keyword_index:
+                result = {"keyword": str(keyword_path)}
+                print_json(result)
+
+            chunk = audio_source.read(chunk_size)
+    except KeyboardInterrupt:
+        pass  # expected
 
 
 # -----------------------------------------------------------------------------
@@ -486,7 +518,7 @@ def record_examples(
     args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]
 ) -> None:
     import pywrapfst as fst
-    from voice2json.utils import buffer_to_wav
+    from voice2json.utils import buffer_to_wav, get_audio_source
     from voice2json.train.jsgf2fst import fstprintall, symbols2intent
 
     chunk_size = args.chunk_size
@@ -516,23 +548,13 @@ def record_examples(
         text = re.sub(r"\s+", "_", text)
         return examples_dir / f"{text}-{count:03d}.wav"
 
-    # Expected raw 16-bit, 16Khz mono audio
+    # Expecting raw 16-bit, 16Khz mono audio
     if args.audio_source is None:
-        arecord_cmd = [
-            "arecord",
-            "-q",
-            "-r",
-            "16000",
-            "-c",
-            "1",
-            "-f",
-            "S16_LE",
-            "-t",
-            "raw",
-        ]
-        arecord_proc = subprocess.Popen(arecord_cmd, stdout=subprocess.PIPE)
-        audio_source = arecord_proc.stdout
+        audio_source = get_audio_source()
         logger.debug(f"Recording raw 16-bit 16Khz mono audio using arecord")
+    elif args.audio_source == "-":
+        audio_source = sys.stdin.buffer
+        logger.debug(f"Recording raw 16-bit 16Khz mono audio from stdin")
     else:
         audio_source: BinaryIO = open(args.audio_source, "rb")
         logger.debug(f"Recording raw 16-bit 16Khz mono audio from {args.audio_source}")

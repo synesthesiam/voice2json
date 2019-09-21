@@ -180,3 +180,20 @@ def align2json(align_file: TextIO) -> Dict[str, Any]:
             utterance_id = None
 
     return results
+
+
+def get_audio_source() -> BinaryIO:
+    arecord_cmd = [
+        "arecord",
+        "-q",
+        "-r",
+        "16000",
+        "-c",
+        "1",
+        "-f",
+        "S16_LE",
+        "-t",
+        "raw",
+    ]
+    arecord_proc = subprocess.Popen(arecord_cmd, stdout=subprocess.PIPE)
+    return arecord_proc.stdout
