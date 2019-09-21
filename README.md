@@ -1,17 +1,29 @@
 # voice2json
 
+`voice2json` is a set of command-line tools for offline, multilingual speech/intent recognition.
+
 ## Commands
 
 * `train-profile`
-* `generate-examples`
+    * Create custom speech/intent recognizer from `sentences.ini`
 * `transcribe-wav`
+    * Transcribe WAV file to text
 * `recognize-text`
+    * Recognize intent from text
 * `wait-wake`
+    * Listen to live audio stream until wake word is spoken
 * `record-command`
+    * Record voice command from live audio stream
 * `pronounce-word`
+    * Look up or guess how a word is pronounced
+* `generate-examples`
+    * Generate random intents
 * `record-examples`
+    * Record speech examples of random indents to a directory
 * `test-examples`
+    * Transcribe and recognize recorded speech examples for performance testing
 * `tune-examples`
+    * Tune acoustic model to better recognize recorded speech examples
 
 ## Profile
 
