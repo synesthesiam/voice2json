@@ -690,6 +690,9 @@ def test_examples(
     # Number of correct words in all transcriptions (as computed by word_align.pl)
     correct_words = 0
 
+    # Total number of intents that were attempted
+    num_intents = 0
+
     # Number of recognized intents that match expectations
     correct_intent_names = 0
 
@@ -749,6 +752,7 @@ def test_examples(
                 # Load recognizer on demand
                 recognizer = get_recognizer(profile_dir, profile)
 
+            num_intents += 1
             actual_intent = recognizer.recognize(actual_text)
 
             # Merge with transcription
@@ -838,7 +842,7 @@ def test_examples(
             "correct_words": correct_words,
             "correct_entities": correct_entities,
             "transcription_accuracy": correct_words / num_words if num_words > 0 else 1,
-            "intent_accuracy": correct_intent_names / num_wavs if num_wavs > 0 else 1,
+            "intent_accuracy": correct_intent_names / num_intents if num_intents > 0 else 1,
             "entity_accuracy": correct_entities / num_entities
             if num_entities > 0
             else 1,

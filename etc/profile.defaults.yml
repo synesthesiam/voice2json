@@ -59,7 +59,7 @@ training:
   dictionary: !env "${profile_dir}/dictionary.txt"
 
   # Path to extra word pronunciations outside of base dictionary
-  custom-words-file: !env "${profile_dir}/unknown_words.txt"
+  custom-words-file: !env "${profile_dir}/custom_words.txt"
 
   # Path to write words without any known pronunciation
   unknown-words-file: !env "${profile_dir}/unknown_words.txt"
