@@ -1,0 +1,11 @@
+site_name: voice2json
+theme: material
+nav:
+  - Home: index.md
+  - Command Line Tools: commands.md
+  - Template Language: sentences.md
+  - Data Formats: formats.md
+  - Profiles: profiles.md
+  - About: about.md
+markdown_extensions:
+  - codehilite

@@ -21,7 +21,7 @@
 * `generate-examples`
     * Generate random intents
 * `record-examples`
-    * Record speech examples of random indents to a directory
+    * Record speech examples of random intents to a directory
 * `test-examples`
     * Transcribe and recognize recorded speech examples for performance testing
 * `tune-examples`

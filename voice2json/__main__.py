@@ -32,7 +32,7 @@ from voice2json.utils import ppath, recursive_update
 
 def main():
     # Parse command-line arguments
-    parser = argparse.ArgumentParser(description="voice2json")
+    parser = argparse.ArgumentParser(prog="voice2json", description="voice2json")
     parser.add_argument("--profile", "-p", help="Path to profle directory")
     parser.add_argument(
         "--debug", action="store_true", help="Print DEBUG log to console"
@@ -128,6 +128,9 @@ def main():
     )
     generate_parser.add_argument(
         "--count", type=int, required=True, help="Number of examples to generate"
+    )
+    generate_parser.add_argument(
+        "--iob", action="store_true", help="Output IOB format instead of JSON"
     )
     generate_parser.set_defaults(func=generate)
 
@@ -466,30 +469,32 @@ def pronounce(
             # Use pronunciations from dictionary
             dict_phonemes.extend(re.split(r"\s+", p) for p in pronunciations[word])
         elif g2p_exists:
-            # Guess pronunciation with phonetisaurus
-            logger.debug(f"Guessing pronunciation for {word}")
+            # Don't guess if a pronunciation was provided
+            if len(dict_phonemes) == 0:
+                # Guess pronunciation with phonetisaurus
+                logger.debug(f"Guessing pronunciation for {word}")
 
-            with tempfile.NamedTemporaryFile(mode="w") as word_file:
-                print(word, file=word_file)
-                word_file.seek(0)
+                with tempfile.NamedTemporaryFile(mode="w") as word_file:
+                    print(word, file=word_file)
+                    word_file.seek(0)
 
-                phonetisaurus_cmd = [
-                    "phonetisaurus-apply",
-                    "--model",
-                    str(g2p_path),
-                    "--word_list",
-                    word_file.name,
-                    "--nbest",
-                    str(args.nbest),
-                ]
+                    phonetisaurus_cmd = [
+                        "phonetisaurus-apply",
+                        "--model",
+                        str(g2p_path),
+                        "--word_list",
+                        word_file.name,
+                        "--nbest",
+                        str(args.nbest),
+                    ]
 
-                logger.debug(phonetisaurus_cmd)
-                output_lines = (
-                    subprocess.check_output(phonetisaurus_cmd).decode().splitlines()
-                )
-                dict_phonemes.extend(
-                    re.split(r"\s+", line.strip())[1:] for line in output_lines
-                )
+                    logger.debug(phonetisaurus_cmd)
+                    output_lines = (
+                        subprocess.check_output(phonetisaurus_cmd).decode().splitlines()
+                    )
+                    dict_phonemes.extend(
+                        re.split(r"\s+", line.strip())[1:] for line in output_lines
+                    )
         else:
             logger.warn(f"No pronunciation for {word}")
 
@@ -552,8 +557,49 @@ def generate(
         # Convert to intent
         intent = symbols2intent(symbols)
 
-        # Write as jsonl
-        print_json(intent)
+        # Add slots
+        intent["slots"] = {}
+        for ev in intent["entities"]:
+            intent["slots"][ev["entity"]] = ev["value"]
+
+        if args.iob:
+            # IOB format
+            token_idx = 0
+            entity_start = {ev["start"]: ev for ev in intent["entities"]}
+            entity_end = {ev["end"]: ev for ev in intent["entities"]}
+            entity = None
+
+            word_tags = []
+            for word in intent["tokens"]:
+                # Determine tag label
+                tag = "O" if not entity else f"I-{entity}"
+                if token_idx in entity_start:
+                    entity = entity_start[token_idx]["entity"]
+                    tag = f"B-{entity}"
+
+                word_tags.append((word, tag))
+
+                # word ner
+                token_idx += len(word) + 1
+
+                if (token_idx - 1) in entity_end:
+                    entity = None
+
+            print("BS", end=" ")
+            for wt in word_tags:
+                print(wt[0], end=" ")
+            print("ES", end="\t")
+
+            print("O", end=" ")  # BS
+            for wt in word_tags:
+                print(wt[1], end=" ")
+            print("O", end="\t")  # ES
+
+            # Intent name last
+            print(intent["intent"]["name"])
+        else:
+            # Write as jsonl
+            print_json(intent)
 
 
 # -----------------------------------------------------------------------------

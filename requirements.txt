@@ -8,3 +8,5 @@ openfst==1.6.9
 antlr4-python3-runtime
 networkx
 pyinstaller
+mkdocs>=1.0.4
+mkdocs-material
