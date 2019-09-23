@@ -134,27 +134,23 @@ function gmm_decode {
     compute-mfcc-feats \
         --config="${model_dir}/conf/mfcc.conf" \
         "scp:${temp_dir}/wav.scp" \
-        "ark,scp:${temp_dir}/feats.ark,${temp_dir}/feats.scp" \
-        2>&1 > /dev/stderr
+        "ark,scp:${temp_dir}/feats.ark,${temp_dir}/feats.scp"
 
     # cmvn
     compute-cmvn-stats \
         "scp:${temp_dir}/feats.scp" \
-        "ark,scp:${temp_dir}/cmvn.ark,${temp_dir}/cmvn.scp" \
-        2>&1 > /dev/stderr
+        "ark,scp:${temp_dir}/cmvn.ark,${temp_dir}/cmvn.scp"
 
     # norm
     apply-cmvn \
         "scp:${temp_dir}/cmvn.scp" \
         "scp:${temp_dir}/feats.scp" \
-        "ark,scp:${temp_dir}/feats_cmvn.ark,${temp_dir}/feats_cmvn.scp" \
-        2>&1 > /dev/stderr
+        "ark,scp:${temp_dir}/feats_cmvn.ark,${temp_dir}/feats_cmvn.scp"
 
     # add_deltas
     add-deltas \
         "scp:${temp_dir}/feats_cmvn.scp" \
-        "ark,scp:${temp_dir}/deltas.ark,${temp_dir}/deltas.scp" \
-        2>&1 > /dev/stderr
+        "ark,scp:${temp_dir}/deltas.ark,${temp_dir}/deltas.scp"
 
     # decode
     gmm-latgen-faster \
@@ -162,8 +158,7 @@ function gmm_decode {
         "${model_dir}/model/final.mdl" \
         "${graph_dir}/HCLG.fst" \
         "scp:${temp_dir}/deltas.scp" \
-        "ark,scp:${temp_dir}/lattices.ark,${temp_dir}/lattices.scp" \
-        2>&1 > /dev/stderr
+        "ark,scp:${temp_dir}/lattices.ark,${temp_dir}/lattices.scp"
 
     # best path
     lattice-best-path \
@@ -173,7 +168,8 @@ function gmm_decode {
         "ark,t:-" | \
         "${utils_dir}"/int2sym.pl \
                       -f 2- \
-                      "${graph_dir}/words.txt" - | \
+                      "${graph_dir}/words.txt" - \
+                      2>&1 | \
         grep '^utt_' | \
         sed -e 's/^utt_//'
 }

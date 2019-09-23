@@ -12,7 +12,9 @@ import tempfile
 import subprocess
 import threading
 import shutil
+import shlex
 import platform
+import itertools
 from pathlib import Path
 from collections import defaultdict
 from typing import Set, Dict, Optional, List, Any, BinaryIO
@@ -56,6 +58,11 @@ def main():
         "transcribe-wav", help="Transcribe WAV file to text"
     )
     transcribe_parser.set_defaults(func=transcribe)
+    transcribe_parser.add_argument(
+        "--stdin-files",
+        action="store_true",
+        help="Read WAV file paths from stdin instead of WAV data",
+    )
     transcribe_parser.add_argument(
         "--open",
         action="store_true",
@@ -249,8 +256,16 @@ def transcribe(
         profile_dir, profile, open_transcription=args.open, debug=args.debug
     )
 
-    if len(args.wav_file) > 0:
-        for wav_path_str in args.wav_file:
+    if (len(args.wav_file) > 0) or args.stdin_files:
+        # Read WAV file paths
+        wav_files = args.wav_file
+        if args.stdin_files:
+            logger.debug("Reading file paths from stdin")
+            wav_files = itertools.chain(wav_files, sys.stdin)
+
+        for wav_path_str in wav_files:
+            wav_path_str = wav_path_str.strip()
+
             # Load and convert
             wav_path = Path(wav_path_str)
             logger.debug(f"Transcribing {wav_path}")
@@ -324,8 +339,8 @@ def record_command(
 
     # Expecting raw 16-bit, 16Khz mono audio
     if args.audio_source is None:
-        audio_source = get_audio_source()
-        logger.debug(f"Recording raw 16-bit 16Khz mono audio using arecord")
+        audio_source = get_audio_source(profile)
+        logger.debug(f"Recording raw 16-bit 16Khz mono audio")
     elif args.audio_source == "-":
         audio_source = sys.stdin.buffer
         logger.debug(f"Recording raw 16-bit 16Khz mono audio from stdin")
@@ -365,8 +380,8 @@ def wake(args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]) -
 
     # Expecting raw 16-bit, 16Khz mono audio
     if args.audio_source is None:
-        audio_source = get_audio_source()
-        logger.debug(f"Recording raw 16-bit 16Khz mono audio using arecord")
+        audio_source = get_audio_source(profile)
+        logger.debug(f"Recording raw 16-bit 16Khz mono audio")
     elif args.audio_source == "-":
         audio_source = sys.stdin.buffer
         logger.debug(f"Recording raw 16-bit 16Khz mono audio from stdin")
@@ -409,9 +424,14 @@ def pronounce(
     g2p_exists = g2p_path.exists()
 
     map_path = ppath(
-        profile, profile_dir, "text-to-speech.phoneme-map", "espeak_phonemes.txt"
+        profile, profile_dir, "text-to-speech.espeak.phoneme-map", "espeak_phonemes.txt"
     )
     map_exists = map_path.exists()
+    espeak_cmd_format = pydash.get(
+        profile,
+        "text-to-speech.espeak.pronounce-command",
+        "espeak -s 80 [[{phonemes}]]",
+    )
 
     # True if audio will go to stdout.
     # In this case, printing will go to stderr.
@@ -490,7 +510,7 @@ def pronounce(
 
                 # Speak with espeak
                 espeak_str = "".join(espeak_phonemes)
-                espeak_cmd = ["espeak", "-s", "80", f"[[{espeak_str}]]"]
+                espeak_cmd = shlex.split(espeak_cmd_format.format(phonemes=espeak_str))
 
                 # Determine where to output WAV data
                 if args.wav_sink is not None:
@@ -575,8 +595,8 @@ def record_examples(
 
     # Expecting raw 16-bit, 16Khz mono audio
     if args.audio_source is None:
-        audio_source = get_audio_source()
-        logger.debug(f"Recording raw 16-bit 16Khz mono audio using arecord")
+        audio_source = get_audio_source(profile)
+        logger.debug(f"Recording raw 16-bit 16Khz mono audio")
     elif args.audio_source == "-":
         audio_source = sys.stdin.buffer
         logger.debug(f"Recording raw 16-bit 16Khz mono audio from stdin")
@@ -842,7 +862,9 @@ def test_examples(
             "correct_words": correct_words,
             "correct_entities": correct_entities,
             "transcription_accuracy": correct_words / num_words if num_words > 0 else 1,
-            "intent_accuracy": correct_intent_names / num_intents if num_intents > 0 else 1,
+            "intent_accuracy": correct_intent_names / num_intents
+            if num_intents > 0
+            else 1,
             "entity_accuracy": correct_entities / num_entities
             if num_entities > 0
             else 1,

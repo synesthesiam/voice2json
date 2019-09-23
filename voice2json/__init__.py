@@ -90,7 +90,7 @@ def get_pocketsphinx_transcriber(
             self.decoder = decoder
 
         def transcribe_wav(self, wav_data: bytes) -> Dict[str, Any]:
-            audio_data = maybe_convert_wav(wav_data)
+            audio_data = maybe_convert_wav(profile, wav_data)
             return transcribe(self.decoder, audio_data)
 
     return PocketsphinxTranscriber(decoder)
@@ -145,7 +145,7 @@ def get_kaldi_transcriber(
 
             with tempfile.NamedTemporaryFile(suffix=".wav", mode="wb") as temp_file:
                 # Convert WAV to 16-bit, 16Khz mono
-                audio_data = maybe_convert_wav(wav_data)
+                audio_data = maybe_convert_wav(profile, wav_data)
                 with wave.open(temp_file, mode="wb") as wav_file:
                     wav_file.setframerate(16000)
                     wav_file.setsampwidth(2)
@@ -325,12 +325,12 @@ def get_tuner(profile_dir: Path, profile: Dict[str, Any]) -> Tuner:
                             temp_wav_path = temp_dir / wav_path.name
 
                             with open(wav_path, "rb") as wav_file:
-                                if should_convert_wav(wav_file):
+                                if should_convert_wav(profile, wav_file):
                                     logger.debug(f"Converting {wav_path}")
 
                                     # Convert/copy WAV file
                                     wav_file.seek(0)
-                                    wav_data = convert_wav(wav_file.read())
+                                    wav_data = convert_wav(profile, wav_file.read())
                                     temp_wav_path.write_bytes(wav_data)
                                 else:
                                     # Create symbolic link to actual WAV file

@@ -1,8 +1,10 @@
 import re
 import io
 import wave
+import shlex
 import subprocess
 import collections
+import logging
 from collections import defaultdict
 from pathlib import Path
 from typing import (
@@ -19,36 +21,26 @@ from typing import (
 
 import pydash
 
+logger = logging.getLogger("voice2json")
+
 # -----------------------------------------------------------------------------
 
 
-def convert_wav(wav_data: bytes) -> bytes:
-    """Converts WAV data to 16-bit, 16Khz mono with sox."""
+def convert_wav(profile: Dict[str, Any], wav_data: bytes) -> bytes:
+    """Converts WAV data to 16-bit, 16Khz mono."""
+    convert_cmd_str = pydash.get(
+        profile,
+        "audio.convert-command",
+        "sox -t wav - -r 16000 -e signed-integer -b 16 -c 1 -t wav -",
+    )
+    convert_cmd = shlex.split(convert_cmd_str)
+    logger.debug(convert_cmd)
     return subprocess.run(
-        [
-            "sox",
-            "-t",
-            "wav",
-            "-",
-            "-r",
-            "16000",
-            "-e",
-            "signed-integer",
-            "-b",
-            "16",
-            "-c",
-            "1",
-            "-t",
-            "wav",
-            "-",
-        ],
-        check=True,
-        stdout=subprocess.PIPE,
-        input=wav_data,
+        convert_cmd, check=True, stdout=subprocess.PIPE, input=wav_data
     ).stdout
 
 
-def maybe_convert_wav(wav_data: bytes) -> bytes:
+def maybe_convert_wav(profile: Dict[str, Any], wav_data: bytes) -> bytes:
     """Converts WAV data to 16-bit, 16Khz mono if necessary."""
     with io.BytesIO(wav_data) as wav_io:
         with wave.open(wav_io, "rb") as wav_file:
@@ -58,7 +50,7 @@ def maybe_convert_wav(wav_data: bytes) -> bytes:
                 wav_file.getnchannels(),
             )
             if (rate != 16000) or (width != 2) or (channels != 1):
-                return convert_wav(wav_data)
+                return convert_wav(profile, wav_data)
             else:
                 return wav_file.readframes(wav_file.getnframes())
 
@@ -193,19 +185,13 @@ def align2json(align_file: TextIO) -> Dict[str, Any]:
     return results
 
 
-def get_audio_source() -> BinaryIO:
-    arecord_cmd = [
-        "arecord",
-        "-q",
-        "-r",
-        "16000",
-        "-c",
-        "1",
-        "-f",
-        "S16_LE",
-        "-t",
-        "raw",
-    ]
+def get_audio_source(profile: Dict[str, Any]) -> BinaryIO:
+    """Starts a recording subprocess for raw 16-bit 16Khz mono audio"""
+    record_cmd_str = pydash.get(
+        profile, "audio.record-command", "arecord -q -r 16000 -c 1 -f S16_LE -t raw"
+    )
+    record_cmd = shlex.split(record_cmd_str)
+    logger.debug(record_cmd)
     arecord_proc = subprocess.Popen(arecord_cmd, stdout=subprocess.PIPE)
     return arecord_proc.stdout
 

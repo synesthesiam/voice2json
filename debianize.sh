@@ -41,6 +41,9 @@ rsync -av \
       "build/kaldi-master/" \
       "${kaldi_output_dir}/"
 
+# Avoid link recursion
+rm -f 'build/kaldi-master/egs/wsj/s5/utils/utils'
+
 for kaldi_sync_dir in 'egs/wsj/s5/utils' 'tools/openfst/bin' 'src/lib';
 do
     rsync -av \
@@ -58,4 +61,4 @@ do
 done
 
 # Actually build the package
-#cd 'debian' && fakeroot dpkg --build "${package_name}"
+cd 'debian' && fakeroot dpkg --build "${package_name}"
