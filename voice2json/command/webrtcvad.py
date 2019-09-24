@@ -13,6 +13,7 @@ from queue import Queue
 from typing import List, BinaryIO, TextIO, Optional
 
 import webrtcvad
+import jsonlines
 
 
 def wait_for_command(
@@ -25,6 +26,7 @@ def wait_for_command(
     speech_seconds=0.3,
     silence_seconds=0.5,
     before_seconds=0.25,
+    json_file: Optional[TextIO] = None,
 ) -> bytes:
     # Verify settings
     sample_rate = 16000
@@ -35,6 +37,13 @@ def wait_for_command(
         "Sample rate and chunk size must make for 10, 20, or 30 ms buffer sizes,"
         + f" assuming 16-bit mono audio (got {chunk_ms} ms)"
     )
+
+    def print_json(value):
+        if json_file is not None:
+            with jsonlines.Writer(json_file) as out:
+                out.write(value)
+
+            json_file.flush()
 
     # Voice detector
     vad = webrtcvad.Vad()
@@ -87,17 +96,18 @@ def wait_for_command(
             max_buffers -= 1
             if max_buffers <= 0:
                 # Timeout
-                logger.warn("Timeout")
+                logger.warn("Voice command timeout")
+                print_json({"event": "timeout", "time_seconds": current_seconds})
                 break
 
             # Detect speech in chunk
             is_speech = vad.is_speech(chunk, sample_rate)
             if is_speech and not last_speech:
                 # Silence -> speech
-                logger.debug(f"Speech at {current_seconds} second(s)")
+                print_json({"event": "speech", "time_seconds": current_seconds})
             elif not is_speech and last_speech:
                 # Speech -> silence
-                logger.debug(f"Silence at {current_seconds} second(s)")
+                print_json({"event": "silence", "time_seconds": current_seconds})
 
             last_speech = is_speech
 
@@ -106,7 +116,7 @@ def wait_for_command(
                 speech_buffers_left -= 1
             elif is_speech and not in_phrase:
                 # Start of phrase
-                logger.debug(f"Command started at {current_seconds} second(s)")
+                print_json({"event": "started", "time_seconds": current_seconds})
                 in_phrase = True
                 after_phrase = False
                 min_phrase_buffers = int(math.ceil(min_seconds / seconds_per_buffer))
@@ -123,7 +133,7 @@ def wait_for_command(
                     silence_buffers -= 1
                 elif after_phrase and (silence_buffers <= 0):
                     # Phrase complete
-                    logger.debug(f"Command finished at {current_seconds} second(s)")
+                    print_json({"event": "stopped", "time_seconds": current_seconds})
                     break
                 elif in_phrase and (min_phrase_buffers <= 0):
                     # Transition to after phrase

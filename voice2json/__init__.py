@@ -90,8 +90,8 @@ def get_pocketsphinx_transcriber(
             self.decoder = decoder
 
         def transcribe_wav(self, wav_data: bytes) -> Dict[str, Any]:
-            audio_data = maybe_convert_wav(profile, wav_data)
-            return transcribe(self.decoder, audio_data)
+            converted_wav_data = maybe_convert_wav(profile, wav_data)
+            return transcribe(self.decoder, converted_wav_data)
 
     return PocketsphinxTranscriber(decoder)
 
@@ -144,14 +144,11 @@ def get_kaldi_transcriber(
             logger.debug(kaldi_cmd)
 
             with tempfile.NamedTemporaryFile(suffix=".wav", mode="wb") as temp_file:
-                # Convert WAV to 16-bit, 16Khz mono
-                audio_data = maybe_convert_wav(profile, wav_data)
-                with wave.open(temp_file, mode="wb") as wav_file:
-                    wav_file.setframerate(16000)
-                    wav_file.setsampwidth(2)
-                    wav_file.setnchannels(1)
-                    wav_file.writeframesraw(audio_data)
+                # Convert WAV to 16-bit, 16Khz mono and save
+                converted_wav_data = maybe_convert_wav(profile, wav_data)
+                temp_file.write(converted_wav_data)
 
+                # Rewind
                 temp_file.seek(0)
 
                 kaldi_proc = subprocess.Popen(
@@ -330,8 +327,8 @@ def get_tuner(profile_dir: Path, profile: Dict[str, Any]) -> Tuner:
 
                                     # Convert/copy WAV file
                                     wav_file.seek(0)
-                                    wav_data = convert_wav(profile, wav_file.read())
-                                    temp_wav_path.write_bytes(wav_data)
+                                    converted_wav_data = convert_wav(profile, wav_file.read())
+                                    temp_wav_path.write_bytes(converted_wav_data)
                                 else:
                                     # Create symbolic link to actual WAV file
                                     temp_wav_path.symlink_to(wav_path)

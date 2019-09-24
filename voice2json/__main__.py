@@ -60,11 +60,13 @@ def main():
     transcribe_parser.set_defaults(func=transcribe)
     transcribe_parser.add_argument(
         "--stdin-files",
+        "-f",
         action="store_true",
         help="Read WAV file paths from stdin instead of WAV data",
     )
     transcribe_parser.add_argument(
         "--open",
+        "-o",
         action="store_true",
         help="Use large pre-built model for transcription",
     )
@@ -81,7 +83,10 @@ def main():
         "sentence", nargs="*", default=[], help="Sentences to recognize"
     )
     recognize_parser.add_argument(
-        "--text-input", action="store_true", help="Input is plain text instead of JSON"
+        "--text-input",
+        "-t",
+        action="store_true",
+        help="Input is plain text instead of JSON",
     )
 
     # record-command
@@ -89,7 +94,10 @@ def main():
         "record-command", help="Record voice command and write WAV to stdout"
     )
     command_parser.add_argument(
-        "--audio-source", help="File to read raw 16-bit 16Khz mono audio from"
+        "--audio-source", "-a", help="File to read raw 16-bit 16Khz mono audio from"
+    )
+    command_parser.add_argument(
+        "--wav-sink", "-w", help="File to write WAV data to instead of stdout"
     )
     command_parser.set_defaults(func=record_command)
 
@@ -98,10 +106,11 @@ def main():
         "wait-wake", help="Listen to audio until wake word is spoken"
     )
     wake_parser.add_argument(
-        "--audio-source", help="File to read raw 16-bit 16Khz mono audio from"
+        "--audio-source", "-a", help="File to read raw 16-bit 16Khz mono audio from"
     )
     wake_parser.add_argument(
         "--exit-count",
+        "-c",
         type=int,
         help="Exit after the wake word has been spoken some number of times",
     )
@@ -113,18 +122,22 @@ def main():
     )
     pronounce_parser.add_argument("word", nargs="*", help="Word(s) to prononunce")
     pronounce_parser.add_argument(
-        "--quiet", action="store_true", help="Don't speak word; only print phonemes"
+        "--quiet",
+        "-q",
+        action="store_true",
+        help="Don't speak word; only print phonemes",
     )
     pronounce_parser.add_argument(
-        "--delay", type=float, default=0, help="Seconds to wait between words"
+        "--delay", "-d", type=float, default=0, help="Seconds to wait between words"
     )
     pronounce_parser.add_argument(
         "--nbest",
+        "-n",
         type=int,
         default=5,
         help="Number of pronunciations to generate for unknown words",
     )
-    pronounce_parser.add_argument("--wav-sink", help="File to write WAV data to")
+    pronounce_parser.add_argument("--wav-sink", "-w", help="File to write WAV data to")
     pronounce_parser.set_defaults(func=pronounce)
 
     # generate-examples
@@ -132,7 +145,7 @@ def main():
         "generate-examples", help="Randomly generate example intents from profile"
     )
     generate_parser.add_argument(
-        "--count", type=int, required=True, help="Number of examples to generate"
+        "--count", "-c", type=int, required=True, help="Number of examples to generate"
     )
     generate_parser.add_argument(
         "--iob", action="store_true", help="Output IOB format instead of JSON"
@@ -145,10 +158,12 @@ def main():
         help="Randomly generate example prompts and have the user record them",
     )
     record_examples_parser.add_argument(
-        "--directory", help="Directory to save recorded WAV files and transcriptions"
+        "--directory",
+        "-d",
+        help="Directory to save recorded WAV files and transcriptions",
     )
     record_examples_parser.add_argument(
-        "--audio-source", help="File to read raw 16-bit 16Khz mono audio from"
+        "--audio-source", "-a", help="File to read raw 16-bit 16Khz mono audio from"
     )
     record_examples_parser.add_argument(
         "--chunk-size",
@@ -163,10 +178,10 @@ def main():
         "test-examples", help="Test performance on previously recorded examples"
     )
     test_examples_parser.add_argument(
-        "--directory", help="Directory with recorded examples"
+        "--directory", "-d", help="Directory with recorded examples"
     )
     test_examples_parser.add_argument(
-        "--results", help="Directory to save test results"
+        "--results", "-r", help="Directory to save test results"
     )
     test_examples_parser.set_defaults(func=test_examples)
 
@@ -175,7 +190,7 @@ def main():
         "tune-examples", help="Tune speech recognizer with previously recorded examples"
     )
     tune_examples_parser.add_argument(
-        "--directory", help="Directory with recorded examples"
+        "--directory", "-d", help="Directory with recorded examples"
     )
     tune_examples_parser.set_defaults(func=tune_examples)
 
@@ -345,6 +360,14 @@ def record_command(
     from voice2json.command.webrtcvad import wait_for_command
     from voice2json.utils import buffer_to_wav, get_audio_source
 
+    # Load settings
+    vad_mode = int(pydash.get(profile, "voice-command.vad-mode", 3))
+    min_seconds = float(pydash.get(profile, "voice-command.minimum-seconds", 2))
+    max_seconds = float(pydash.get(profile, "voice-command.maximum-seconds", 30))
+    speech_seconds = float(pydash.get(profile, "voice-command.speech-seconds", 0.3))
+    silence_seconds = float(pydash.get(profile, "voice-command.silence-seconds", 0.5))
+    before_seconds = float(pydash.get(profile, "voice-command.before-seconds", 0.25))
+
     # Expecting raw 16-bit, 16Khz mono audio
     if args.audio_source is None:
         audio_source = get_audio_source(profile)
@@ -356,9 +379,31 @@ def record_command(
         audio_source: BinaryIO = open(args.audio_source, "rb")
         logger.debug(f"Recording raw 16-bit 16Khz mono audio from {args.audio_source}")
 
-    audio_buffer = wait_for_command(audio_source)
+    # JSON events are not printed by default
+    json_file = None
+    wav_sink = sys.stdout
+
+    if (args.wav_sink is not None) and (args.wav_sink != "-"):
+        wav_sink = open(args.wav_sink, "wb")
+
+        # Print JSON to stdout
+        json_file = sys.stdout
+
+    # Record command
+    audio_buffer = wait_for_command(
+        audio_source,
+        vad_mode=vad_mode,
+        min_seconds=min_seconds,
+        max_seconds=max_seconds,
+        speech_seconds=speech_seconds,
+        silence_seconds=silence_seconds,
+        before_seconds=before_seconds,
+        json_file=json_file,
+    )
+
+    # Output WAV data
     wav_bytes = buffer_to_wav(audio_buffer)
-    sys.stdout.buffer.write(wav_bytes)
+    wav_sink.write(wav_bytes)
 
 
 # -----------------------------------------------------------------------------
