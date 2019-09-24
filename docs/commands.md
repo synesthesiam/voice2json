@@ -79,6 +79,14 @@ Output:
 
 Settings that control where generated artifacts are saved are in the `training` section of your [profile](profiles.md).
 
+### Slots Directory
+
+If your [sentences.ini](sentences.md) file contains [slot references](sentences.md#slot-references), `voice2json` will look for text files in a directory named `slots` in your profile (set `training.slots-directory` to change). If you reference `$movies`, then `slots/movies` should exist with one item per line. When these files change, you should [re-train](#train-profile).
+
+### Intent Whitelist
+
+If a file named `intent_whitelist` exists in your profile (set `training.intent-whitelist` to change), then `voice2json` will only consider the intents listed in it (one per line). If this file is missing (the default), then all intents from [sentences.ini](sentences.md) are considered. When this file changes, you should [re-train](#train-profile).
+
 ---
 
 ## transcribe-wav
@@ -107,7 +115,9 @@ Output:
 Reads one or more WAV files and transcribes each of them in turn.
 
 ```bash
-$ voice2json transcribe-wav turn-on-the-light.wav what-time-is-it.wav
+$ voice2json transcribe-wav \
+      turn-on-the-light.wav \
+      what-time-is-it.wav
 ```
 
 Output:

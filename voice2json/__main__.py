@@ -952,6 +952,7 @@ def print_json(value: Any) -> None:
     with jsonlines.Writer(sys.stdout) as out:
         out.write(value)
 
+    sys.stdout.flush()
 
 def env_constructor(loader, node):
     """Expands !env STRING to replace environment variables in STRING."""

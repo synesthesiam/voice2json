@@ -83,6 +83,13 @@ training:
   # Path to file with custom intents and sentences
   sentences-file: !env "${profile_dir}/sentences.ini"
   
+  # Path to text file with intents that will be considered for training.
+  # All intents will be considered if this file is missing.
+  intent_whitelist: !env "${profile_dir}/intent_whitelist"
+
+  # Directory containing text files, one for each $slot referenced in sentences.ini
+  slots-directory: !env "${profile_dir}/slots"
+
   # Path to write custom intent finite state transducer
   intent-fst: !env "${profile_dir}/intent.fst"
   

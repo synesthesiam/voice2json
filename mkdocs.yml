@@ -2,6 +2,7 @@ site_name: voice2json
 theme: material
 nav:
   - Home: index.md
+  - Installation Guide: install.md
   - Command Line Tools: commands.md
   - Template Language: sentences.md
   - Data Formats: formats.md
