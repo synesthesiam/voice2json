@@ -41,7 +41,7 @@ def convert_wav(profile: Dict[str, Any], wav_data: bytes) -> bytes:
 
 
 def maybe_convert_wav(profile: Dict[str, Any], wav_data: bytes) -> bytes:
-    """Converts WAV data to 16-bit, 16Khz mono if necessary."""
+    """Converts WAV data to 16-bit, 16Khz mono WAV if necessary."""
     with io.BytesIO(wav_data) as wav_io:
         with wave.open(wav_io, "rb") as wav_file:
             rate, width, channels = (
@@ -50,9 +50,11 @@ def maybe_convert_wav(profile: Dict[str, Any], wav_data: bytes) -> bytes:
                 wav_file.getnchannels(),
             )
             if (rate != 16000) or (width != 2) or (channels != 1):
+                # Do conversion
                 return convert_wav(profile, wav_data)
             else:
-                return wav_file.readframes(wav_file.getnframes())
+                # Return original data
+                return wav_data
 
 
 def buffer_to_wav(buffer: bytes) -> bytes:

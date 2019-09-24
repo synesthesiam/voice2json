@@ -52,16 +52,20 @@ def get_decoder(
 
 
 def transcribe(
-    decoder: pocketsphinx.Decoder, audio_data: bytes, nbest: int = 0
+    decoder: pocketsphinx.Decoder, wav_data: bytes, nbest: int = 0
 ) -> Dict[str, Any]:
     """Transcribes audio data to text."""
 
     # Compute WAV duration
-    with io.BytesIO(audio_data) as wav_buffer:
+    audio_data: bytes = bytes()
+    with io.BytesIO(wav_data) as wav_buffer:
         with wave.open(wav_buffer) as wav_file:
             frames = wav_file.getnframes()
             rate = wav_file.getframerate()
             wav_duration = frames / float(rate)
+
+            # Extract raw audio data
+            audio_data = wav_file.readframes(wav_file.getnframes())
 
     # Process data as an entire utterance
     start_time = time.time()
