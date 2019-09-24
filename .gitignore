@@ -8,3 +8,5 @@ debian/*.deb
 debian/**/usr/lib/voice2json/voice2json/
 debian/**/usr/lib/voice2json/build/
 .ipynb_checkpoints/
+recipes/train_rasa/data/
+recipes/train_rasa/models/

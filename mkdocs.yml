@@ -7,6 +7,7 @@ nav:
   - Template Language: sentences.md
   - Data Formats: formats.md
   - Profiles: profiles.md
+  - Recipes: recipes.md
   - About: about.md
 markdown_extensions:
   - codehilite

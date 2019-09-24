@@ -78,11 +78,151 @@ is the light <SetLightColor.colors>
 
 The second intent (`GetLightColor`) references the `colors` rule from `SetLightColor`.
 
+## Word/Tag Substitutions
+
+`voice2json` allows you to control how words are emitted in the final [JSON event](formats.md#intents).
+
+Consider the following example with two lights, a lamp in the living room and a light in the garage:
+
+```
+[LightState]
+state = (on | off)
+name = (living room lamp | garage light)
+turn (<state>){state} [the] (<name>){name}
+```
+
+If the voice command "turn on the living room lamp" is spoken, `voice2json` will produce the expected JSON:
+
+```json
+{ 
+  "intent": {
+    "name": "LightState"
+  },
+  "slots": {
+    "state": "on",
+    "name": "living room lamp"
+  }
+}
+```
+
+If the system that **consumes** this JSON does not know what `on` and `living room lamp` are, however, it will be unable to handle the intent. Suppose this hypothetical system knows only how to `enable` and `disable` either `switch_1` or `switch_2`. We could ease the burden of interfacing with some minor modifications to `sentences.ini`:
+
+```
+[LightState]
+state = (on:enable | off:disable)
+name = (living room lamp){name:switch_1} | (garage light){name:switch_2}
+turn (<state>){state} [the] (<name>)
+```
+
+The syntax `on:enable` tells `voice2json` to *listen* for the word `on`, but *emit* the word `enable` in its place. Similarly, the syntax `(living room lamp){name:switch_1}` tells `voice2json` to listen for `living room lamp`, but *actually put* `switch_1` in the `name` slot:
+
+```json
+{
+  "text": "turn enable the switch_1",
+  "intent": {
+    "name": "LightState",
+    "confidence": 1
+  },
+  "entities": [
+    {
+      "entity": "state",
+      "value": "enable",
+      "raw_value": "on",
+      "start": 5,
+      "raw_start": 5,
+      "end": 11,
+      "raw_end": 7
+    },
+    {
+      "entity": "name",
+      "value": "switch_1",
+      "raw_value": "living room lamp",
+      "start": 16,
+      "raw_start": 12,
+      "end": 24,
+      "raw_end": 28
+    }
+  ],
+  "raw_text": "turn on the living room lamp",
+  "tokens": [
+    "turn",
+    "enable",
+    "the",
+    "switch_1"
+  ],
+  "raw_tokens": [
+    "turn",
+    "on",
+    "the",
+    "living",
+    "room",
+    "lamp"
+  ],
+  "slots": {
+    "state": "enable",
+    "name": "switch_1"
+  },
+  "intents": [],
+  "recognize_seconds": 0.000274658203125
+}
+```
+
+Notice that with substitutions, the `text` and `raw_text` properties of the recognized intent no longer match. Likewise, `raw_value` differs from `value` for each entity. The `raw_` properties contain the left side of the `:` in each substitution.
+
+### Slot Substitutions
+
+This syntax also works **inside slot files**. When nothing is put on the right side of the `:`, the word is silently dropped, so:
+
+```
+[the:] light
+```
+
+will match both `the light` and `light`, but always emit just `light`. This technique is especially useful in English with articles like "a" and "an". It is common to write something in `sentences.ini` like this:
+
+```
+[LightState]
+turn on (a | an) ($colors){color} light
+```
+
+where `slots/colors` might be:
+
+```
+red
+orange
+```
+
+This will match `turn on a red light` and `turn on an orange light` as intended, but also `turn on an red light` and `turn on a orange light`. Using word replacement and a slot file, we can instead write:
+
+```
+[LightState]
+turn on ($colors){color} light
+```
+
+where `slots/colors` is:
+
+```
+a: red
+an: orange
+```
+
+This will *only* match `turn on a red light` and `turn on an orange light` as well as ensuring that the `color` slot does not contain "a" or "an"!
+
+### Extra Words
+
+You can also use substitution to add words that are not present in the speech:
+
+```ini
+[LightState]
+:please turn on the light
+```
+
+will accept the spoken sentence "turn on the light", but emit "please turn on the light" in the recognized intent.
+
 ## Tags
 
 The example templates above will generate sentences for training the speech recognizer, but using them to train the intent recognizer will not be satisfactory. The `SetLightColor` intent, when recognized, will result in a Home Assistant event called `rhasspy_SetLightColor`. But the actual *color* will not be provided because the intent recognizer is not aware that a `color` slot should exist (and has the values `red`, `green`, and `blue`).
 
-Luckily, JSGF has a [tag feature](https://www.w3.org/TR/jsgf/#15057) that lets you annotate portions of sentences/rules. `voice2json` assumes that the tags themselves are *slot/entity names* and the tagged portions of the sentence are *slot/entity values*. The `SetLightColor` example can be extended with tags like this:
+Luckily, JSGF has a [tag feature](https://www.w3.org/TR/jsgf/#15057) that lets you annotate portions of sentences/rules. ``voice2json`` assumes that the tags themselves are *slot/entity names* and the tagged portions of the sentence are *slot/entity values*. The `SetLightColor` example can be extended with tags like this:
 
 ```ini
 [SetLightColor]
@@ -106,58 +246,8 @@ When the `SetLightColor` intent is recognized now, the corresponding JSON event 
 
 A Home Assistant [automation](https://www.home-assistant.io/docs/automation) can use the slot values to take an appropriate action, such as [setting an RGB light's color](https://www.home-assistant.io/docs/automation/action/) to `[255,0,0]` (red).
 
-### Tag Synonyms
 
-There are times where you want to match a particular part of your sentence with a tag, but want the actual *value* of the tag to be something different than the matched text. This is needed if you want to talk about entities in Home Assistant, for example, with phrases like "the living room lamp", but want to pass the appropriate entity id (say `lamp_1`) to Home Assistant instead.
-
-Normally, you would tag part of a sentence like this:
-
-```ini
-[ChangeLightState]
-turn on the (living room lamp){name}
-```
-
-When this intent is activated, `voice2json` will send a JSON event (named `rhasspy_ChangeLightState` in Home Assistant) with:
-
-```json
-{
-  "name": "living room lamp"
-}
-```
-
-You can catch this event in a Home Assistant automation, match the `name` "living room name", and do something with the `lamp_1` entity. That's fine for one instance, but would require a separate rule for every `name`! Instead, let's add a tag **synonym**:
-
-```ini
-[ChangeLightState]
-turn on the (living room lamp){name:lamp_1}
-```
-
-The tag label and synonym are separated by a ":". When this sentence is spoken and the intent is activated, the same `rhasspy_ChangeLightState` event will be sent to Home Assistant, but with the following data:
-
-```json
-{
-  "name": "lamp_1"
-}
-```
-
-Now in your Home Assistant automation, you could use [templating](https://www.home-assistant.io/docs/automation/templating/) to plug the `name` directly into the `entity_id` field of an action. One rule to rule them all.
-
-This same technique could be used to replace number words with digits, like:
-
-```ini
-[SetTimer]
-set a timer for (ten){number:10} seconds
-```
-
-which would generate an event like this when recognized:
-
-```json
-{
-  "number": "10"
-}
-```
-
-### Slot References
+## Slot References
 
 In the `SetLightColor` example above, the color names are stored in `sentences.ini` as a rule:
 

@@ -35,14 +35,19 @@ The [recognize-text](commands.md#) command produces JSON in the following format
         "confidence": 1.0
     },
     "entities": [
-        { "entity": "entity_1", "value": "value_1", "start": 0, "end": 1 },
-        { "entity": "entity_2", "value": "value_2" "start": 0, "end": 1 }
+        { "entity": "entity_1", "value": "value_1", "raw_value": "value_1",
+          "start": 0, "end": 1, "raw_start": 0, "raw_end": 1 },
+        { "entity": "entity_2", "value": "value_2", "raw_value": "value_2",
+          "start": 0, "end": 1, "raw_start": 0, "raw_end": 1 }
     ],
     "slots": {
         "entity_1": "value_1",
         "entity_2": "value_2"
     },
-    "text": "transcription text",
+    "text": "transcription text with substitutions",
+    "raw_text": "transcription text without substitutions",
+    "tokens": ["transcription", "text", "with", "substitutions"],
+    "raw_tokens": ["transcription", "text", "without", "substitutions"],
     "recognize_seconds": 0.001
     
 }
@@ -50,16 +55,23 @@ The [recognize-text](commands.md#) command produces JSON in the following format
 
 where
 
-* `intent.name` is the name of the recognized intent (section headers in your [sentences.ini](sentences.md)) (string)
-* `intent.confidence` is a value between 0 and 1, with 1 being maximally confident (number)
+* `intent` describes the recognized intent (object)
+    * `name` is the name of the recognized intent (section headers in your [sentences.ini](sentences.md)) (string)
+    * `confidence` is a value between 0 and 1, with 1 being maximally confident (number)
 * `entities` is a list of recognized entities (list)
     * `entity` is the name of the slot (string)
-    * `value` is the (substitued) value (string)
-    * `start` is the zero-based start index of the entity in the text (number)
-    * `stop` is the zero-based stop index (exclusive) of the entity in the text (number)
+    * `value` is the ([substitued](sentences.md#wordtag-substitutions)) value (string)
+    * `raw_value` is the (**non**-substitued) value (string)
+    * `start` is the zero-based start index of the entity in `text` (number)
+    * `raw_start` is the zero-based start index of the entity in `raw_text` (number)
+    * `stop` is the zero-based stop index (exclusive) of the entity in `text` (number)
+    * `raw_stop` is the zero-based stop index (exclusive) of the entity in `raw_text` (number)
 * `slots` is a dictionary of entities/values (object)
-    * Assumes one value per entity
-* `text` is the input text with substitutions (string)
+    * Assumes one value per entity. See `entities` for complete list.
+* `text` is the input text with [substitutions](sentences.md#wordtag-substitutions) (string)
+* `raw_text` is the input text **without** substitutions
+* `tokens` is the list of words/tokens in `text`
+* `raw_tokens` is the list of words/tokens in `raw_text`
 * `recognize_seconds` is the number of seconds it took to recognize the intent and slots (number)
 
 ## Pronunciation Dictionaries

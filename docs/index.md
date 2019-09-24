@@ -2,6 +2,8 @@
 
 `voice2json` is a collection of [command-line tools](commands.md) for <strong>offline speech/intent recognition</strong> on Linux. It is free, open source, and [supports 15 languages](#supported-languages). 
 
+From the command-line:
+
 ```bash
 $ voice2json transcribe-wav < turn-on-the-light.wav | \
       voice2json recognize-text | \
@@ -38,9 +40,9 @@ turn (<states>){state} [the] light
 
 It can be used to:
 
-* Add voice commands to existing applications or Unix-style workflows
-* Provide basic voice assistant functionality completely offline on modest hardware
-* Bootstrap more sophisticated speech/intent recognition systems
+* Add voice commands to [existing applications or Unix-style workflows](recipes.md#create-an-mqtt-transcription-service)
+* Provide basic [voice assistant functionality](recipes.md#set-and-run-timers) completely offline on modest hardware
+* Bootstrap more [sophisticated speech/intent recognition systems](recipes.md#train-a-rasa-nlu-bot)
 
 ---
 
@@ -49,7 +51,7 @@ It can be used to:
 `voice2json` is more than just a wrapper around [pocketsphinx](https://github.com/cmusphinx/pocketsphinx) and [Kaldi](https://kaldi-asr.org)!
 
 * Training produces **both** a speech and intent recognizer. By describing your voice commands with `voice2json`'s [templating language](sentences.md), you get [more than just transcriptions](formats.md#intents) for free.
-* Re-training is **fast enough** to be done at runtime (usually < 10s), even up to millions of possible voice commands. This means
+* Re-training is **fast enough** to be done at runtime (usually < 10s), even up to millions of possible voice commands. This means you can change [referenced slot](sentences.md#slot-references) values or [whitelist specific intents](commands.md#intent-whitelist) on the fly.
 
 ---
 

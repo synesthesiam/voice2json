@@ -141,6 +141,29 @@ wake-word:
   
 # -----------------------------------------------------------------------------
 
+voice-command:
+  # Minimum number of seconds a voice command must last (ignored otherwise)
+  minimum-seconds: 2
+
+  # Maximum number of seconds a voice command can last (timeout otherwise)
+  maximum-seconds: 30
+
+  # Seconds of speech detected before voice command is considered started
+  speech-seconds: 0.3
+
+  # Seconds of silence before voice command is considered ended
+  silence-seconds: 0.5
+
+  # Seconds of audio before voice command starts to retain in output
+  before-seconds: 0.25
+
+  # webrtcvad specific settings
+  webrtcvad:
+    # Speech filtering aggressiveness 0-3 (3 is most aggressive) 
+    vad-mode: 3
+
+# -----------------------------------------------------------------------------
+
 text-to-speech:
   # espeak specific settings
   espeak:
