@@ -53,9 +53,12 @@ def fstaccept(
 
 
 class TagInfo:
-    def __init__(self, tag, start_index, symbols=None, raw_symbols=None):
+    def __init__(
+        self, tag, start_index, raw_start_index, symbols=None, raw_symbols=None
+    ):
         self.tag = tag
         self.start_index = start_index
+        self.raw_start_index = raw_start_index
         self.symbols = symbols or []
         self.raw_symbols = raw_symbols or []
 
@@ -72,6 +75,7 @@ def symbols2intent(
     out_symbols: List[str] = []
     raw_symbols: List[str] = []
     out_index = 0
+    raw_out_index = 0
 
     for sym in symbols:
         if sym == eps:
@@ -79,17 +83,18 @@ def symbols2intent(
 
         if sym.startswith("__begin__"):
             # Begin tag
-            tag_stack.append(TagInfo(sym[9:], out_index))
+            tag_stack.append(TagInfo(sym[9:], out_index, raw_out_index))
         elif sym.startswith("__end__"):
             assert len(tag_stack) > 0, f"Unbalanced tags. Got {sym}."
 
             # End tag
             tag_info = tag_stack.pop()
-            tag, tag_symbols, tag_raw_symbols, tag_start_index = (
+            tag, tag_symbols, tag_raw_symbols, tag_start_index, tag_raw_start_index = (
                 tag_info.tag,
                 tag_info.symbols,
                 tag_info.raw_symbols,
                 tag_info.start_index,
+                tag_info.raw_start_index,
             )
             assert tag == sym[7:], f"Mismatched tags: {tag} {sym[7:]}"
 
@@ -106,13 +111,16 @@ def symbols2intent(
                 out_symbols.extend(tag_symbols)
 
             out_index += len(tag_value) + 1  # space
+            raw_out_index += len(raw_value) + 1  # space
             intent["entities"].append(
                 {
                     "entity": tag,
                     "value": tag_value,
                     "raw_value": raw_value,
                     "start": tag_start_index,
+                    "raw_start": tag_raw_start_index,
                     "end": out_index - 1,
+                    "raw_end": raw_out_index - 1,
                 }
             )
         elif sym.startswith("__label__"):
@@ -149,11 +157,13 @@ def symbols2intent(
                     # Ignore empty output symbols
                     out_symbols.append(out_sym)
                     out_index += len(out_sym) + 1  # space
+                    raw_out_index += len(out_sym) + 1  # space
             else:
                 # Use original symbol
                 raw_symbols.append(sym)
                 out_symbols.append(sym)
                 out_index += len(sym) + 1  # space
+                raw_out_index += len(sym) + 1  # space
 
     intent["text"] = " ".join(out_symbols)
     intent["raw_text"] = " ".join(raw_symbols)
@@ -199,14 +209,15 @@ def fstprintall(
                 sentences.append(sentence)
 
         for arc in in_fst.arcs(state):
+            arc_sentence = list(sentence)
             if arc.olabel != out_eps:
                 out_symbol = output_symbols.find(arc.olabel).decode()
                 if exclude_meta and out_symbol.startswith("__"):
                     pass  # skip __label__, etc.
                 else:
-                    sentence.append(out_symbol)
+                    arc_sentence.append(out_symbol)
 
-            state_queue.append((arc.nextstate, list(sentence)))
+            state_queue.append((arc.nextstate, arc_sentence))
 
     return sentences
 
@@ -440,3 +451,30 @@ def apply_fst(
 
 def empty_intent() -> Dict[str, Any]:
     return {"text": "", "intent": {"name": "", "confidence": 0}, "entities": []}
+
+
+# -----------------------------------------------------------------------------
+
+
+def fstcount(in_fst: fst.Fst) -> int:
+    """Counts the number of possible states in an FST."""
+    zero_weight = fst.Weight.Zero(in_fst.weight_type())
+
+    state_queue = deque()
+    state_queue.append(in_fst.start())
+
+    paths = 0
+
+    while len(state_queue) > 0:
+        state = state_queue.popleft()
+
+        if in_fst.final(state) != zero_weight:
+            paths += 1
+
+        for arc in in_fst.arcs(state):
+            state_queue.append(arc.nextstate)
+
+    return paths
+
+
+# -----------------------------------------------------------------------------

@@ -145,7 +145,12 @@ def main():
         "generate-examples", help="Randomly generate example intents from profile"
     )
     generate_parser.add_argument(
-        "--count", "-c", type=int, required=True, help="Number of examples to generate"
+        "--number", "-n", type=int, required=True, help="Number of examples to generate"
+    )
+    generate_parser.add_argument(
+        "--raw-symbols",
+        action="store_true",
+        help="Output symbols directly from finite state transducer",
     )
     generate_parser.add_argument(
         "--iob", action="store_true", help="Output IOB format instead of JSON"
@@ -611,7 +616,7 @@ def generate(
     args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]
 ) -> None:
     import pywrapfst as fst
-    from voice2json.train.jsgf2fst import fstprintall, symbols2intent
+    from voice2json.train.jsgf2fst import fstprintall, symbols2intent, fstcount
 
     # Load settings
     intent_fst_path = ppath(
@@ -621,11 +626,20 @@ def generate(
     # Load intent finite state transducer
     intent_fst = fst.Fst.read(str(intent_fst_path))
 
+    if args.number <= 0:
+        # Print number of possible paths
+        print(fstcount(intent_fst))
+        return
+
     # Generate samples
-    rand_fst = fst.randgen(intent_fst, npath=args.count)
+    rand_fst = fst.randgen(intent_fst, npath=args.number)
 
     # Convert to words/tokens
     for symbols in fstprintall(rand_fst, exclude_meta=False):
+        if args.raw_symbols:
+            print(" ".join(symbols))
+            continue
+
         # Convert to intent
         intent = symbols2intent(symbols)
 

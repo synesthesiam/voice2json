@@ -51,8 +51,8 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
     base_language_model_fst = ppath(
         "training.base-language-model-fst", "base_language_model.fst"
     )
-    base_language_model_weight = pydash.get(
-        profile, "training.base-language-model-weight", None
+    base_language_model_weight = float(
+        pydash.get(profile, "training.base-language-model-weight", 0)
     )
     custom_words = ppath("training.custom-words-file", "custom_words.txt")
     g2p_model = ppath("training.grapheme-to-phoneme-model", "g2p.fst")
@@ -251,7 +251,7 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
     def task_language_model():
         """Creates an ARPA language model from intent.fst."""
 
-        if base_language_model_weight is not None:
+        if base_language_model_weight > 0:
             yield {
                 "name": "base_lm_to_fst",
                 "file_dep": [base_language_model],
@@ -277,7 +277,7 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
             "actions": ["ngrammake %(dependencies)s %(targets)s"],
         }
 
-        if base_language_model_weight is not None:
+        if base_language_model_weight > 0:
             merged_model = str(intent_model) + ".merge"
 
             # merge
