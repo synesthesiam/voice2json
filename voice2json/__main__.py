@@ -100,6 +100,11 @@ def main():
     wake_parser.add_argument(
         "--audio-source", help="File to read raw 16-bit 16Khz mono audio from"
     )
+    wake_parser.add_argument(
+        "--exit-count",
+        type=int,
+        help="Exit after the wake word has been spoken some number of times",
+    )
     wake_parser.set_defaults(func=wake)
 
     # pronounce-word
@@ -392,19 +397,33 @@ def wake(args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]) -
         audio_source: BinaryIO = open(args.audio_source, "rb")
         logger.debug(f"Recording raw 16-bit 16Khz mono audio from {args.audio_source}")
 
-    chunk = audio_source.read(chunk_size)
+    audio_buffer = bytes()
 
     try:
-        while len(chunk) == chunk_size:
+        while True:
+            while len(audio_buffer) < chunk_size:
+                chunk = audio_source.read(chunk_size - len(audio_buffer))
+                audio_buffer += chunk
+
             # Process audio chunk
-            chunk = struct.unpack_from(chunk_format, chunk)
-            keyword_index = handle.process(chunk)
+            unpacked_chunk = struct.unpack_from(chunk_format, audio_buffer[:chunk_size])
+            keyword_index = handle.process(unpacked_chunk)
 
             if keyword_index:
                 result = {"keyword": str(keyword_path)}
                 print_json(result)
 
-            chunk = audio_source.read(chunk_size)
+                # Check exit count
+                if args.exit_count is not None:
+                    args.exit_count -= 1
+                    if args.exit_count <= 0:
+                        break
+
+            # Get next chunk
+            audio_buffer = audio_buffer[chunk_size:]
+            while len(audio_buffer) < chunk_size:
+                chunk = audio_source.read(chunk_size - len(audio_buffer))
+                audio_buffer += chunk
     except KeyboardInterrupt:
         pass  # expected
 
@@ -498,8 +517,16 @@ def pronounce(
         else:
             logger.warn(f"No pronunciation for {word}")
 
+        # Avoid duplicate pronunciations
+        used_pronunciations: Set[str] = set()
+
         for phonemes in dict_phonemes:
-            print(word, " ".join(phonemes), file=print_file)
+            phoneme_str = " ".join(phonemes)
+            if phoneme_str in used_pronunciations:
+                continue
+
+            print(word, phoneme_str, file=print_file)
+            used_pronunciations.add(phoneme_str)
 
             if not args.quiet:
                 if map_exists:
@@ -953,6 +980,7 @@ def print_json(value: Any) -> None:
         out.write(value)
 
     sys.stdout.flush()
+
 
 def env_constructor(loader, node):
     """Expands !env STRING to replace environment variables in STRING."""

@@ -192,8 +192,8 @@ def get_audio_source(profile: Dict[str, Any]) -> BinaryIO:
     )
     record_cmd = shlex.split(record_cmd_str)
     logger.debug(record_cmd)
-    arecord_proc = subprocess.Popen(arecord_cmd, stdout=subprocess.PIPE)
-    return arecord_proc.stdout
+    record_proc = subprocess.Popen(record_cmd, stdout=subprocess.PIPE)
+    return record_proc.stdout
 
 
 # -----------------------------------------------------------------------------
