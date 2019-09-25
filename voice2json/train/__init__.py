@@ -28,7 +28,7 @@ from voice2json.train.jsgf2fst import (
 
 from voice2json.train.ini_jsgf import make_grammars
 from voice2json.train.vocab_dict import make_dict
-from voice2json.utils import ppath as utils_ppath
+from voice2json.utils import ppath as utils_ppath, read_dict
 
 logger = logging.getLogger("train")
 
@@ -309,6 +309,12 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
                 symbol = input_symbols.find(i).decode().strip()
                 if not (symbol.startswith("__") or symbol.startswith("<")):
                     print(symbol, file=vocab_file)
+
+            if base_language_model_weight > 0:
+                # Add all words from base dictionary
+                with open(base_dictionary, "r") as dict_file:
+                    for word in read_dict(dict_file):
+                        print(word, file=vocab_file)
 
     @create_after(executed="language_model")
     def task_vocab():

@@ -146,6 +146,7 @@ time_expr = ((<hour_expr> [[and] <minute_expr>] [[and] <second_expr>]) | (<minut
 
 set [a] timer for <time_expr>
 ```
+Over 8.6 million possible sentences.
 
 ```python
 #!/usr/bin/env python3

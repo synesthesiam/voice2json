@@ -111,6 +111,12 @@ training:
   # Path to pre-built ARPA language model (open transcription)
   base-language-model: !env "${profile_dir}/base_language_model.txt"
   
+  # Path to save compiled finite state transducer for base language model
+  base-language-model-fst: !env "${profile_dir}/base_language_model.fst"
+
+  # Amount of base language model to mix into custom language model
+  base-language-model-weight: 0.0
+
   # Path to pre-built pronunciation dictionary
   base-dictionary: !env "${profile_dir}/base_dictionary.txt"
   

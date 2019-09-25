@@ -815,7 +815,7 @@ def record_examples(
             recording = True
 
             # Instructions
-            print("Recording from stdin. Press ENTER to stop (CTRL+C to exit).")
+            print("Recording from audio source. Press ENTER to stop (CTRL+C to exit).")
             input()
 
             # Save WAV

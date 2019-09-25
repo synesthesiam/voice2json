@@ -111,7 +111,115 @@ If a file named `intent_whitelist` exists in your profile (set `training.intent-
 
 ### Language Model Mixing
 
-TODO
+`voice2json` is designed to only recognize the voice commands you specify in [sentences.ini](sentences.md). Both the [pocketsphinx](https://github.com/cmusphinx/pocketsphinx) and [Kaldi](https://kaldi-asr.org) speech systems are capable of transcribing [open-ended speech](#open-transcription), however. But what if you want to recognize *sort of* open-ended speech that's still focused on [your voice commands](sentences.md)?
+
+In every [profile](profiles.md), `voice2json` includes a `base_dictionary.txt` and `base_language_model.txt` file. The former is a dictionary containing the pronunciations all possible words. The latter is a large language model trained on *very* large corpus of text in the profile's language (usually books and web pages).
+
+During training, `voice2json` can **mix** the large, open ended language model in `base_language_model.txt` with the one generated specifically for your voice commands. You specify a **mixture weight**, which controls how much of an influence the large language model has (see `training.base-language-model-weight`). A mixture weight of 0 makes `voice2json` sensitive *only* to your voice commands, which is the default. A mixture weight of 0.05, on the other hand, adds a 5% influence from the large language model.
+
+![Diagram of training process](img/training.svg)
+
+To see the effect of language model mixing, consder a simple `sentences.ini` file:
+
+```ini
+[ChangeLightState]
+turn (on){state} the living room lamp
+```
+
+This will only allow `voice2json` to recognize the voice command "turn on the living room lamp". If we train `voice2json` and [transcribe](#transcribe-wav) a WAV file with this command, the output is no surprise:
+
+```bash
+$ time voice2json train-profile
+...
+real	0m0.688s
+
+$ voice2json transcribe-wav \
+    turn_on_living_room_lamp.wav | \
+    jq -r .text
+
+turn on the living room lamp
+```
+
+Now let's do speech to text on a variation of the command, a WAV file with the speech "would you please turn on the living room lamp":
+
+```bash
+$ voice2json transcribe-wav \
+    would_you_please_turn_on_living_room_lamp.wav | \
+    jq -r .text
+    
+turn the turn on the living room lamp
+```
+
+The word salad here is because we're trying to recognize a voice command that was not present in `sentences.ini` (technically, it's because [n-gram models are kind of dumb](whitepaper.md#sentences)). We could always add it to `sentences.ini`, of course. There may be cases, however, where we cannot anticipate *all* of the variations of a voice command. For these cases, you should increase the `training.base-language-model-weight` in your [profile](profiles.md) to something above 0. Let's set it to 0.05 (5% mixture) and re-train:
+
+```bash
+$ time voice2json train-profile
+...
+real	1m3.221s
+```
+
+Note that training took **significantly** longer (a full minute!) because of the size of the base langauge model. Now, let's test our two WAV files again:
+
+```bash
+$ voice2json transcribe-wav \
+    turn_on_living_room_lamp.wav | \
+    jq -r .text
+    
+turn on the living room lamp
+
+$ voice2json transcribe-wav \
+    would_you_please_turn_on_living_room_lamp.wav | \
+    jq -r .text
+    
+would you please turn on the living room lamp
+```
+
+Great! `voice2json` was able to transcribe a sentence that it wasn't explicitly trained on. If you're trying this at home, you surely noticed that it took a lot longer to process the WAV files too (probably 3-4x longer). In practice, it's not recommended to do mixed language modeling on lower-end hardware like a Raspberry Pi. If you need more open-ended speech recognition, try turning `voice2json` into [a network service](recipes.md#create-an-mqtt-transcription-service).
+
+#### The Elephant in the Room
+
+This isn't the end of the story for open-ended speech recognition in `voice2json`, however. What about *intent recognition*? When the set of possible voice commands is known ahead of time, it's relatively easy to know what to do with each and every sentence. The flexibility gained from mixing in a base language model unfortunately places a larger burden on the intent recognizer.
+
+In our `ChangeLightState` example above, we're fortunate that everything still works as expected:
+
+```bash
+$ voice2json recognize-text -t \
+    'would you please turn on the living room lamp' | \
+    jq . \
+```
+
+outputs:
+    
+```json
+{
+  "text": "turn on the living room lamp",
+  "intent": {
+    "name": "ChangeLightState",
+    "confidence": 1
+  },
+  "entities": [
+    {
+      "entity": "state",
+      "value": "on",
+      "start": 5,
+      "end": 7,
+    }
+  ],
+  "tokens": [
+    "turn",
+    "on",
+    "the",
+    "living",
+    "room",
+    "lamp"
+  ],
+  "slots": {
+    "state": "on"
+  }
+}
+```
+
+This only works because [fuzzy recognition](whitepaper.md#fuzzy-fsts) is enabled. Notice the `text` property? All the "problematic" words have simply been dropped! If you need something more sophisticated, consider [training a Rasa NLU bot](recipes.md#train-a-rasa-nlu-bot) using [generated examples](#generate-examples).
 
 ---
 
@@ -375,18 +483,142 @@ See the [Rasa NLU bot recipe](recipes.md#train-a-rasa nlu-bot) for an example of
 
 ## record-examples
 
-TODO
+Generates random example sentences from [sentences.ini](sentences.md) and prompts you to record them. Saves WAV files, transcriptions, and expected intents (as [JSON events](formats.md#intents)) to a directory.
+
+```bash
+$ voice2json record-examples --directory /path/to/examples/
+```
+
+You will be prompted with a random sentence. Once you press ENTER, `voice2json` will [begin recording](#audio-sources). When you press ENTER again, the recorded audio will be saved to a WAV file in the provided `--directory` (default is the current directory). When you're finished recording examples, press CTRL+C to exit.
+
+A directory of recorded examples can be used for [performance testing](#test-examples) or to [tune voice2json](#tune-examples) to better recognize voice commands in your acoustic environment.
 
 ---
 
 ## test-examples
 
+Transcribes and performs intent recognition on all WAV files in a directory (usually recorded with [record-examples](#record-examples)). Outputs a JSON report with speech/intent recognition details and accuracy statistics (including [word error rate](https://en.wikipedia.org/wiki/Word_error_rate)).
+
+```bash
+$ voice2json test-examples --directory /path/to/examples/
+```
+
+outputs something like:
+
+```json
+{
+  "statistics": {
+    "num_wavs": 1,
+    "num_words": 12,
+    "num_entities": 0,
+    "correct_transcriptions": 0,
+    "correct_intent_names": 0,
+    "correct_words": 5,
+    "correct_entities": 0,
+    "transcription_accuracy": 0.123,
+    "intent_accuracy": 0,
+    "entity_accuracy": 1
+  },
+  "actual": {
+    "example-1.wav": {
+      ...
+      "word_error": {
+        "expected": "EXPECTED TEXT",
+        "actual": "ACTUAL TEXT",
+        "words": 2,
+        "correct": 2,
+        "errors": 0
+      }
+    },
+  },
+  "expected": {
+    "turn_on_the_living_room_lamp-000.wav": {
+      "text": "turn on the living room lamp",
+      "intent": {
+        "name": "ChangeLightState",
+        "confidence": 1
+      },
+      "entities": [
+        {
+          "entity": "state",
+          "value": "on",
+          "raw_value": "on",
+          "start": 5,
+          "raw_start": 5,
+          "end": 7,
+          "raw_end": 7
+        }
+      ],
+      "raw_text": "turn on the living room lamp",
+      "tokens": [
+        "turn",
+        "on",
+        "the",
+        "living",
+        "room",
+        "lamp"
+      ],
+      "raw_tokens": [
+        "turn",
+        "on",
+        "the",
+        "living",
+        "room",
+        "lamp"
+      ]
+    },
+    "turn_on_the_living_room_lamp-001.wav": {
+      "text": "turn on the living room lamp",
+      "intent": {
+        "name": "ChangeLightState",
+        "confidence": 1
+      },
+      "entities": [
+        {
+          "entity": "state",
+          "value": "on",
+          "raw_value": "on",
+          "start": 5,
+          "raw_start": 5,
+          "end": 7,
+          "raw_end": 7
+        }
+      ],
+      "raw_text": "turn on the living room lamp",
+      "tokens": [
+        "turn",
+        "on",
+        "the",
+        "living",
+        "room",
+        "lamp"
+      ],
+      "raw_tokens": [
+        "turn",
+        "on",
+        "the",
+        "living",
+        "room",
+        "lamp"
+      ]
+    }
+  }
+}
+
+```
+
 TODO
+
+If a WAV file named `example-1.wav` is present in the directory
 
 ---
 
 ## tune-examples
 
-Pocketsphinx only.
+Tunes the speech model in your profile to your acoustic environment (speaker/microphone/room) using previously recorded examples (usually recorded with [record-examples](#record-examples)). For now, this only works if your profile is based on [pocketsphinx](https://github.com/cmusphinx/pocketsphinx).
 
-TODO
+```bash
+$ voice2json tune-examples --directory /path/to/examples/
+```
+
+This will use the recorded WAV files and transcriptions to [adapt the sphinx acoustic model](https://cmusphinx.github.io/wiki/tutorialadapt/). When it's finished, `tune-examples` will write an [MLLR matrix](https://cmusphinx.github.io/wiki/tutorialadapt/#creating-a-transformation-with-mllr) to the file path in `speech-to-text.pocketsphinx.mllr-matrix` in your [profile](profiles.md). When `transcibe-wav` runs next, it will use this file during transcription.

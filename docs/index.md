@@ -51,8 +51,8 @@ It can be used to:
 `voice2json` is more than just a wrapper around [pocketsphinx](https://github.com/cmusphinx/pocketsphinx) and [Kaldi](https://kaldi-asr.org)!
 
 * Training produces **both** a speech and intent recognizer. By describing your voice commands with `voice2json`'s [templating language](sentences.md), you get [more than just transcriptions](formats.md#intents) for free.
-* Re-training is **fast enough** to be done at runtime (usually < 10s), even up to millions of possible voice commands. This means you can change [referenced slot](sentences.md#slot-references) values or [add/remove intents](commands.md#intent-whitelist) on the fly.
-* All of the [available commands](commands.md) are designed to work well in Unix pipelines, typically consuming or emitting plaintext or [newline-delimited JSON](http://jsonlines.org). Audio input/output is [file-based]()
+* Re-training is **fast enough** to be done at runtime (usually < 5s), even up to [millions of possible voice commands](recipes.md#set-and-run-times). This means you can change [referenced slot](sentences.md#slot-references) values or [add/remove intents](commands.md#intent-whitelist) on the fly.
+* All of the [available commands](commands.md) are designed to work well in Unix pipelines, typically consuming/emitting plaintext or [newline-delimited JSON](http://jsonlines.org). Audio input/output is [file-based](commands.md#audio-sources), so you receive audio from [any source](recipes.md#stream-microphone-audio-over-a-network).
 
 ---
 
