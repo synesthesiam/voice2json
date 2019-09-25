@@ -1,5 +1,7 @@
 # Data Formats
 
+`voice2json` strives to use only common data formats, preferrably text-based. Some artifacts generated during [training](commands.md#train-profile), such as your [language model](#language-models), are even usable by [other speech systems](https://github.com/mozilla/DeepSpeech).
+
 ## Audio
 
 `voice2json` expects 16-bit 16Khz mono audio as input. When WAV data is provided in a different format, it is automatically converted with [sox](http://sox.sourceforge.net).

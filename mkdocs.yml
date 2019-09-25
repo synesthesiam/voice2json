@@ -8,6 +8,7 @@ nav:
   - Data Formats: formats.md
   - Profiles: profiles.md
   - Recipes: recipes.md
+  - Whitepaper: whitepaper.md
   - About: about.md
 markdown_extensions:
   - codehilite

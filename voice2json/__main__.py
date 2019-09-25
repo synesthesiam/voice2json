@@ -88,6 +88,12 @@ def main():
         action="store_true",
         help="Input is plain text instead of JSON",
     )
+    recognize_parser.add_argument(
+        "--perplexity",
+        "-p",
+        action="store_true",
+        help="Compute perplexity of input text relative to language model",
+    )
 
     # record-command
     command_parser = sub_parsers.add_parser(
@@ -327,6 +333,11 @@ def recognize(
 ) -> None:
     from voice2json import get_recognizer
 
+    # Load settings
+    intent_fst_path = ppath(
+        profile, profile_dir, "intent-recognition.intent-fst", "intent.fst"
+    )
+
     # Load intent recognizer
     recognizer = get_recognizer(profile_dir, profile)
 
@@ -347,7 +358,46 @@ def recognize(
             sentence_object = json.loads(sentence)
             text = sentence_object.get("text", "")
 
+        text = text.strip()
         intent = recognizer.recognize(text)
+
+        if args.perplexity:
+            try:
+                # Compute sentence perplexity with ngramperplexity
+                with tempfile.TemporaryDirectory() as temp_dir_name:
+                    temp_path = Path(temp_dir_name)
+                    text_path = temp_path / "sentence.txt"
+                    text_path.write_text(text)
+
+                    symbols_path = temp_path / "sentence.syms"
+                    subprocess.check_call(
+                        ["ngramsymbols", str(text_path), str(symbols_path)]
+                    )
+
+                    far_path = temp_path / "sentence.far"
+                    subprocess.check_call(
+                        [
+                            "farcompilestrings",
+                            f"-symbols={symbols_path}",
+                            "-keep_symbols=1",
+                            str(text_path),
+                            str(far_path),
+                        ]
+                    )
+
+                    output = subprocess.check_output(
+                        [
+                            "ngramperplexity",
+                            str(profile_dir / "intent.fst.model"),
+                            str(far_path),
+                        ]
+                    ).decode()
+
+                    last_line = output.strip().splitlines()[-1]
+                    perplexity = float(re.match(r"^.*perplexity\s*=\s*(.+)$", last_line).group(1))
+                    intent["perplexity"] = perplexity
+            except Exception as e:
+                logger.exception("perplexity")
 
         # Merge with input object
         for key, value in intent.items():

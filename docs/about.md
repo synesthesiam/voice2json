@@ -10,7 +10,7 @@
 
 `voice2json` itself is licensed under the [MIT license](#mit-license), so feel free to do what you want with the code.
 
-Please see the individual licenses for the [supporting tools](#supporting-tools) as well.
+Please see the individual licenses for the [supporting tools](#supporting-tools) and [language-specific profiles](https://github.com/synesthesiam/voice2json-profiles) as well.
 
 ### MIT License
 

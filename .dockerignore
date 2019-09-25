@@ -1,2 +1,5 @@
 *
 !debian/*.deb
+!docker/multiarch_build/
+!etc/
+!download/

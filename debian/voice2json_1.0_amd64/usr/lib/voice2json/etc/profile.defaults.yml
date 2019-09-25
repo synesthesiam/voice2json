@@ -48,6 +48,13 @@ intent-recognition:
 training:
   # Path to file with custom intents and sentences
   sentences-file: !env "${profile_dir}/sentences.ini"
+
+  # Path to text file with intents that will be considered for training.
+  # All intents will be considered if this file is missing.
+  intent-whitelist: !env "${profile_dir}/intent_whitelist"
+
+  # Directory containing text files, one for each $slot referenced in sentences.ini
+  slots-directory: !env "${profile_dir}/slots"
   
   # Path to write custom intent finite state transducer
   intent-fst: !env "${profile_dir}/intent.fst"
@@ -66,6 +73,12 @@ training:
 
   # Path to pre-built ARPA language model (open transcription)
   base-language-model: !env "${profile_dir}/base_language_model.txt"
+  
+  # Path to save compiled finite state transducer for base language model
+  base-language-model-fst: !env "${profile_dir}/base_language_model.fst"
+
+  # Amount of base language model to mix into custom language model
+  base-language-model-weight: 0.0
   
   # Path to pre-built pronunciation dictionary
   base-dictionary: !env "${profile_dir}/base_dictionary.txt"
@@ -98,6 +111,29 @@ wake-word:
       # Path to procupine keyword file
       keyword-file: !env "${voice2json_dir}/etc/porcupine/keyword_files/porcupine_${machine}.ppn"
   
+# -----------------------------------------------------------------------------
+
+voice-command:
+  # Minimum number of seconds a voice command must last (ignored otherwise)
+  minimum-seconds: 2
+
+  # Maximum number of seconds a voice command can last (timeout otherwise)
+  maximum-seconds: 30
+
+  # Seconds of speech detected before voice command is considered started
+  speech-seconds: 0.3
+
+  # Seconds of silence before voice command is considered ended
+  silence-seconds: 0.5
+
+  # Seconds of audio before voice command starts to retain in output
+  before-seconds: 0.25
+
+  # webrtcvad specific settings
+  webrtcvad:
+    # Speech filtering aggressiveness 0-3 (3 is most aggressive) 
+    vad-mode: 3
+
 # -----------------------------------------------------------------------------
 
 text-to-speech:

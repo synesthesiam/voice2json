@@ -109,6 +109,10 @@ If your [sentences.ini](sentences.md) file contains [slot references](sentences.
 
 If a file named `intent_whitelist` exists in your profile (set `training.intent-whitelist` to change), then `voice2json` will only consider the intents listed in it (one per line). If this file is missing (the default), then all intents from [sentences.ini](sentences.md) are considered. When this file changes, you should [re-train](#train-profile).
 
+### Language Model Mixing
+
+TODO
+
 ---
 
 ## transcribe-wav
@@ -169,6 +173,11 @@ Output:
 {"text": "what time is it", "transcribe_seconds": 0.123, "wav_seconds": 1.456, "wav_name": "what-time-is-it.wav"}
 ```
 
+### Open Transcription
+
+When given the `--open` argument, `transcribe-wav` will ignore your [custom voice commands](sentences.md) and instead use the large, pre-trained speech model present in [your profile](profiles.md). Do this if you want to use `voice2json` for general transcription tasks that are not domain specific. Keep in mind, of course, that this is not what `voice2json` is optimized for!
+
+If you want the best of both worlds (transcriptions focused on a particular domain, but still able to accomodate general speech), check out [language model mixing](#language-model-mixing). This comes at a performance cost, however, in training, loading, and transcription times. Consider using `transcribe-wav` [as a service](recipes.md#create-an-mqtt-transcription-service) to avoid re-loading your mixed speech model.
 
 ---
 
@@ -227,18 +236,26 @@ where `keyword` is the path to the detected keyword file and `detect_seconds` is
 
 ### Custom Wake Word
 
-You can [train your own wake word](https://github.com/Picovoice/Porcupine#picovoice-console) or use [one of the pre-trained ones](https://github.com/Picovoice/porcupine/tree/master/resources/keyword_files).
+You can [train your own wake word](https://github.com/Picovoice/Porcupine#picovoice-console) or use [one of the pre-trained keyword files](https://github.com/Picovoice/porcupine/tree/master/resources/keyword_files) from [Picovoice](https://picovoice.ai/).
+
+### Exit Count
+
+Providing a `--exit-count <N>` argument to `wait-wake` tells `voice2json` to automatically exit after the wake word has been detected `N` times. This is useful when you want to use `wait-wake` in [a shell script](recipes.md#launch-a-program-via-voice).
 
 
-### Wake Audio Source
+### Audio Sources
 
-`wait-wake` executes the command defined in `audio.record-command` in [your profile](profiles.md) to record audio (from standard out). You can customize this command or provide a different source with the `--audio-source` argument, which expects a file path or "-" for standard in. This can be used to receive [microphone audio streamed over a network](recipes.md#stream-microphone-audio-over-a-network)
+By default, the [wait-wake](#wait-wake), [record-command](#record-command), and [record-examples](#record-examples) commands execute the program defined in the `audio.record-command` section of [your profile](profiles.md) to record audio. You can customize/change this program or provide a different source of [audio data](formats.md#audio) with the `--audio-source` argument, which expects a file path or "-" for standard in. Through [process substition](https://www.gnu.org/software/bash/manual/html_node/Process-Substitution.html) or Unix pipes, this can be used to receive [microphone audio streamed over a network](recipes.md#stream-microphone-audio-over-a-network).
 
 ---
 
 ## record-command
 
 Records from a live audio stream until a voice command has been spoken.
+
+TODO
+
+See [audio sources](#audio-sources) for a description of how `record-command` gets audio input.
 
 ---
 
@@ -262,7 +279,11 @@ hello HH EH L OW
 
 ```
 
-In addition to text output, you should have heard both pronunciations of "hello". These came the `base_dictionary.txt` included in the profile. The same command works for words that are definitely **not** in the U.S. English dictionary:
+In addition to text output, you should have heard both pronunciations of "hello". These came the `base_dictionary.txt` included in the profile.
+
+### Unknown Words
+
+The same `pronounce-word` command works for words that are hopefully **not** in the U.S. English dictionary:
 
 ```bash
 voice2json pronounce-word raxacoricofallipatorius
@@ -317,7 +338,13 @@ Output (formatted with [jq](https://stedolan.github.io/jq/)):
   ],
   "slots": {
     "state": "off"
-  }
+  },
+  "tokens": [
+      "turn",
+      "on",
+      "the",
+      "light"
+  ]
 }
 ```
 
@@ -340,16 +367,26 @@ Output:
 BS turn off the light ES<TAB>O O B-state O O O<TAB>LightState
 ```
 
+### Other Formats
+
+See the [Rasa NLU bot recipe](recipes.md#train-a-rasa nlu-bot) for an example of transforming `voice2json` examples into Rasa NLU's [Markdown training data format](https://rasa.com/docs/rasa/nlu/training-data-format/).
+
 ---
 
 ## record-examples
 
+TODO
+
 ---
 
 ## test-examples
+
+TODO
 
 ---
 
 ## tune-examples
 
 Pocketsphinx only.
+
+TODO

@@ -7,14 +7,17 @@ A `voice2json` <strong>profile</strong> contains everything necessary to recogni
 * [sentences.ini](sentences.md)
     * A template file describing all of your voice commands
 * Speech/intent models
+    * See [the whitepaper](whitepaper.md) for more details
 * Pronunciation dictionaries
+    * How `voice2json` expects words to be pronounced. You can [customize any word](commands.md#pronounce-word).
 * Grapheme to phoneme models
+    * Used to guess how [unknown words](commands.md#unknown-words) *should* be pronounced.
 
 ---
 
 ## profile.yml
 
-A [YAML file](https://yaml.org) with settings that override [the defaults](#default-settings). This file typically contains the profile language's name and locale code, as well as an [espeak](http://espeak.sourceforge.net) voice to use for word pronunciations.
+A [YAML file](https://yaml.org) with settings that override [the defaults](#default-settings). This file typically contains the profile language's name and locale code, as well as an [eSpeak](http://espeak.sourceforge.net) voice to use for word pronunciations.
 
 For Kaldi-based profiles, `kaldi.model-type` **must** be set to either `gmm` or `nnet3`.
 
