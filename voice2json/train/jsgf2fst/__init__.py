@@ -33,7 +33,6 @@ from .fstaccept import (
     filter_words,
     make_slot_acceptor,
     apply_fst,
-    fstcount,
 )
 
 logger = logging.getLogger("jsgf2fst")

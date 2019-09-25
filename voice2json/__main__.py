@@ -664,7 +664,7 @@ def generate(
     args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]
 ) -> None:
     import pywrapfst as fst
-    from voice2json.train.jsgf2fst import fstprintall, symbols2intent, fstcount
+    from voice2json.train.jsgf2fst import fstprintall, symbols2intent
 
     # Load settings
     intent_fst_path = ppath(
@@ -675,8 +675,6 @@ def generate(
     intent_fst = fst.Fst.read(str(intent_fst_path))
 
     if args.number <= 0:
-        # Print number of possible paths
-        print(fstcount(intent_fst))
         return
 
     # Generate samples

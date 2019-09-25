@@ -6,9 +6,10 @@ import re
 import json
 import logging
 from typing import Dict, Any, List, Optional, TextIO, Mapping, Union, Iterable
-from collections import deque
+from collections import deque, defaultdict, Counter
 
 import pywrapfst as fst
+import networkx as nx
 
 logger = logging.getLogger("fstaccept")
 
@@ -451,30 +452,3 @@ def apply_fst(
 
 def empty_intent() -> Dict[str, Any]:
     return {"text": "", "intent": {"name": "", "confidence": 0}, "entities": []}
-
-
-# -----------------------------------------------------------------------------
-
-
-def fstcount(in_fst: fst.Fst) -> int:
-    """Counts the number of possible states in an FST."""
-    zero_weight = fst.Weight.Zero(in_fst.weight_type())
-
-    state_queue = deque()
-    state_queue.append(in_fst.start())
-
-    paths = 0
-
-    while len(state_queue) > 0:
-        state = state_queue.popleft()
-
-        if in_fst.final(state) != zero_weight:
-            paths += 1
-
-        for arc in in_fst.arcs(state):
-            state_queue.append(arc.nextstate)
-
-    return paths
-
-
-# -----------------------------------------------------------------------------

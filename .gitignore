@@ -11,3 +11,5 @@ debian/**/usr/lib/voice2json/build/
 recipes/train_rasa/data/
 recipes/train_rasa/models/
 qemu-*
+fstutils/fstprint-all
+fstutils/fstcount-all
