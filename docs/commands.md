@@ -27,7 +27,7 @@ The following commands are available:
 Prints all profile settings as JSON to the console. This is a combination of the [default settings](profiles.md#default-settings) and what's provided in [profile.yml](profiles.md#profileyml).
 
 ```bash
-$ voice2json print-profile
+$ voice2json print-profile | jq .
 ```
 
 Output:
@@ -38,6 +38,28 @@ Output:
         "name": "english",
         "code": "en-us"
     },
+    "speech-to-text": {
+        ...
+    },
+    "intent-recognition": {
+        ...
+    },
+    "training": {
+        ...
+    },
+    "wake-word": {
+        ...
+    },
+    "voice-command": {
+        ...
+    },
+    "text-to-speech": {
+        ...
+    },
+    "audio": {
+        ...
+    },
+
     ...
 }
 ```
@@ -110,7 +132,7 @@ Output:
 
 **Note**: No `wav_name` property is provided when WAV data comes from standard in.
 
-### WAV file(s) as arguments
+### Files as arguments
 
 Reads one or more WAV files and transcribes each of them in turn.
 
@@ -128,7 +150,7 @@ Output:
 {"text": "what time is it", "transcribe_seconds": 0.123, "wav_seconds": 1.456, "wav_name": "what-time-is-it.wav"}
 ```
 
-### WAV file(s) from stdin
+### Files from stdin
 
 Reads one or more WAV file paths from standard in and transcribes each of them in turn. If arguments are also provided, they will be processed **first**.
 
@@ -189,7 +211,28 @@ Output:
 
 ## wait-wake
 
-Listens to a live audio stream until the wake word is spoken.
+Listens to a live audio stream for a wake word (default is "[porcupine](https://github.com/Picovoice/Porcupine)"). Outputs a single line of [jsonl](http://jsonlines.org) each time the wake word is detected.
+
+```bash
+$ voice2json wait-wake
+```
+
+Once the wake word is spoken, `voice2json` will output:
+
+```json
+{ "keyword": "/path/to/keyword.ppn", "detect_seconds": 1.2345 }
+```
+
+where `keyword` is the path to the detected keyword file and `detect_seconds` is the time of detection relative to when `voice2json` was started.
+
+### Custom Wake Word
+
+You can [train your own wake word](https://github.com/Picovoice/Porcupine#picovoice-console) or use [one of the pre-trained ones](https://github.com/Picovoice/porcupine/tree/master/resources/keyword_files).
+
+
+### Wake Audio Source
+
+`wait-wake` executes the command defined in `audio.record-command` in [your profile](profiles.md) to record audio (from standard out). You can customize this command or provide a different source with the `--audio-source` argument, which expects a file path or "-" for standard in. This can be used to receive [microphone audio streamed over a network](recipes.md#stream-microphone-audio-over-a-network)
 
 ---
 

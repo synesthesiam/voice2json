@@ -462,3 +462,37 @@ $ mkdir -p models && \
   ],
   "text": "please turn off the light in the living room"
 ```
+
+---
+
+## Stream Microphone Audio Over a Network
+
+Using the [gst-launch](https://gstreamer.freedesktop.org/documentation/tools/gst-launch.html) command from [GStreamer](https://gstreamer.freedesktop.org/), you can stream raw audio data from your microphone to another machine over a UDP socket:
+
+```bash
+gst-launch-1.0 \
+    pulsesrc ! \
+    audioconvert ! \
+    audioresample ! \
+    audio/x-raw, rate=16000, channels=1, format=S16LE ! \
+    udpsink host=<Destination IP> port=<Destination Port>
+```
+
+where `<Destination IP>` is the IP address of the machine with `voice2json` and `<Destination Port>` is a free port on that machine.
+
+On the destination machine, run:
+
+```bash
+$ gst-launch-1.0 \
+     udpsrc port=<Destination Port> ! \
+     rawaudioparse use-sink-caps=false format=pcm pcm-format=s16le sample-rate=16000 num-channels=1 ! \
+     queue ! \
+     audioconvert ! \
+     audioresample ! \
+     filesink location=/dev/stdout | \
+  voice2json <Command> --audio-source -
+```
+
+where `<Destination IP>` matches the first command and `<Command>` is [wait-wake](commands.md#wait-wake), [record-command](commands.md#record-command), or [record-examples](commands.md#record-examples).
+
+See the GStreamer [multiudpsink plugin](https://gstreamer.freedesktop.org/documentation/udp/multiudpsink.html) for streaming to multiple machines simultaneously (it also has multicast support too).

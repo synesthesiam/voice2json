@@ -447,20 +447,21 @@ def wake(args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]) -
         audio_source: BinaryIO = open(args.audio_source, "rb")
         logger.debug(f"Recording raw 16-bit 16Khz mono audio from {args.audio_source}")
 
-    audio_buffer = bytes()
+    # Read first audio chunk
+    start_time = time.time()
+    chunk = audio_source.read(chunk_size)
 
     try:
-        while True:
-            while len(audio_buffer) < chunk_size:
-                chunk = audio_source.read(chunk_size - len(audio_buffer))
-                audio_buffer += chunk
-
+        while len(chunk) == chunk_size:
             # Process audio chunk
-            unpacked_chunk = struct.unpack_from(chunk_format, audio_buffer[:chunk_size])
+            unpacked_chunk = struct.unpack_from(chunk_format, chunk)
             keyword_index = handle.process(unpacked_chunk)
 
             if keyword_index:
-                result = {"keyword": str(keyword_path)}
+                result = {
+                    "keyword": str(keyword_path),
+                    "detect_seconds": time.time() - start_time,
+                }
                 print_json(result)
 
                 # Check exit count
@@ -470,10 +471,7 @@ def wake(args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]) -
                         break
 
             # Get next chunk
-            audio_buffer = audio_buffer[chunk_size:]
-            while len(audio_buffer) < chunk_size:
-                chunk = audio_source.read(chunk_size - len(audio_buffer))
-                audio_buffer += chunk
+            chunk = audio_source.read(chunk_size)
     except KeyboardInterrupt:
         pass  # expected
 
