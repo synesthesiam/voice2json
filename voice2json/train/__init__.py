@@ -101,6 +101,27 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
 
     # -----------------------------------------------------------------------------
 
+    def task_unzip_files():
+        for path in [base_dictionary, base_language_model, g2p_model]:
+            gzip_path = Path(str(path) + ".gz")
+            if gzip_path.exists():
+                if path.exists():
+                    # Delete unneeded .gz file
+                    gzip_path.unlink()
+                else:
+                    # Unzip the file. We can't delete it here, since doit gets upset.
+                    yield {
+                        "name": f"unzip_{path.name}",
+                        "file_dep": [gzip_path],
+                        "targets": [path],
+                        "actions": [
+                            "gunzip -f --stdout %(dependencies)s > %(targets)s"
+                        ],
+                    }
+
+    # -----------------------------------------------------------------------------
+
+    @create_after(executed="unzip_files")
     def task_grammars():
         """Transforms sentences.ini into JSGF grammars, one per intent."""
         maybe_deps = []
@@ -156,6 +177,7 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
         with open(targets[0], "w") as graph_file:
             json.dump(graph_json, graph_file)
 
+    @create_after(executed="grammars")
     def task_grammar_dependencies():
         """Creates grammar dependency graphs from JSGF grammars and relevant slots."""
 
