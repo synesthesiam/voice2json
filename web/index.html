@@ -4,7 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="author" content="Michael Hansen">
-        <title>voice2json - Offline Multilingual Speech/Intent Recognition</title>
+        <title>voice2json - Offline Speech/Intent Recognition for Linux</title>
         <link rel="icon" href="img/favicon.png">
         <link rel="stylesheet" href="css/fonts.css">
         <link rel="stylesheet" href="css/normalize.css">
@@ -28,7 +28,7 @@
                             <a class="navigation-link" href="https://voice2json.readthedocs.io/">Documentation</a>
                         </li>
                         <li class="navigation-item">
-                            <a class="navigation-link" href="whitepaper.html">Whitepaper</a>
+                            <a class="navigation-link" href="https://github.com/synesthesiam/voice2json/releases">Download</a>
                         </li>
                     </ul>
                     <a href="https://github.com/synesthesiam/voice2json" title="voice2json on Github" target="_blank">
@@ -40,25 +40,72 @@
             <section class="container" id="main">
                 <img src="img/voice2json.svg" style="height: 10rem;">
                 <p style="margin-top: 1rem;">
-                    <strong>voice2json</strong> is a set of command-line tools for <strong>offline, multilingual speech/intent recognition</strong>.
-                    It recognizes and transforms your <a href="https://voice2json.readthedocs.io/en/latest/training/">custom voice commands</a> into JSON events.
+                    <strong>voice2json</strong> is a set of command-line tools for <strong>offline speech/intent recognition</strong> on Linux.
+                    It is free, open source, and <a href="https://github.com/synesthesiam/voice2json-profiles">supports 15 languages</a>.
                 </p>
 
                 <img alt="voice2json translates voice commands to JSON events" title="voice2json overview" src="img/overview-1.svg" style="height: 20rem;">
 
+                <hr>
+
+                <p>
+                    When you provide <tt>voice2json</tt> with a <a href="https://voice2json.readthedocs.io/en/latest/sentences/">description of your custom voice commands</a>:
+                </p>
+                <pre><code>[LightState]
+states = (on | off)
+turn (&lt;states&gt;){state} [the] light</code></pre>
+
+                <p>
+                    and then <a href="https://voice2json.readthedocs.io/en/latest/commands/#train-profile">train your profile</a>:
+                </p>
+
+
+                <pre><code>$ voice2json train-profile</code></pre>
+
+                <p>
+                    you can now recognize intents from audio data:
+                </p>
+
+                <pre><code>$ voice2json transcribe-wav < turn-on-the-light.wav | \
+      voice2json recognize-intent | \
+      jq .</code></pre>
+
+                output is a <a href="https://voice2json.readthedocs.io/en/latest/formats/#intents">JSON event</a>:
+
+                <pre><code>{
+    "text": "turn on the light",
+    "intent": {
+        "name": "LightState"
+    },
+    "slots": {
+        "state": "on"
+    }
+}</code></pre>
+
+                <hr>
+
                 <h3>voice2json is...</h3>
                 <ul>
                     <li>Free and fully <a href="https://github.com/synesthesiam/voice2json">open source</a></li>
-                    <li>Completely <strong>offline</strong>, no account or internet connection required</li>
-                    <li>Multilingual, with support for <a href="https://github.com/synesthesiam/voice2json#supported-languages">13 languages</a></li>
-                    <li>Easily integrated with <a href="https://nodered.org">Node-RED</a>, <a href="https://www.home-assistant.io/">Home Assistant</a>, and <a href="https://www.home-assistant.io/hassio/">Hass.io</a></li>
+                    <li>Completely <strong>offline</strong>, no account or internet connection required, ever</li>
+                    <li>Designed for use in <a href="https://voice2json.readthedocs.io/en/latest/commands/">Unix-style workflows</a> and shell scripts</li>
+                    <li>Optimized for <a href="https://voice2json.readthedocs.io/en/latest/sentences/">custom voice commands</a> with <a href="https://voice2json.readthedocs.io/en/latest/commands/#pronounce-word">uncommon words</a></li>
+                        <li>Quick to re-train, even for <a href="https://voice2json.readthedocs.io/en/latest/recipes/#set-and-run-timers">millions of possible voice commands</a></li>
                 </ul>
 
-                <h3>voice2json is <strong>not</strong>...</h3>
+                <h3>Available Commands</h3>
                 <ul>
-                    <li>A magic machine learning system that tries to guess what you want</li>
-                    <li>A general purpose speech/intent recognizer</li>
-                    <li>Usable "out of the box" with no tinkering</li>
+                    <li><a href="https://voice2json.readthedocs.io/en/latest/commands/#print-profile">print-profile</a> - Print profile settings</li>
+                    <li><a href="https://voice2json.readthedocs.io/en/latest/commands/#train-profile">train-profile</a> - Generate speech/intent artifacts</li>
+                    <li><a href="https://voice2json.readthedocs.io/en/latest/commands/#transcribe-wav">transcribe-wav</a> - Transcribe WAV file to text</li>
+                    <li><a href="https://voice2json.readthedocs.io/en/latest/commands/#recognize-intent">recognize-intent</a> - Recognize intent from text</li>
+                    <li><a href="https://voice2json.readthedocs.io/en/latest/commands/#wait-wake">wait-wake</a> - Listen to live audio stream for wake word</li>
+                    <li><a href="https://voice2json.readthedocs.io/en/latest/commands/#record-command">record-command</a> - Record voice command from live audio stream</li>
+                    <li><a href="https://voice2json.readthedocs.io/en/latest/commands/#pronounce-word">pronounce-word</a> - Look up or guess how a word is pronounced</li>
+                    <li><a href="https://voice2json.readthedocs.io/en/latest/commands/#generate-examples">generate-examples</a> - Generate random intents</li>
+                    <li><a href="https://voice2json.readthedocs.io/en/latest/commands/#record-examples">record-examples</a> - Generate and record speech examples</li>
+                    <li><a href="https://voice2json.readthedocs.io/en/latest/commands/#test-examples">test-examples</a> - Test recorded speech examples</li>
+                    <li><a href="https://voice2json.readthedocs.io/en/latest/commands/#tune-examples">tune-examples</a> - Tune acoustic model using recorded speech examplesrint profile settings</li>
                 </ul>
 
                 <hr>
@@ -80,6 +127,7 @@
 
             <footer class="footer">
                 <section class="container">
+                    <img src="img/terminal.svg">
                     <p>Created by <a target="_blank" href="https://synesthesiam.com" title="Michael Hansen">Michael Hansen</a>. Licensed under the <a target="_blank" href="https://github.com/synesthesiam/voice2json/blob/master/LICENSE" title="MIT License">MIT License</a>.</p>
                 </section>
             </footer>
