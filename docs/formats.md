@@ -28,7 +28,7 @@ where
 
 ## Intents
 
-The [recognize-text](commands.md#) command produces JSON in the following format:
+The [recognize-intent](commands.md#recognize-intent) command produces JSON in the following format:
 
 ```json
 {

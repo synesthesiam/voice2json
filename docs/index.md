@@ -6,7 +6,7 @@ From the command-line:
 
 ```bash
 $ voice2json transcribe-wav < turn-on-the-light.wav | \
-      voice2json recognize-text | \
+      voice2json recognize-intent | \
       jq .
 ```
 
@@ -94,7 +94,7 @@ voice2json is designed to work under the following assumptions:
     * Your [profile settings](profiles.md) will be in `$HOME/.config/voice2json/profile.yml`
 3. Edit `sentences.ini` in [your profile](profiles.md) and add your [custom voice commands](sentences.md)
 4. [Train your profile](commands.md#train-profile)
-5. Use the [transcribe-wav](commands.md#transcribe-wav) and [recognize-text](commands.md#recognize-text) commands to do speech/intent recognition
+5. Use the [transcribe-wav](commands.md#transcribe-wav) and [recognize-intent](commands.md#recognize-intent) commands to do speech/intent recognition
     * See [the recipes](recipes.md) for more possibilities
 
 ---
@@ -103,13 +103,13 @@ voice2json is designed to work under the following assumptions:
 
 Why not just use [Google](https://assistant.google.com/), [Dragon](https://www.nuance.com/dragon.html), or even [Snips](https://snips.ai/)?
 
-Cloud-based speech and intent recognition services, such as Google Assistant or Amazon's Alexa, require a constant Internet connection to function. Additionally, they keep a copy of everything you say on their servers. Despite the high accuracy and deep integration with other services, this approach is **too brittle and uncomfortable** for some people.
+Cloud-based speech and intent recognition services, such as Google Assistant or Amazon's Alexa, require a constant Internet connection to function. Additionally, they keep a copy of everything you say on their servers. Despite the high accuracy and deep integration with other services, this approach is **too brittle and uncomfortable** for me.
 
-Dragon Naturally Speaking and Snips offer local installations and offline functionality. Unfortunately, Dragon requires Microsoft Windows to function. It is *possible* to use [Dragon in Wine on Linux](http://appdb.winehq.org/objectManager.php?sClass=application&iId=2077) or via a virtual machine, but is not officially supported by [Nuance](https://www.nuance.com). Snips offers and impressive amount of functionality and is [easy to interoperate with](https://docs.snips.ai/reference/hermes), but still [requires an online account](https://console.snips.ai/login) to create an assistant. Additionally, Snips is not yet fully open source, so any artifacts created for your Snips-based assistant may not be portable to another platform of **your choice** in the future.
+Dragon Naturally Speaking and Snips offer local installations and offline functionality. Unfortunately, Dragon requires Microsoft Windows to function. It is *possible* to use [Dragon in Wine on Linux](http://appdb.winehq.org/objectManager.php?sClass=application&iId=2077) or via a virtual machine, but is difficult to set up and not officially supported by [Nuance](https://www.nuance.com). Snips offers an impressive amount of functionality and is [easy to interoperate with](https://docs.snips.ai/reference/hermes), but [requires an online account](https://console.snips.ai/login) just to create an assistant. Additionally, Snips is not yet fully open source, so any artifacts created for a Snips-based assistant may **not be portable** to another platform in the future.
 
 ### No Magic, No Surprises
 
-`voice2json` is **not A.I.**, does not attempt to guess what you mean or want, and keeps **everything** on your machine. There is no online account sign-up needed, **no privacy policy** to review, and no advertisements. All generated artifacts are in [standard data formats](formats.md); typically just text.
+`voice2json` is **not an A.I.**. It does not attempt to guess what you want to do, and keeps **everything** on your local machine. There is no online account sign-up needed, **no privacy policy** to review, and no advertisements. All generated artifacts are in [standard data formats](formats.md); typically just text.
 
 Once you've installed `voice2json` and [downloaded a profile](https://github.com/synesthesiam/voice2json-profiles), there is no longer a need for an Internet connection. At runtime, `voice2json` will only every write to your [profile directory](profiles.md) or the system's temporary directory (`/tmp`).
 

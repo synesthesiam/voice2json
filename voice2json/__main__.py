@@ -74,9 +74,9 @@ def main():
         "wav_file", nargs="*", default=[], help="Path(s) to WAV file(s)"
     )
 
-    # recognize-text
+    # recognize-intent
     recognize_parser = sub_parsers.add_parser(
-        "recognize-text", help="Recognize JSON intent from text"
+        "recognize-intent", help="Recognize intent from JSON or text"
     )
     recognize_parser.set_defaults(func=recognize)
     recognize_parser.add_argument(
@@ -286,6 +286,9 @@ def transcribe(
 ) -> None:
     from voice2json import get_transcriber
 
+    # Make sure profile has been trained
+    check_trained(profile, profile_dir)
+
     transcriber = get_transcriber(
         profile_dir, profile, open_transcription=args.open, debug=args.debug
     )
@@ -332,6 +335,9 @@ def recognize(
     args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]
 ) -> None:
     from voice2json import get_recognizer
+
+    # Make sure profile has been trained
+    check_trained(profile, profile_dir)
 
     # Load settings
     intent_fst_path = ppath(
@@ -394,7 +400,9 @@ def recognize(
                     ).decode()
 
                     last_line = output.strip().splitlines()[-1]
-                    perplexity = float(re.match(r"^.*perplexity\s*=\s*(.+)$", last_line).group(1))
+                    perplexity = float(
+                        re.match(r"^.*perplexity\s*=\s*(.+)$", last_line).group(1)
+                    )
                     intent["perplexity"] = perplexity
             except Exception as e:
                 logger.exception("perplexity")
@@ -414,6 +422,9 @@ def record_command(
 ) -> None:
     from voice2json.command.webrtcvad import wait_for_command
     from voice2json.utils import buffer_to_wav, get_audio_source
+
+    # Make sure profile has been trained
+    check_trained(profile, profile_dir)
 
     # Load settings
     vad_mode = int(pydash.get(profile, "voice-command.vad-mode", 3))
@@ -436,7 +447,7 @@ def record_command(
 
     # JSON events are not printed by default
     json_file = None
-    wav_sink = sys.stdout
+    wav_sink = sys.stdout.buffer
 
     if (args.wav_sink is not None) and (args.wav_sink != "-"):
         wav_sink = open(args.wav_sink, "wb")
@@ -666,6 +677,9 @@ def generate(
     import pywrapfst as fst
     from voice2json.train.jsgf2fst import fstprintall, symbols2intent
 
+    # Make sure profile has been trained
+    check_trained(profile, profile_dir)
+
     # Load settings
     intent_fst_path = ppath(
         profile, profile_dir, "intent-recognition.intent-fst", "intent.fst"
@@ -743,6 +757,9 @@ def record_examples(
     import pywrapfst as fst
     from voice2json.utils import buffer_to_wav, get_audio_source
     from voice2json.train.jsgf2fst import fstprintall, symbols2intent
+
+    # Make sure profile has been trained
+    check_trained(profile, profile_dir)
 
     chunk_size = args.chunk_size
     examples_dir = Path(args.directory) if args.directory is not None else Path.cwd()
@@ -858,6 +875,9 @@ def test_examples(
     args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]
 ) -> None:
     from voice2json import get_transcriber, get_recognizer
+
+    # Make sure profile has been trained
+    check_trained(profile, profile_dir)
 
     examples_dir = Path(args.directory) if args.directory is not None else Path.cwd()
     logger.debug(f"Looking for examples in {examples_dir}")
@@ -1093,6 +1113,32 @@ def env_constructor(loader, node):
 
 
 yaml.SafeLoader.add_constructor("!env", env_constructor)
+
+
+def check_trained(profile: Dict[str, Any], profile_dir: Path) -> None:
+    """Checks important files to see if profile is not trained. Exits if it isn't."""
+    # Load settings
+    dictionary_path = ppath(
+        profile, profile_dir, "speech-to-text.dictionary", "dictionary.txt"
+    )
+
+    language_model_path = ppath(
+        profile, profile_dir, "speech-to-text.language-model", "language_model.txt"
+    )
+
+    intent_fst_path = ppath(
+        profile, profile_dir, "intent-recognition.intent-fst", "intent.fst"
+    )
+
+    missing = False
+    for path in [dictionary_path, language_model_path, intent_fst_path]:
+        if not path.exists():
+            logger.fatal(f"Missing {path}. Did you forget to run train-profile?")
+            missing = True
+
+    if missing:
+        sys.exit(1)
+
 
 # -----------------------------------------------------------------------------
 

@@ -31,7 +31,7 @@ do
     # 2. Recognize the intent from the transcription.
     # 3. Extract the name of the program to launch
     voice2json transcribe-wav "${temp_wav}" | \
-        voice2json recognize-text | \
+        voice2json recognize-intent | \
         jq --raw-output '.slots.program' | \
         while read -r program;
         do

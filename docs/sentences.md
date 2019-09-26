@@ -25,7 +25,7 @@ Compared to JSON, YAML, etc., there is minimal syntactic overhead for the purpos
 3. You cannot share commonly *repeated phrases* across sentences or intents.
 4. There is no way to *annotate phrases* so the intent recognizer knows the values for an intent's **named entities/slots** (e.g., color).
 
-Each of these shortcomings are addressed by considering the space between intent headings (`[Intent 1]`, etc.) as a **grammar** that will represent a space of valid, annotated voice commands. `voice2json` specifically represents these spaces as [finite state transducers](http://www.openfst.org), serving as input to [opengrm](https://www.opengrm.org) to produce language models **without ever generating a single sentence**. The same representation is then used to [recognize intents](commands.md#recognize-text).
+Each of these shortcomings are addressed by considering the space between intent headings (`[Intent 1]`, etc.) as a **grammar** that will represent a space of valid, annotated voice commands. `voice2json` specifically represents these spaces as [finite state transducers](http://www.openfst.org), serving as input to [opengrm](https://www.opengrm.org) to produce language models **without ever generating a single sentence**. The same representation is then used to [recognize intents](commands.md#recognize-intent).
 
 ## Optional Words
 

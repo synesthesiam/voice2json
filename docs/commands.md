@@ -11,7 +11,7 @@ The following commands are available:
 * [print-profile](#print-profile) - Print profile settings
 * [train-profile](#train-profile) - Generate speech/intent artifacts
 * [transcribe-wav](#transcribe-wav) - Transcribe WAV file to text
-* [recognize-text](#recognize-text) - Recognize intent from text
+* [recognize-intent](#recognize-intent) - Recognize intent from text
 * [wait-wake](#wait-wake) - Listen to live audio stream for wake word
 * [record-command](#record-command) - Record voice command from live audio stream
 * [pronounce-word](#pronounce-word) - Look up or guess how a word is pronounced
@@ -183,7 +183,7 @@ This isn't the end of the story for open-ended speech recognition in `voice2json
 In our `ChangeLightState` example above, we're fortunate that everything still works as expected:
 
 ```bash
-$ voice2json recognize-text -t \
+$ voice2json recognize-intent -t \
     'would you please turn on the living room lamp' | \
     jq . \
 ```
@@ -289,7 +289,7 @@ If you want the best of both worlds (transcriptions focused on a particular doma
 
 ---
 
-## recognize-text
+## recognize-intent
 
 Recognizes an intent and slots from JSON or plaintext. Outputs a single line of [jsonl](http://jsonlines.org) for each input line ([format description](formats.md#intents)).
 
@@ -300,7 +300,7 @@ Inputs can be provided either as arguments **or** lines via standard in.
 Input is a single line of [jsonl](http://jsonlines.org) per sentence, minimally with a `text` property (like the output of [transcribe-wav](#transcribe-wav)).
 
 ```bash
-voice2json recognize-text '{ "text": "turn on the light" }'
+voice2json recognize-intent '{ "text": "turn on the light" }'
 ```
 
 Output:
@@ -314,7 +314,7 @@ Output:
 Input is a single line of plaintext per sentence.
 
 ```bash
-voice2json recognize-text --text-input 'turn on the light' 'turn off the light'
+voice2json recognize-intent --text-input 'turn on the light' 'turn off the light'
 ```
 
 Output:
@@ -359,17 +359,44 @@ By default, the [wait-wake](#wait-wake), [record-command](#record-command), and 
 
 ## record-command
 
-Records from a live audio stream until a voice command has been spoken.
+Records from a live audio stream until a voice command has been spoken. Outputs WAV audio data containing just the voice command.
 
-TODO
+```bash
+$ voice2json record-command > my-voice-command.wav
+```
+
+`record-command` uses the [webrtcvad](https://github.com/wiseman/py-webrtcvad) library to detect live speech. Once speech has been detected, `voice2json` begins recording until there is silence. If speech goes on too long, a timeout is reached and recording stops. The [profile settings](profiles.md) under the `voice-command** section control exactly how many seconds of speech and silence are needed to segement live audio.
 
 See [audio sources](#audio-sources) for a description of how `record-command` gets audio input.
+
+### Redirecting WAV Output
+
+The `--wav-sink` argument lets you change where `record-command` writes its output WAV data. When this is set to something other than "-" (standard out), `record-command` will output lines of JSON to standard out that describe events in the live speech.
+
+```bash
+$ voice2json record-command \
+      --audio-source <(sox turn-on-the-living-room-lamp.wav -t raw -) \
+      --wav-sink /dev/null
+```
+
+will output something lile:
+
+```json
+{"event": "speech", "time_seconds": 0.24}
+{"event": "started", "time_seconds": 0.54}
+{"event": "silence", "time_seconds": 4.5}
+{"event": "speech", "time_seconds": 4.619999999999999}
+{"event": "silence", "time_seconds": 4.799999999999998}
+{"event": "stopped", "time_seconds": 5.279999999999995}
+```
+
+where `event` is either "speech", "started", "silence", "stopped", or "timeout". The "started" and "stopped" events refer to the start/stop of the detected voice command. The `time_seconds` property is the time of the event relative to the start of the WAV file (time 0).
 
 ---
 
 ## pronounce-word
 
-Uses [eSpeak](http://espeak.sourceforge.net) to pronounce words *the same way that the speech recognizer is expecting them*. This depends on manually created [phoneme map](formats.md#espeak-phoneme-maps) in each profile.
+Uses [eSpeak](http://espeak.sourceforge.net) to pronounce words *the same way that the speech recognizer is expecting to hear them*. This depends on a manually created [phoneme map](formats.md#espeak-phoneme-maps) in each profile.
 
 Inputs can be provided either as arguments **or** lines via standard in.
 
@@ -509,107 +536,61 @@ outputs something like:
 {
   "statistics": {
     "num_wavs": 1,
-    "num_words": 12,
+    "num_words": 0,
     "num_entities": 0,
     "correct_transcriptions": 0,
     "correct_intent_names": 0,
-    "correct_words": 5,
+    "correct_words": 0,
     "correct_entities": 0,
     "transcription_accuracy": 0.123,
     "intent_accuracy": 0,
-    "entity_accuracy": 1
+    "entity_accuracy": 0
   },
   "actual": {
     "example-1.wav": {
       ...
       "word_error": {
-        "expected": "EXPECTED TEXT",
-        "actual": "ACTUAL TEXT",
-        "words": 2,
-        "correct": 2,
+        "expected": "...",
+        "actual": "...",
+        "words": 0,
+        "correct": 0,
         "errors": 0
       }
     },
   },
   "expected": {
-    "turn_on_the_living_room_lamp-000.wav": {
-      "text": "turn on the living room lamp",
-      "intent": {
-        "name": "ChangeLightState",
-        "confidence": 1
-      },
-      "entities": [
-        {
-          "entity": "state",
-          "value": "on",
-          "raw_value": "on",
-          "start": 5,
-          "raw_start": 5,
-          "end": 7,
-          "raw_end": 7
-        }
-      ],
-      "raw_text": "turn on the living room lamp",
-      "tokens": [
-        "turn",
-        "on",
-        "the",
-        "living",
-        "room",
-        "lamp"
-      ],
-      "raw_tokens": [
-        "turn",
-        "on",
-        "the",
-        "living",
-        "room",
-        "lamp"
-      ]
-    },
-    "turn_on_the_living_room_lamp-001.wav": {
-      "text": "turn on the living room lamp",
-      "intent": {
-        "name": "ChangeLightState",
-        "confidence": 1
-      },
-      "entities": [
-        {
-          "entity": "state",
-          "value": "on",
-          "raw_value": "on",
-          "start": 5,
-          "raw_start": 5,
-          "end": 7,
-          "raw_end": 7
-        }
-      ],
-      "raw_text": "turn on the living room lamp",
-      "tokens": [
-        "turn",
-        "on",
-        "the",
-        "living",
-        "room",
-        "lamp"
-      ],
-      "raw_tokens": [
-        "turn",
-        "on",
-        "the",
-        "living",
-        "room",
-        "lamp"
-      ]
-    }
+    "example-1.wav": {
+    ...
   }
 }
 
 ```
 
-TODO
+where `statistics` describes the overall accuracy of the examples relative to expectations, `actual` provides details of the transcription/intent recognition of the examples, and `expected` is simply pulled from the provided transcription/intent files.
 
-If a WAV file named `example-1.wav` is present in the directory
+### Report Format
+
+The `statistics` section of the report contains:
+
+* `num_wavs` - total number of WAV files that were tested
+* `num_words` - total number of expected words across all test WAVs
+* `num_entities` - total number of distinct entity/value pairs accross all test WAVs
+* `correct_transcriptions` - number of WAV files whose actual transcriptions **exactly** matched expectations
+* `correct_intent_names` - number of WAV files whose actual  intent **exactly** matched expectations
+* `correct_entities` - number of entity/value pairs that **exactly** matched expectations **if and only if** the actual intent matched too
+* `transcription_accuracy` - correct words / num words (1 = perfect)
+* `intent_accuracy` - correct intents / num wavs (1 = perfect)
+* `entity_accuracy` - correct entities / num entities (1 = perfect)
+
+The `actual` section of the report contains the [recognized intent](formats.md#intents) of each WAV file as well as a `word_error` section with:
+
+* `expected` - text from expected transcription (capitalized sections are incorrect)
+* `actual` - text from actual transcription ('*' means missing letter)
+* `words` - number of expected words
+* `correct` - number of correct words
+* `errors` - number of incorrect words
+
+The `expected` section is just the intent or transcription recorded in the examples directory alongside each WAV file. For example, a WAV file named `example-1.wav` should ideally have an `example-1.json` file with an [expected intent](formats.md#intents). Failing that, an `example-1.txt` file with the transcription **must** be present.
 
 ---
 
@@ -621,4 +602,4 @@ Tunes the speech model in your profile to your acoustic environment (speaker/mic
 $ voice2json tune-examples --directory /path/to/examples/
 ```
 
-This will use the recorded WAV files and transcriptions to [adapt the sphinx acoustic model](https://cmusphinx.github.io/wiki/tutorialadapt/). When it's finished, `tune-examples` will write an [MLLR matrix](https://cmusphinx.github.io/wiki/tutorialadapt/#creating-a-transformation-with-mllr) to the file path in `speech-to-text.pocketsphinx.mllr-matrix` in your [profile](profiles.md). When `transcibe-wav` runs next, it will use this file during transcription.
+This will use the recorded WAV files and transcriptions to [adapt the sphinx acoustic model](https://cmusphinx.github.io/wiki/tutorialadapt/) with MLLR. When it's finished, `tune-examples` will write an [MLLR matrix](https://cmusphinx.github.io/wiki/tutorialadapt/#creating-a-transformation-with-mllr) to the file path in `speech-to-text.pocketsphinx.mllr-matrix` in your [profile](profiles.md). When `transcibe-wav` runs next, it will use this matrix during transcription.

@@ -33,7 +33,7 @@ do
     # 4. Play an alarm sound
     voice2json transcribe-wav "${temp_wav}" | \
         tee >(jq --raw-output '.text' > /dev/stderr) | \
-        voice2json recognize-text | \
+        voice2json recognize-intent | \
         python3 "${this_dir}/do_timer.py" | \
         while read -r line;
         do

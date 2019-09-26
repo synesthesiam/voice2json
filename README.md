@@ -10,8 +10,8 @@
     * Create custom speech/intent recognizer from `sentences.ini`
 * `transcribe-wav`
     * Transcribe WAV file to text
-* `recognize-text`
-    * Recognize intent from text
+* `recognize-intent`
+    * Recognize intent from JSON or text
 * `wait-wake`
     * Listen to live audio stream until wake word is spoken
 * `record-command`

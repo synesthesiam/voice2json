@@ -109,7 +109,6 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
         for path in [base_dictionary, base_language_model, g2p_model]:
             gzip_path = Path(str(path) + ".gz")
             part_paths = sorted(list(profile_dir.glob(f"{gzip_path.name}.part-*")))
-            logger.error(part_paths)
             if len(part_paths) > 0:
                 if gzip_path.exists():
                     # Delete unneeded .gz-part files

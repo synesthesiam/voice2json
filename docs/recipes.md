@@ -99,7 +99,7 @@ do
     # 2. Recognize the intent from the transcription.
     # 3. Extract the name of the program to launch
     voice2json transcribe-wav "${temp_wav}" | \
-        voice2json recognize-text | \
+        voice2json recognize-intent | \
         jq --raw-output '.slots.program' | \
         while read -r program;
         do
@@ -217,7 +217,7 @@ do
     # 4. Play an alarm sound
     voice2json transcribe-wav "${temp_wav}" | \
         tee >(jq --raw-output '.text' > /dev/stderr) | \
-        voice2json recognize-text | \
+        voice2json recognize-intent | \
         python3 "${this_dir}/do_timer.py" | \
         while read -r line;
         do
@@ -236,7 +236,7 @@ Want to recognize intents in a large number of WAV files as fast as possible? Yo
 $ find /path/to/wav/files/ -name '*.wav' | \
       tee wav-file-names.txt | \
       parallel -k --pipe -n 10 \
-         'voice2json transcribe-wav --stdin-files | voice2json recognize-text'
+         'voice2json transcribe-wav --stdin-files | voice2json recognize-intent'
 ```
 
 This will run up to 10 copies of `voice2json` in parallel and output a line of JSON per WAV file *in the same order as they were printed by the find command*. For convenience, the file names are saved to a text file named `wav-file-names.txt`.
