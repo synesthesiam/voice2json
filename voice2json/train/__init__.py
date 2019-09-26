@@ -8,7 +8,7 @@ import logging
 import tempfile
 import subprocess
 from pathlib import Path
-from typing import Dict, Set, Iterable, Any
+from typing import Dict, Set, Iterable, Any, List
 from collections import deque
 
 import yaml
@@ -101,6 +101,32 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
 
     # -----------------------------------------------------------------------------
 
+    def do_reassemble(paths: List[Path], targets):
+        with open(targets[0], "wb") as target_file:
+            subprocess.run(["cat"] + [str(path) for path in paths], stdout=target_file)
+
+    def task_reassemble_files():
+        for path in [base_dictionary, base_language_model, g2p_model]:
+            gzip_path = Path(str(path) + ".gz")
+            part_paths = sorted(list(profile_dir.glob(f"{gzip_path.name}.part-*")))
+            logger.error(part_paths)
+            if len(part_paths) > 0:
+                if gzip_path.exists():
+                    # Delete unneeded .gz-part files
+                    for part_path in part_paths:
+                        part_path.unlink()
+                else:
+                    # Assemble the file. We can't delete the parts here, since doit gets upset.
+                    yield {
+                        "name": f"reassemble_{gzip_path.name}",
+                        "file_dep": part_paths,
+                        "targets": [gzip_path],
+                        "actions": [(do_reassemble, [part_paths])],
+                    }
+
+    # -----------------------------------------------------------------------------
+
+    @create_after(executed="reassemble_files")
     def task_unzip_files():
         for path in [base_dictionary, base_language_model, g2p_model]:
             gzip_path = Path(str(path) + ".gz")
