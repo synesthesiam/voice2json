@@ -6,6 +6,8 @@ if [[ -z "$1" ]]; then
     exit 1
 fi
 
+CPU_ARCH="$(lscpu | awk '/^Architecture/{print $2}')"
+
 name='voice2json'
 arch="$1"
 version="$2"
@@ -20,9 +22,10 @@ output_dir="${package_dir}/usr/lib/${name}"
 mkdir -p "${output_dir}/${name}"
 
 # Copy PyInstaller-generated files
-if [[ -d "dist/${name}" ]]; then
+dist_dir="dist/voice2json_${CPU_ARCH}"
+if [[ -d "${dist_dir}/${name}" ]]; then
     rsync -av --delete \
-          "dist/${name}/" \
+          "${dist_dir}/${name}/" \
           "${output_dir}/${name}"
     # Remove all symbols (Liantian warning)
     strip --strip-all "${output_dir}/${name}"/*.so* || true

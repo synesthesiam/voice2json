@@ -8,7 +8,10 @@ RUN apt-get update && \
     apt-get install -y \
         sox jq alsa-utils espeak sphinxtrain perl
 
-COPY debian/voice2json_1.0_${DEBIAN_ARCH}/usr/lib/voice2json/ /usr/lib/voice2json/
+ARG LIB_DIR=debian/voice2json_1.0_${DEBIAN_ARCH}/usr/lib/voice2json/
+COPY ${LIB_DIR}/bin/ /usr/lib/voice2json/bin/
+COPY ${LIB_DIR}/etc/ /usr/lib/voice2json/etc/
+COPY ${LIB_DIR}/voice2json/ /usr/lib/voice2json/voice2json/
 COPY debian/voice2json_1.0_${DEBIAN_ARCH}/usr/bin/voice2json /usr/bin/
 
 ENTRYPOINT ["voice2json"]

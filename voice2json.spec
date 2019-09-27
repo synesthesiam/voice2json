@@ -1,33 +1,36 @@
 # -*- mode: python -*-
+import os
 from pathlib import Path
 
 block_cipher = None
 
 venv = Path.cwd() / ".venv"
+bin_dir = Path(os.environ.get("spec_bin_dir", venv / "bin"))
+lib_dir = Path(os.environ.get("spec_lib_dir", venv / "lib"))
 
 a = Analysis(
-    [os.path.join(os.getcwd(), "voice2json/__main__.py")],
+    [Path.cwd() / "voice2json" "/__main__.py"],
     pathex=["."],
     binaries=[
         (
-            venv
-            / "lib/python3.6/site-packages/pywrapfst.cpython-36m-x86_64-linux-gnu.so",
+            lib_dir
+            / "python3.6/site-packages/pywrapfst.cpython-36m-x86_64-linux-gnu.so",
             ".",
         ),
-        (venv / "lib" / "libfstfarscript.so.13", "."),
-        (venv / "lib" / "libfstscript.so.13", "."),
-        (venv / "lib" / "libfstfar.so.13", "."),
-        (venv / "lib" / "libfst.so.13", "."),
-        (venv / "lib" / "libngram.so.134", "."),
-        (venv / "bin" / "ngramread", "."),
-        (venv / "bin" / "ngramcount", "."),
-        (venv / "bin" / "ngrammake", "."),
-        (venv / "bin" / "ngrammerge", "."),
-        (venv / "bin" / "ngramprint", "."),
-        (venv / "bin" / "ngramsymbols", "."),
-        (venv / "bin" / "ngramperplexity", "."),
-        (venv / "bin" / "farcompilestrings", "."),
-        (venv / "bin" / "phonetisaurus-apply", "."),
+        (lib_dir / "libfstfarscript.so.13", "."),
+        (lib_dir / "libfstscript.so.13", "."),
+        (lib_dir / "libfstfar.so.13", "."),
+        (lib_dir / "libfst.so.13", "."),
+        (lib_dir / "libngram.so.134", "."),
+        (bin_dir / "ngramread", "."),
+        (bin_dir / "ngramcount", "."),
+        (bin_dir / "ngrammake", "."),
+        (bin_dir / "ngrammerge", "."),
+        (bin_dir / "ngramprint", "."),
+        (bin_dir / "ngramsymbols", "."),
+        (bin_dir / "ngramperplexity", "."),
+        (bin_dir / "farcompilestrings", "."),
+        (bin_dir / "phonetisaurus-apply", "."),
     ],
     datas=[],
     hiddenimports=["doit", "dbm.gnu", "antlr4-python3-runtime", "networkx", "numbers"],

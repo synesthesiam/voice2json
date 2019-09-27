@@ -21,7 +21,7 @@ docker: debian
 
 docker-multiarch-build:
 	docker build . -f docker/multiarch_build/Dockerfile.debian \
-        --build-arg BUILD_ARCH=armhf \
+        --build-arg DEBIAN_ARCH=armhf \
         --build-arg CPU_ARCH=armv7l \
         --build-arg BUILD_FROM=arm32v7/python:3.6-slim-stretch \
         -t voice2json/multi-arch-build
