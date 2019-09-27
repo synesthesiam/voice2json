@@ -35,6 +35,14 @@ def main():
     parser = argparse.ArgumentParser(prog="voice2json", description="voice2json")
     parser.add_argument("--profile", "-p", help="Path to profle directory")
     parser.add_argument(
+        "--setting",
+        "-s",
+        nargs=1,
+        action="append",
+        default=[],
+        help="Override a profile settings",
+    )
+    parser.add_argument(
         "--debug", action="store_true", help="Print DEBUG log to console"
     )
 
@@ -255,6 +263,12 @@ def main():
             recursive_update(profile, yaml.safe_load(profile_file) or {})
     else:
         logger.warning(f"{profile_yaml} does not exist. Using default settings.")
+
+    # Override settings
+    for setting_path, setting_value in args.setting:
+        setting_value = json.loads(setting_value)
+        logger.debug(f"Overring {setting_name} with {setting_value}")
+        pydash.set_(profile, setting_path, setting_value)
 
     # Call sub-commmand
     args.func(args, profile_dir, profile)

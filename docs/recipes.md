@@ -51,10 +51,22 @@ turn on the light
 
 ## Launch a Program via Voice
 
+Let's use `voice2json` to launch programs using voice commands. This will follow a typical voice assistant flow, meaning we will:
+
+1. Wait for a wake word to be spoken
+2. Record the voice command
+3. Recognize and handle the intent
+
+The [listen_and_launch.sh](https://github.com/synesthesiam/voice2json/blob/master/recipes/launch_program/listen_and_launch.sh) script realizes these steps in a bash `while` loop using the [wait-wake](commands.md#wait-wake) and [record-command](commands.md#record-command) `voice2json` commands to do steps 1 and 2. For step 3, [transcribe-wav](commands.md#transcribe-wav) and [recognize-intent](commands.md#recognize-intent) are used.
+
+Our `sentences.ini` file is very simple:
+
 ```ini
 [LaunchProgram]
 (start | run | launch) ($program){program}
 ```
+
+We keep the list of supported programs in a `slots/program` file:
 
 ```
 firefox
@@ -65,65 +77,17 @@ gimp
 mail:thunderbird
 ```
 
-```bash
-#!/usr/bin/env bash
-this_dir="$( cd "$( dirname "$0" )" && pwd )"
+Note the use of [substitutions](sentences.md#wordtag-substitutions) to map spoken program names (e.g., "web browser", "mail") to actual binary names (`firefox`, `thunderbird`). A few words were added to `custom_words.txt` using [pronounce-word](commands.md#pronounce-word) to guess their pronunciations.
 
-# Use a temporary WAV file for recorded command.
-# Clean up when this script exits.
-temp_wav="$(mktemp)"
-function finish {
-    rm -rf "${temp_wav}"
-    exit 0
-}
-
-trap finish SIGTERM SIGINT
-
-# ----------
-
-while true;
-do
-    # Wait until the wake word has been spoken, then exit
-    voice2json wait-wake --exit-count 1
-
-    # Play a sound to tell the user we're recording
-    aplay "${this_dir}/beep_hi.wav"
-
-    # Record voice command until silence
-    voice2json record-command > "${temp_wav}"
-
-    # Play a sound to tell the user we're done recording
-    aplay "${this_dir}/beep_lo.wav" &
-
-    # 1. Transcribe the WAV file.
-    # 2. Recognize the intent from the transcription.
-    # 3. Extract the name of the program to launch
-    voice2json transcribe-wav "${temp_wav}" | \
-        voice2json recognize-intent | \
-        jq --raw-output '.slots.program' | \
-        while read -r program;
-        do
-            if [[ ! -z "${program}" ]]; then
-                # Run the program.
-                # For simplicity, we assume its the name of a binary in /usr/bin.
-                program_exe="/usr/bin/${program}"
-                echo "Running ${program_exe}"
-
-                # Detach the process from this terminal, so it will keep running.
-                nohup "${program_exe}" &
-            fi
-        done
-done
-```
+After following the [installation instructions](https://github.com/synesthesiam/voice2json/tree/master/recipes/launch_program), we can execute the [listen_and_launch.sh](https://github.com/synesthesiam/voice2json/blob/master/recipes/launch_program/listen_and_launch.sh) script. After saying the wake word ("porcupine" by default), you should be able to say "run firefox" and have it launch a Firefox window.
 
 ---
 
 ## Set and Run Timers
 
-```ini
-[ClearTimer]
-clear [the] timer
+A common task for voice assistants is to set timers. Here, we demonsrate a "simple" timer that supports a single timer that's less than 10 hours in one second increments:
 
+```ini
 [SetTimer]
 two_to_nine = (two:2 | three:3 | four:4 | five:5 | six:6 | seven:7 | eight:8 | nine:9)
 one_to_nine = (one:1 | <two_to_nine>)
@@ -146,7 +110,8 @@ time_expr = ((<hour_expr> [[and] <minute_expr>] [[and] <second_expr>]) | (<minut
 
 set [a] timer for <time_expr>
 ```
-Over 8.6 million possible sentences.
+
+There are over 8 million possible sentences here, such as "set a timer for two hours and ten and a half minutes". This template makes heavy use of [substitutions](sentences.md#wordtag-substitutions) to relieve the burden on the intent handler. All number words (e.g., "one") are mapped to digits (e.g. "1"). For multi-word numbers, like "thirty five", the mapped string will be "30 5". Because `hours`, `minutes`, and `seconds` are kept in separate slots, these strings can simply be split by whitespace, converted to integers, and summed to get the intended value:
 
 ```python
 #!/usr/bin/env python3
@@ -179,51 +144,6 @@ for line in sys.stdin:
 
     # Done
     print("Ready")
-```
-
-```bash
-#!/usr/bin/env bash
-this_dir="$( cd "$( dirname "$0" )" && pwd )"
-
-# Use a temporary WAV file for recorded command.
-# Clean up when this script exits.
-temp_wav="$(mktemp)"
-function finish {
-    rm -rf "${temp_wav}"
-    exit 0
-}
-
-trap finish SIGTERM SIGINT
-
-# ----------
-
-while true;
-do
-    # Wait until the wake word has been spoken, then exit
-    voice2json wait-wake --exit-count 1
-
-    # Play a sound to tell the user we're recording
-    aplay "${this_dir}/beep_hi.wav"
-
-    # Record voice command until silence
-    voice2json record-command > "${temp_wav}"
-
-    # Play a sound to tell the user we're done recording
-    aplay "${this_dir}/beep_lo.wav" &
-
-    # 1. Transcribe the WAV file.
-    # 2. Recognize the intent from the transcription.
-    # 3. Wait until the timer is up
-    # 4. Play an alarm sound
-    voice2json transcribe-wav "${temp_wav}" | \
-        tee >(jq --raw-output '.text' > /dev/stderr) | \
-        voice2json recognize-intent | \
-        python3 "${this_dir}/do_timer.py" | \
-        while read -r line;
-        do
-            aplay "${this_dir}/alarm.wav"
-        done
-done
 ```
 
 ---

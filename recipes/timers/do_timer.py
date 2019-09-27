@@ -24,7 +24,5 @@ for line in sys.stdin:
     total_seconds = (hours * 60 * 60) + (minutes * 60) + seconds
 
     # Wait
+    print(f"Waiting for {total_seconds} second(s)")
     time.sleep(total_seconds)
-
-    # Done
-    print("Ready")
