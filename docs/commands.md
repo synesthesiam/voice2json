@@ -283,7 +283,7 @@ Output:
 
 ### Open Transcription
 
-When given the `--open` argument, `transcribe-wav` will ignore your [custom voice commands](sentences.md) and instead use the large, pre-trained speech model present in [your profile](profiles.md). Do this if you want to use `voice2json` for general transcription tasks that are not domain specific. Keep in mind, of course, that this is not what `voice2json` is optimized for!
+When given the `--open` argument, `transcribe-wav` **will ignore** your [custom voice commands](sentences.md) and instead use the large, pre-trained speech model present in [your profile](profiles.md). Do this if you want to use `voice2json` for general transcription tasks that are not domain specific. Keep in mind, of course, that this is not what `voice2json` is optimized for!
 
 If you want the best of both worlds (transcriptions focused on a particular domain, but still able to accomodate general speech), check out [language model mixing](#language-model-mixing). This comes at a performance cost, however, in training, loading, and transcription times. Consider using `transcribe-wav` [as a service](recipes.md#create-an-mqtt-transcription-service) to avoid re-loading your mixed speech model.
 

@@ -48,6 +48,7 @@ The following tools/libraries help to support voice2json:
 * [Phonetisaurus](https://github.com/AdolfVonKleist/Phonetisaurus) (word pronunciations)
 * [Pocketsphinx](https://github.com/cmusphinx/pocketsphinx) (speech to text)
 * [porcupine](https://github.com/Picovoice/Porcupine) (wake word)
+* [PyInstaller](https://www.pyinstaller.org)
 * [Python 3](https://www.python.org)
 * [OpenFST](http://www.openfst.org) (speech/intent recognition, g2p)
 * [Opengrm](http://www.opengrm.org/twiki/bin/view/GRM/NGramLibrary) (language modeling)
