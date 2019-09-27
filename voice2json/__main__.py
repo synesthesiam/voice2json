@@ -250,8 +250,11 @@ def main():
     profile_yaml = profile_dir / "profile.yml"
     logger.debug(f"Loading profile from {profile_yaml}")
 
-    with open(profile_yaml, "r") as profile_file:
-        recursive_update(profile, yaml.safe_load(profile_file) or {})
+    if profile_yaml.exists():
+        with open(profile_yaml, "r") as profile_file:
+            recursive_update(profile, yaml.safe_load(profile_file) or {})
+    else:
+        logger.warning(f"{profile_yaml} does not exist. Using default settings.")
 
     # Call sub-commmand
     args.func(args, profile_dir, profile)
