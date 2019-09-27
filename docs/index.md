@@ -117,49 +117,51 @@ Once you've installed `voice2json` and [downloaded a profile](https://github.com
 
 ## Supported Languages
 
-TODO: Fix links
-
-voice2json supports the following languages/locales:
+`voice2json` supports the following languages/locales:
 
 * Catalan
-    * [ca-es_pocketsphinx-cmu](catalan/ca-es_pocketsphinx-cmu)
+    * [ca-es_pocketsphinx-cmu](https://github.com/synesthesiam/ca-es_pocketsphinx-cmu)
 * Dutch (Nederlands)
-    * [nl_pocketsphinx-cmu](dutch/nl_pocketsphinx-cmu)
+    * [nl_pocketsphinx-cmu](https://github.com/synesthesiam/nl_pocketsphinx-cmu)
 * English
     * U.S. English
-        * [en-us_pocketsphinx-cmu](english/en-us_pocketsphinx-cmu)
-        * [en-us_kaldi-zamia](english/en-us_kaldi-zamia)
+        * [en-us_pocketsphinx-cmu](https://github.com/synesthesiam/en-us_pocketsphinx-cmu)
+        * [en-us_kaldi-zamia](https://github.com/synesthesiam/en-us_kaldi-zamia)
     * Indian English
-        * [en-in_pocketsphinx-cmu](english/en-in_pocketsphinx-cmu)
+        * [en-in_pocketsphinx-cmu](https://github.com/synesthesiam/en-in_pocketsphinx-cmu)
 * French (Français)
-    * [fr_pocketsphinx-cmu](french/fr_pocketsphinx-cmu)
+    * [fr_pocketsphinx-cmu](https://github.com/synesthesiam/fr_pocketsphinx-cmu)
 * German (Deutsch)
-    * [de_pocketsphinx-cmu](german/de_pocketsphinx-cmu)
+    * [de_pocketsphinx-cmu](https://github.com/synesthesiam/de_pocketsphinx-cmu)
 * Greek (Ελληνικά)
-    * [el-gr_pocketsphinx-cmu](greek/el-gr_pocketsphinx-cmu)
+    * [el-gr_pocketsphinx-cmu](https://github.com/synesthesiam/el-gr_pocketsphinx-cmu)
 * Hindi (Devanagari)
-    * [hi_pocketsphinx-cmu](hindi/hi_pocketsphinx-cmu)
+    * [hi_pocketsphinx-cmu](https://github.com/synesthesiam/hi_pocketsphinx-cmu)
 * Italian (Italiano)
-    * [it_pocketsphinx-cmu](italian/it_pocketsphinx-cmu)
+    * [it_pocketsphinx-cmu](https://github.com/synesthesiam/it_pocketsphinx-cmu)
 * Kazakh (қазақша)
-    * [kz_pocketsphinx-cmu](kazakh/kz_pocketsphinx-cmu)
+    * [kz_pocketsphinx-cmu](https://github.com/synesthesiam/kz_pocketsphinx-cmu)
 * Mandarin (中文)
-    * [zh-cn_pocketsphinx-cmu](mandarin/zh-cn_pocketsphinx-cmu)
+    * [zh-cn_pocketsphinx-cmu](https://github.com/synesthesiam/zh-cn_pocketsphinx-cmu)
 * Portugese (Português)
-    * [pt-br_pocketsphinx-cmu](portuguese/pt-br_pocketsphinx-cmu)
+    * [pt-br_pocketsphinx-cmu](https://github.com/synesthesiam/pt-br_pocketsphinx-cmu)
 * Russian (Русский)
-    * [ru_pocketsphinx-cmu](russian/ru_pocketsphinx-cmu)
+    * [ru_pocketsphinx-cmu](https://github.com/synesthesiam/ru_pocketsphinx-cmu)
 * Spanish (Español)
-    * [es_pocketsphinx-cmu](spanish/es_pocketsphinx-cmu)
+    * [es_pocketsphinx-cmu](https://github.com/synesthesiam/es_pocketsphinx-cmu)
     * Mexian Spanish
-        * [es_mexican_pocketsphinx-cmu](spanish/es_mexican_pocketsphinx-cmu)
+        * [es_mexican_pocketsphinx-cmu](https://github.com/synesthesiam/es_mexican_pocketsphinx-cmu)
 * Swedish (svenska)
-    * [sv_kaldi-montreal](swedish/sv_kaldi-montreal)
+    * [sv_kaldi-montreal](https://github.com/synesthesiam/sv_kaldi-montreal)
 * Vietnamese (Tiếng Việt)
-    * [vi_kaldi-montreal](vietnamese/vi_kaldi-montreal)
+    * [vi_kaldi-montreal](https://github.com/synesthesiam/vi_kaldi-montreal)
 
 ## Contributing
 
 Community contributions are welcomed.
 
 TODO
+
+---
+
+![smiling terminal](img/terminal.svg)

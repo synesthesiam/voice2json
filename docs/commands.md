@@ -11,7 +11,7 @@ The following commands are available:
 * [print-profile](#print-profile) - Print profile settings
 * [train-profile](#train-profile) - Generate speech/intent artifacts
 * [transcribe-wav](#transcribe-wav) - Transcribe WAV file to text
-* [recognize-intent](#recognize-intent) - Recognize intent from text
+* [recognize-intent](#recognize-intent) - Recognize intent from JSON or text
 * [wait-wake](#wait-wake) - Listen to live audio stream for wake word
 * [record-command](#record-command) - Record voice command from live audio stream
 * [pronounce-word](#pronounce-word) - Look up or guess how a word is pronounced
