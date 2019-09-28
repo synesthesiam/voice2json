@@ -167,9 +167,10 @@ else
 fi
 
 # -----------------------------------------------------------------------------
-# Pocketsphinx for Python (no sound)
+# Download Dependencies
 # -----------------------------------------------------------------------------
 
+# Python-Pocketsphinx
 pocketsphinx_file="${download_dir}/pocketsphinx-python.tar.gz"
 if [[ ! -f "${pocketsphinx_file}" ]]; then
     pocketsphinx_url='https://github.com/synesthesiam/pocketsphinx-python/releases/download/v1.0/pocketsphinx-python.tar.gz'
@@ -177,15 +178,9 @@ if [[ ! -f "${pocketsphinx_file}" ]]; then
     download "${pocketsphinx_url}" "${pocketsphinx_file}"
 fi
 
-python3 -m pip install "${pocketsphinx_file}"
-
-# -----------------------------------------------------------------------------
-# openfst
-# -----------------------------------------------------------------------------
-
+# OpenFST
 openfst_dir="${build_dir}/openfst-1.6.9"
 if [[ ! -d "${openfst_dir}/build" ]]; then
-    echo "Building openfst"
     openfst_file="${download_dir}/openfst-1.6.9.tar.gz"
 
     if [[ ! -f "${openfst_file}" ]]; then
@@ -193,7 +188,51 @@ if [[ ! -d "${openfst_dir}/build" ]]; then
         echo "Downloading openfst (${openfst_url})"
         download "${openfst_url}" "${openfst_file}"
     fi
+fi
 
+# Opengrm
+opengrm_dir="${build_dir}/opengrm-ngram-1.3.4"
+if [[ ! -d "${opengrm_dir}/build" ]]; then
+    opengrm_file="${download_dir}/opengrm-ngram-1.3.4.tar.gz"
+
+    if [[ ! -f "${opengrm_file}" ]]; then
+        opengrm_url='http://www.opengrm.org/twiki/pub/GRM/NGramDownload/opengrm-ngram-1.3.4.tar.gz'
+        echo "Downloading opengrm (${opengrm_url})"
+        download "${opengrm_url}" "${opengrm_file}"
+    fi
+fi
+
+# Phonetisaurus
+phonetisaurus_dir="${build_dir}/phonetisaurus"
+if [[ ! -d "${phonetisaurus_dir}/build" ]]; then
+    phonetisaurus_file="${download_dir}/phonetisaurus-2019.tar.gz"
+
+    if [[ ! -f "${phonetisaurus_file}" ]]; then
+        phonetisaurus_url='https://github.com/synesthesiam/phonetisaurus-2019/releases/download/v1.0/phonetisaurus-2019.tar.gz'
+        echo "Downloading phonetisaurus (${phonetisaurus_url})"
+        download "${phonetisaurus_url}" "${phonetisaurus_file}"
+    fi
+fi
+
+# Kaldi
+kaldi_dir="${build_dir}/kaldi-master"
+if [[ ! -z "${no_kaldi}" || ! -d "${kaldi_dir}/build" ]]; then
+    install libatlas-base-dev libatlas3-base
+    kaldi_file="${download_dir}/kaldi-2019.tar.gz"
+
+    if [[ ! -f "${kaldi_file}" ]]; then
+        kaldi_url='https://github.com/kaldi-asr/kaldi/archive/master.tar.gz'
+        echo "Downloading kaldi (${kaldi_url})"
+        download "${kaldi_url}" "${kaldi_file}"
+    fi
+fi
+
+# -----------------------------------------------------------------------------
+# openfst
+# -----------------------------------------------------------------------------
+
+if [[ ! -d "${openfst_dir}/build" ]]; then
+    echo "Building openfst"
     tar -C "${build_dir}" -xf "${openfst_file}" && \
         cd "${openfst_dir}" && \
         ./configure "--prefix=${openfst_dir}/build" --enable-far --enable-static --enable-shared --enable-ngram-fsts && \
@@ -211,17 +250,8 @@ cp -R "${openfst_dir}"/build/lib/*.so* "${venv}/lib/"
 # -----------------------------------------------------------------------------
 
 # opengrm
-opengrm_dir="${build_dir}/opengrm-ngram-1.3.4"
 if [[ ! -d "${opengrm_dir}/build" ]]; then
     echo "Building opengrm"
-    opengrm_file="${download_dir}/opengrm-ngram-1.3.4.tar.gz"
-
-    if [[ ! -f "${opengrm_file}" ]]; then
-        opengrm_url='http://www.opengrm.org/twiki/GRM/NGramDownload/opengrm-ngram-1.3.4.tar.gz'
-        echo "Downloading opengrm (${opengrm_url})"
-        download "${opengrm_url}" "${opengrm_file}"
-    fi
-
     tar -C "${build_dir}" -xf "${opengrm_file}" && \
         cd "${opengrm_dir}" && \
         CXXFLAGS="-I${venv}/include" LDFLAGS="-L${venv}/lib" ./configure "--prefix=${opengrm_dir}/build" && \
@@ -238,17 +268,8 @@ cp -R "${opengrm_dir}"/build/lib/*.so* "${venv}/lib/"
 # phonetisaurus
 # -----------------------------------------------------------------------------
 
-phonetisaurus_dir="${build_dir}/phonetisaurus"
 if [[ ! -d "${phonetisaurus_dir}/build" ]]; then
     echo "Installing phonetisaurus"
-    phonetisaurus_file="${download_dir}/phonetisaurus-2019.tar.gz"
-
-    if [[ ! -f "${phonetisaurus_file}" ]]; then
-        phonetisaurus_url='https://github.com/synesthesiam/phonetisaurus-2019/releases/download/v1.0/phonetisaurus-2019.tar.gz'
-        echo "Downloading phonetisaurus (${phonetisaurus_url})"
-        download "${phonetisaurus_url}" "${phonetisaurus_file}"
-    fi
-
     tar -C "${build_dir}" -xf "${phonetisaurus_file}" && \
         cd "${phonetisaurus_dir}" && \
         ./configure "--prefix=${phonetisaurus_dir}/build" \
@@ -265,18 +286,8 @@ cp -R "${phonetisaurus_dir}"/build/bin/* "${venv}/bin/"
 # kaldi
 # -----------------------------------------------------------------------------
 
-kaldi_dir="${build_dir}/kaldi-master"
 if [[ ! -z "${no_kaldi}" || ! -d "${kaldi_dir}/build" ]]; then
     echo "Installing kaldi"
-    install libatlas-base-dev libatlas3-base
-    kaldi_file="${download_dir}/kaldi-2019.tar.gz"
-
-    if [[ ! -f "${kaldi_file}" ]]; then
-        kaldi_url='https://github.com/kaldi-asr/kaldi/archive/master.tar.gz'
-        echo "Downloading kaldi (${kaldi_url})"
-        download "${kaldi_url}" "${kaldi_file}"
-    fi
-
     tar -C "${build_dir}" -xf "${kaldi_file}" && \
         cd "${kaldi_dir}/tools" && \
         make -j "${make_threads}" && \
@@ -290,6 +301,10 @@ fi
 # Python requirements
 # -----------------------------------------------------------------------------
 
+# Pocketsphinx for Python (no sound)
+python3 -m pip install "${pocketsphinx_file}"
+
+# Other requirements
 python3 -m pip install \
         --global-option=build_ext --global-option="-L${venv}/lib" \
         -r "${this_dir}/requirements.txt"
