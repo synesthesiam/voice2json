@@ -1,10 +1,10 @@
 ![voice2json logo](docs/img/voice2json.svg)
 
-`voice2json` is a collection of [command-line tools](http://voice2json.org/commands.html) for <strong>offline speech/intent recognition</strong> on Linux. It is free, open source, and [supports 15 languages](#supported-languages). 
+`voice2json` is a collection of [command-line tools](https://voice2json.org/commands.html) for <strong>offline speech/intent recognition</strong> on Linux. It is free, open source, and [supports 15 languages](#supported-languages). 
 
-* [Getting Started](http://voice2json.org/#getting-started)
-* [Recipes](http://voice2json.org/recipes.html)
-* [About](http://voice2json.org/about.html)
+* [Getting Started](https://voice2json.org/#getting-started)
+* [Recipes](https://voice2json.org/recipes.html)
+* [About](https://voice2json.org/about.html)
 
 From the command-line:
 
@@ -14,7 +14,7 @@ $ voice2json transcribe-wav < turn-on-the-light.wav | \
       jq .
 ```
 
-produces a [JSON event](http://voice2json.org/formats.html) like:
+produces a [JSON event](https://voice2json.org/formats.html) like:
 
 ```json
 {
@@ -28,7 +28,7 @@ produces a [JSON event](http://voice2json.org/formats.html) like:
 }
 ```
 
-when trained with this [template](http://voice2json.org/sentences.html):
+when trained with this [template](https://voice2json.org/sentences.html):
 
 ```
 [LightState]
@@ -38,15 +38,15 @@ turn (<states>){state} [the] light
 
 `voice2json` is <strong>optimized for</strong>:
 
-* Sets of voice commands that are described well [by a grammar](http://voice2json.org/sentences.html)
-* Commands with [uncommon words or pronunciations](http://voice2json.org/commands.html#pronounce-word)
+* Sets of voice commands that are described well [by a grammar](https://voice2json.org/sentences.html)
+* Commands with [uncommon words or pronunciations](https://voice2json.org/commands.html#pronounce-word)
 * Commands or intents that [can vary at runtime](#unique-features)
 
 It can be used to:
 
-* Add voice commands to [existing applications or Unix-style workflows](http://voice2json.org/recipes.html#create-an-mqtt-transcription-service)
-* Provide basic [voice assistant functionality](http://voice2json.org/recipes.html#set-and-run-timers) completely offline on modest hardware
-* Bootstrap more [sophisticated speech/intent recognition systems](http://voice2json.org/recipes.html#train-a-rasa-nlu-bot)
+* Add voice commands to [existing applications or Unix-style workflows](https://voice2json.org/recipes.html#create-an-mqtt-transcription-service)
+* Provide basic [voice assistant functionality](https://voice2json.org/recipes.html#set-and-run-timers) completely offline on modest hardware
+* Bootstrap more [sophisticated speech/intent recognition systems](https://voice2json.org/recipes.html#train-a-rasa-nlu-bot)
 
 ---
 
