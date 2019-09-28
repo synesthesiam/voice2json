@@ -2,6 +2,10 @@
 
 `voice2json` is a collection of [command-line tools](commands.md) for <strong>offline speech/intent recognition</strong> on Linux. It is free, open source, and [supports 15 languages](#supported-languages). 
 
+* [Getting Started](#getting-started)
+* [Recipes](recipes.md)
+* [About](about.md)
+
 From the command-line:
 
 ```bash
@@ -26,7 +30,7 @@ produces a [JSON event](formats.md) like:
 
 when [trained](commands.md#train-profile) with this [template](sentences.md):
 
-```ini
+```
 [LightState]
 states = (on | off)
 turn (<states>){state} [the] light
@@ -60,7 +64,7 @@ It can be used to:
 
 `voice2json` needs a description of the voice commands you want to be recognized in a file named `sentences.ini`. This can be as simple as a listing of intents and sentences:
 
-```ini
+```
 [GarageDoor]
 open the garage door
 close the garage door
@@ -79,10 +83,10 @@ When [trained](commands.md#train-profile), `voice2json` will transform [audio da
 
 ### Assumptions
 
-voice2json is designed to work under the following assumptions:
+`voice2json` is designed to work under the following assumptions:
 
 * Speech can be segmented into voice commands by a [wake word](commands.md#wait-wake) + [silence](commands.md#record-command), or via a push-to-talk mechanism
-* Voice commands contain at most **one intent**
+* A voice commands contains at most **one intent**
 * Intents and [slot values](sentences.md#slot-references) are equally likely
 
 ---
@@ -111,7 +115,7 @@ Dragon Naturally Speaking and Snips offer local installations and offline functi
 
 `voice2json` is **not an A.I.**. It does not attempt to guess what you want to do, and keeps **everything** on your local machine. There is no online account sign-up needed, **no privacy policy** to review, and no advertisements. All generated artifacts are in [standard data formats](formats.md); typically just text.
 
-Once you've installed `voice2json` and [downloaded a profile](https://github.com/synesthesiam/voice2json-profiles), there is no longer a need for an Internet connection. At runtime, `voice2json` will only every write to your [profile directory](profiles.md) or the system's temporary directory (`/tmp`).
+Once you've [installed voice2json](install.md) and [downloaded a profile](install.md#download-profile), there is no longer a need for an Internet connection. At runtime, `voice2json` will only every write to your [profile directory](profiles.md) or the system's temporary directory (`/tmp`).
 
 ---
 
