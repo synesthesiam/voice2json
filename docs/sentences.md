@@ -1,10 +1,10 @@
-# Voice Command Language
+# Template Language
 
-Voice commands are recognized by voice2json from a set of sentences that you define in your [profile](profiles.md). These are stored in an [ini file](https://docs.python.org/3/library/configparser.html) whose "values" are simplified [JSGF grammars](https://www.w3.org/TR/jsgf/). The set of all sentences *represented* in these grammars is used to create an [ARPA language model](https://cmusphinx.github.io/wiki/arpaformat/) and an intent recognizer.
+Voice commands are recognized by `voice2json` from a set of **template sentences** that you define in your [profile](profiles.md). These are stored in an [ini file](https://docs.python.org/3/library/configparser.html) (`sentences.ini`) whose  section values are simplified [JSGF grammars](https://www.w3.org/TR/jsgf/). The set of all sentences *represented* in these grammars is used to create an [ARPA language model](https://cmusphinx.github.io/wiki/arpaformat/) and an intent recognizer. See [the whitepaper](whitepaper.md) for details.
 
 ## Motivation
 
-The combination of an ini file and JSGF is arguably an abuse of two file formats, so why do this? At a minimum, voice2json needs a set of sentences, grouped by intent, in order to train the speech and intent recognizers. A fairly pleasant way to express this in text is as follows:
+The combination of an ini file and JSGF is arguably an abuse of *two* file formats, so why do this? At a minimum, `voice2json` needs a set of sentences, grouped by intent, in order to train the speech and intent recognizers. A fairly pleasant way to express this in text (I think) is as follows:
 
 ```
 [Intent 1]
@@ -29,13 +29,13 @@ Each of these shortcomings are addressed by considering the space between intent
 
 ## Optional Words
 
-Within a sentence, you can specify optional word(s) by surrounding them `[with brackets]`. These will generate at least two sentences: one with the optional word(s), and one without. So the following sentence template:
+Within a sentence, you can specify optional word(s) by surrounding them `[with brackets]`. These represents at least two sentences: one with the optional word(s), and one without. So the following sentence template:
 
 ```
 [an] example sentence [with] some optional words
 ```
 
-will generate 4 concrete sentences:
+represents 4 concrete sentences:
 
 1. `an example sentence with some optional words`
 2. `example sentence with some optional words`
@@ -44,13 +44,13 @@ will generate 4 concrete sentences:
 
 ## Alternatives
 
-A set of items, where only one is present at a time, is `(specified | like | this)`. For N items, there will be N sentences generated (unless you nest optional words, etc.). The template:
+A set of items, where only one is present at a time, is `(specified | like | this)`. For N alternatives, there will be N different sentences represented (unless you nest optional words, etc.). The template:
 
 ```
 set the light to (red | green | blue)
 ```
 
-will generate:
+will represent:
 
 1. `set the light to red`
 2. `set the light to green`
@@ -65,7 +65,7 @@ colors = (red | green | blue)
 set the light to <colors>
 ```
 
-which will generate the same 4 sentences as above. Importantly, you can **share rules** across intents by prefixing the rule's name with the intent name followed by a dot:
+which will represent the same 4 sentences as above. Importantly, you can **share rules** across intents by prefixing the rule's name with the intent name followed by a dot:
 
 ```
 [SetLightColor]
@@ -77,6 +77,42 @@ is the light <SetLightColor.colors>
 ```
 
 The second intent (`GetLightColor`) references the `colors` rule from `SetLightColor`.
+
+## Tags
+
+The example templates above represent sentences for training the speech recognizer, but using them as-is to train the *intent recognizer* will not be satisfactory. The **color** in the `SetLightColor` intent, for example, is obviously important for a system that will fulfill it (i.e., *actually* change a light's color). `voice2json`'s intent recognizer just needs a little extra information from you, the user.
+
+Luckily, JSGF has a [tag feature](https://www.w3.org/TR/jsgf/#15057) that lets you annotate portions of sentences/rules. `voice2json` interprets that the JSGF tag text (**inside** `{...}`) as *slot/entity names* and the tagged portions of the sentence (**left of** `{...}`) as *slot/entity values*. The `SetLightColor` example can be extended with tags like this:
+
+```
+[SetLightColor]
+colors = (red | green | blue){color}
+set the light to <colors>
+```
+
+With the `{color}` tag attached to the `(red | green | blue)` alternative set, each color name will carry the tag. This is the same as typing `((red){color} | (green){color} | (blue){color})`, but less verbose. This template now represents the following **tagged sentences**:
+
+1. `set the light to [red](color)`
+2. `set the light to [green](color)`
+3. `set the light to [blue](color)`
+
+When the `SetLightColor` intent is recognized now, perhaps with "set the light to red", the corresponding [JSON event](formats.md#intents) will have a `color` entity/slot with the value of `red`:
+
+```json
+{
+    "intent": {
+        "name": "SetColor"
+    },
+    "entities": [
+        { "entity": "color", "value": "red" }
+    ],
+    "slots": {
+        "color": "red"
+    }
+}
+```
+
+The downstream system that will use this event to fulfill the user's intent (e.g., [Node-RED](https://nodered.org)) now only has to inspect the `color` slot to decide what to do! 
 
 ## Word/Tag Substitutions
 
@@ -218,34 +254,6 @@ You can also use substitution to add words that are not present in the speech:
 
 will accept the spoken sentence "turn on the light", but emit "please turn on the light" in the recognized intent.
 
-## Tags
-
-The example templates above will generate sentences for training the speech recognizer, but using them to train the intent recognizer will not be satisfactory. The `SetLightColor` intent, when recognized, will result in a Home Assistant event called `rhasspy_SetLightColor`. But the actual *color* will not be provided because the intent recognizer is not aware that a `color` slot should exist (and has the values `red`, `green`, and `blue`).
-
-Luckily, JSGF has a [tag feature](https://www.w3.org/TR/jsgf/#15057) that lets you annotate portions of sentences/rules. ``voice2json`` assumes that the tags themselves are *slot/entity names* and the tagged portions of the sentence are *slot/entity values*. The `SetLightColor` example can be extended with tags like this:
-
-```
-[SetLightColor]
-colors = (red | green | blue){color}
-set the light to <colors>
-```
-
-With the `{color}` tag attached to the `(red | green | blue)` alternative set, each color name will carry the tag. This is the same as typing `((red){color} | (green){color} | (blue){color})`, but less verbose. `voice2json` will now generate the following **tagged sentences**:
-
-1. `set the light to [red](color)`
-2. `set the light to [green](color)`
-3. `set the light to [blue](color)`
-
-When the `SetLightColor` intent is recognized now, the corresponding JSON event (`rhasspy_SetLightColor` in Home Assistant) will have the following properties:
-
-```json
-{
-  "color": "red"
-}
-```
-
-A Home Assistant [automation](https://www.home-assistant.io/docs/automation) can use the slot values to take an appropriate action, such as [setting an RGB light's color](https://www.home-assistant.io/docs/automation/action/) to `[255,0,0]` (red).
-
 
 ## Slot References
 
@@ -263,9 +271,9 @@ movies = ("Primer" | "Moon" | "Chronicle" | "Timecrimes" | "Coherence" | ... )
 ```
 
 It would be much easier if this list was stored externally, but could be *referenced* in the appropriate places in the grammar.
-This is possible in `voice2json` by placing text files in the `speech_to_text.slots_dir` directory specified in your [profile](profiles.md) ("slots" by default).
+This is possible in `voice2json` by placing text files in the directory given in `training.slots-directory` from your [profile](profiles.md) (`slots/` by default).
 
-If you're using the English (`en`) profile, for example, create the file `profiles/en/slots/movies` and add the following content:
+By putting the movie names above in a text file at `slots/movies`:
 
 ```
 Primer
@@ -275,24 +283,32 @@ Timecrimes
 Coherence
 ```
 
-This list of movie can now be referenced as `$movies` in your your `sentences.ini` file! Something like:
+you can now reference them as `$movies` in your your `sentences.ini` file! Something like:
 
 ```
 [PlayMovie]
 play ($movies){movie_name}
 ```
 
-will generate `rhasspy_PlayMovie` events like:
+will generate JSON events like:
 
 ```json
 {
-  "movie_name": "Primer"
+    "intent": {
+        "name": "PlayMovie"
+    },
+    "entities": [
+        { "entity": "movie_name", "value": "Primer" }
+    ]
+    "slots": {
+        "movie_name": "Primer"
+    }
 }
 ```
 
-If you update the `movies` file, make sure to re-train `voice2json` in order to pick up the new movie names.
+If you update the `movies` file, make sure to [re-train voice2json](commands.md#train-profile) in order to pick up the new movie names.
 
-## Special Cases
+## Escaping
 
 If one of your sentences happens to start with an optional word (e.g., `[the]`), this can lead to a problem:
 
@@ -312,6 +328,12 @@ Now `[the]` will be properly interpreted as a sentence under `[SomeIntent]`. You
 
 ## Missing JSGF Features
 
-* Plus Operator
-* Kleene Star
-* Weights
+The following features from the [full JSGF specification](https://www.w3.org/TR/jsgf/) are not supported in `voice2json`:
+
+* Plus Operator (`+`)
+* Kleene Star (`*`)
+* Weights (`/10/`)
+* Recursion
+* `<NULL>` and `<VOID>`
+* Documentation comments (`/**`)
+    * Just use ini-style comments instead (`#`)
