@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 this_dir="$( cd "$( dirname "$0" )" && pwd )"
 
+CPU_ARCH="$(lscpu | awk '/^Architecture/{print $2}')"
+
 # -----------------------------------------------------------------------------
 # Command-line Arguments
 # -----------------------------------------------------------------------------
@@ -9,7 +11,7 @@ this_dir="$( cd "$( dirname "$0" )" && pwd )"
 
 DEFINE_string 'venv' "${this_dir}/.venv" 'Path to create virtual environment'
 DEFINE_string 'download-dir' "${this_dir}/download" 'Directory to cache downloaded files'
-DEFINE_string 'build-dir' "${this_dir}/build" 'Directory to build dependencies in'
+DEFINE_string 'build-dir' "${this_dir}/build_${CPU_ARCH}" 'Directory to build dependencies in'
 DEFINE_boolean 'create' true 'Create a virtual environment'
 DEFINE_boolean 'kaldi' true 'Install Kaldi speech recognizer'
 DEFINE_boolean 'runtime' true 'Install packages needed for building and running'

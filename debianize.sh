@@ -18,11 +18,12 @@ fi
 
 package_name="${name}_${version}_${arch}"
 package_dir="debian/${package_name}"
+build_dir="build_${CPU_ARCH}"
 output_dir="${package_dir}/usr/lib/${name}"
 mkdir -p "${output_dir}/${name}"
 
 # Copy PyInstaller-generated files
-dist_dir="dist/voice2json_${CPU_ARCH}"
+dist_dir="dist_${CPU_ARCH}/voice2json"
 if [[ -d "${dist_dir}/${name}" ]]; then
     rsync -av --delete \
           "${dist_dir}/${name}/" \
@@ -35,23 +36,23 @@ if [[ -d "${dist_dir}/${name}" ]]; then
 fi
 
 # Copy Kaldi
-kaldi_output_dir="${package_dir}/usr/lib/${name}/build/kaldi-master"
+kaldi_output_dir="${package_dir}/usr/lib/${name}/build_${CPU_ARCH}/kaldi-master"
 rm -rf "${kaldi_output_dir}"
 mkdir -p "${kaldi_output_dir}"
 
 rsync -av \
       --files-from 'debian/kaldi_include.txt' \
-      "build/kaldi-master/" \
+      "${build_dir}/kaldi-master/" \
       "${kaldi_output_dir}/"
 
 # Avoid link recursion
-rm -f 'build/kaldi-master/egs/wsj/s5/utils/utils'
+rm -f '${build_dir}/kaldi-master/egs/wsj/s5/utils/utils'
 
 for kaldi_sync_dir in 'egs/wsj/s5/utils' 'tools/openfst/bin' 'src/lib';
 do
     rsync -av \
           --copy-links \
-          "build/kaldi-master/${kaldi_sync_dir}/" \
+          "${build_dir}/kaldi-master/${kaldi_sync_dir}/" \
           "${kaldi_output_dir}/${kaldi_sync_dir}/"
 done
 
