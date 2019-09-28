@@ -1,8 +1,8 @@
 .venv/
-build/
+build_*/
 __pycache__/
 download/
-dist/
+dist_*/
 .doit.db*
 debian/*.deb
 debian/**/usr/lib/voice2json/voice2json/

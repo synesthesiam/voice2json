@@ -86,7 +86,7 @@ word2 P1 P4 P5
 ...
 ```
 
-Each line starts with a word and, after some whitespace, a list of phonemes are given (separated by whitespace). These phonemes must match what the acoustic model was trained to recognize.
+Each line starts with a word and, after some whitespace, a list of phonemes are given (separated by whitespace). These phonemes must match what the [acoustic model](whitepaper.md) was trained to recognize.
 
 Multiple pronunciations for the same word are possible, and may optionally contain an index:
 
@@ -124,6 +124,8 @@ A `voice2json` [profile](profiles.md) will typically contain 2 language models:
 ## Grapheme To Phoneme Models
 
 A grapheme-to-phoneme (g2p) model helps guess the pronunciations of words outside of [the dictionary](#pronunciation-dictionaries). These models are trained on each profile's `base_dictionary.txt` file using [phonetisaurus](https://github.com/AdolfVonKleist/Phonetisaurus) and saved in the [OpenFST](http://www.openfst.org) binary format.
+
+G2P prediction can also be done using [transformer models](https://github.com/cmusphinx/g2p-seq2seq).
 
 ## eSpeak Phoneme Maps
 

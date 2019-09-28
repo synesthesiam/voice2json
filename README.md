@@ -9,7 +9,8 @@
 From the command-line:
 
 ```bash
-$ voice2json transcribe-wav < turn-on-the-light.wav | \
+$ voice2json transcribe-wav \
+      < turn-on-the-light.wav | \
       voice2json recognize-intent | \
       jq .
 ```

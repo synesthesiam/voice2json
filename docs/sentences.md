@@ -150,7 +150,7 @@ name = (living room lamp){name:switch_1} | (garage light){name:switch_2}
 turn (<state>){state} [the] (<name>)
 ```
 
-The syntax `on:enable` tells `voice2json` to *listen* for the word `on`, but *emit* the word `enable` in its place. Similarly, the syntax `(living room lamp){name:switch_1}` tells `voice2json` to listen for `living room lamp`, but *actually put* `switch_1` in the `name` slot:
+The syntax `on:enable` tells `voice2json` to *listen* for the word `on`, but *emit* the word `enable` in its place. Similarly, the syntax `(living room lamp){name:switch_1}` tells `voice2json` to listen for `living room lamp`, but *actually* put `switch_1` in the `name` slot:
 
 ```json
 {
@@ -241,7 +241,7 @@ a: red
 an: orange
 ```
 
-This will *only* match `turn on a red light` and `turn on an orange light` as well as ensuring that the `color` slot does not contain "a" or "an"!
+This will *only* match the spoken commands `turn on a red light` and `turn on an orange light`, and the `color` slot will never contain "a" or "an"!
 
 ### Extra Words
 
@@ -273,7 +273,7 @@ movies = ("Primer" | "Moon" | "Chronicle" | "Timecrimes" | "Coherence" | ... )
 It would be much easier if this list was stored externally, but could be *referenced* in the appropriate places in the grammar.
 This is possible in `voice2json` by placing text files in the directory given in `training.slots-directory` from your [profile](profiles.md) (`slots/` by default).
 
-By putting the movie names above in a text file at `slots/movies`:
+By putting the movie names above in a text file at `slots/movies`...
 
 ```
 Primer
@@ -306,7 +306,7 @@ will generate JSON events like:
 }
 ```
 
-If you update the `movies` file, make sure to [re-train voice2json](commands.md#train-profile) in order to pick up the new movie names.
+If you update the `movies` file, make sure to [re-train voice2json](commands.md#train-profile) in order to pick up the new movie names. Only intent grammars that reference `$movies` will be re-built.
 
 ## Escaping
 
