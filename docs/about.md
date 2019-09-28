@@ -155,7 +155,7 @@ The notion of a **profile**, borrowed originally from Jasper, was extended in v2
 
 A major change from v1.5 was the introduction of **sentences.ini**, a new format for specifying training sentences. This format uses simplified [JSGF grammars](https://www.w3.org/TR/jsgf/) to concisely describe sentences with optional words, alternative clauses, and re-usable rules. These sentence *templates* are grouped using ini-style blocks, which each represent an intent.
 
-```ini
+```
 [ChangeLightState]
 states = (on | off)
 turn (<states>){state} the (living room lamp){name}

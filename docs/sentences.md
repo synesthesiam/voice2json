@@ -6,7 +6,7 @@ Voice commands are recognized by voice2json from a set of sentences that you def
 
 The combination of an ini file and JSGF is arguably an abuse of two file formats, so why do this? At a minimum, voice2json needs a set of sentences, grouped by intent, in order to train the speech and intent recognizers. A fairly pleasant way to express this in text is as follows:
 
-```ini
+```
 [Intent 1]
 sentence 1
 sentence 2
@@ -31,7 +31,7 @@ Each of these shortcomings are addressed by considering the space between intent
 
 Within a sentence, you can specify optional word(s) by surrounding them `[with brackets]`. These will generate at least two sentences: one with the optional word(s), and one without. So the following sentence template:
 
-```ini
+```
 [an] example sentence [with] some optional words
 ```
 
@@ -46,7 +46,7 @@ will generate 4 concrete sentences:
 
 A set of items, where only one is present at a time, is `(specified | like | this)`. For N items, there will be N sentences generated (unless you nest optional words, etc.). The template:
 
-```ini
+```
 set the light to (red | green | blue)
 ```
 
@@ -60,14 +60,14 @@ will generate:
 
 Rules allow you to reuse common phrases, alternatives, etc. Rules are defined by `rule_name = ...` alongside your sentences and referenced by `<rule_name>`. The template above with colors could be rewritten as:
 
-```ini
+```
 colors = (red | green | blue)
 set the light to <colors>
 ```
 
 which will generate the same 4 sentences as above. Importantly, you can **share rules** across intents by prefixing the rule's name with the intent name followed by a dot:
 
-```ini
+```
 [SetLightColor]
 colors = (red | green | blue)
 set the light to <colors>
@@ -211,7 +211,7 @@ This will *only* match `turn on a red light` and `turn on an orange light` as we
 
 You can also use substitution to add words that are not present in the speech:
 
-```ini
+```
 [LightState]
 :please turn on the light
 ```
@@ -224,7 +224,7 @@ The example templates above will generate sentences for training the speech reco
 
 Luckily, JSGF has a [tag feature](https://www.w3.org/TR/jsgf/#15057) that lets you annotate portions of sentences/rules. ``voice2json`` assumes that the tags themselves are *slot/entity names* and the tagged portions of the sentence are *slot/entity values*. The `SetLightColor` example can be extended with tags like this:
 
-```ini
+```
 [SetLightColor]
 colors = (red | green | blue){color}
 set the light to <colors>
@@ -251,14 +251,14 @@ A Home Assistant [automation](https://www.home-assistant.io/docs/automation) can
 
 In the `SetLightColor` example above, the color names are stored in `sentences.ini` as a rule:
 
-```ini
+```
 colors = (red | green | blue)
 ```
 
 Ths is convenient when the list of colors is small, changes infrequently, and does not depend on an external service.
 But what if this was a list of movie names that were stored on your [Kodi Home Theater](https://kodi.tv)?
 
-```ini
+```
 movies = ("Primer" | "Moon" | "Chronicle" | "Timecrimes" | "Coherence" | ... )
 ```
 
@@ -277,7 +277,7 @@ Coherence
 
 This list of movie can now be referenced as `$movies` in your your `sentences.ini` file! Something like:
 
-```ini
+```
 [PlayMovie]
 play ($movies){movie_name}
 ```
@@ -296,14 +296,14 @@ If you update the `movies` file, make sure to re-train `voice2json` in order to 
 
 If one of your sentences happens to start with an optional word (e.g., `[the]`), this can lead to a problem:
 
-```ini
+```
 [SomeIntent]
 [the] problem sentence
 ```
 
 Python's [configparser](https://docs.python.org/3/library/configparser.html) will interpret `[the]` as a new section header, which will produce a new intent, grammar, etc. `voice2json` handles this special case by using a backslash escape sequence (`\[`):
 
-```ini
+```
 [SomeIntent]
 \[the] problem sentence
 ```

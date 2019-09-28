@@ -226,7 +226,7 @@ test_fst
 
 `voice2json` splits the contents of a [sentence template file](sentences.md) (`sentences.ini`) into a set of [JSGF grammars](https://www.w3.org/TR/jsgf/), one per `[Intent]`. Each grammar is then transformed into an FST.
 
-```ini
+```
 [LightState]
 states = (on | off)
 turn (<states>){state} [the] light

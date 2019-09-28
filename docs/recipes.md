@@ -61,7 +61,7 @@ The [listen_and_launch.sh](https://github.com/synesthesiam/voice2json/blob/maste
 
 Our `sentences.ini` file is very simple:
 
-```ini
+```
 [LaunchProgram]
 (start | run | launch) ($program){program}
 ```
@@ -87,7 +87,7 @@ After following the [installation instructions](https://github.com/synesthesiam/
 
 A common task for voice assistants is to set timers. Here, we demonsrate a "simple" timer that supports a single timer that's less than 10 hours in one second increments:
 
-```ini
+```
 [SetTimer]
 two_to_nine = (two:2 | three:3 | four:4 | five:5 | six:6 | seven:7 | eight:8 | nine:9)
 one_to_nine = (one:1 | <two_to_nine>)
@@ -165,7 +165,7 @@ This will run up to 10 copies of `voice2json` in parallel and output a line of J
 
 ## Train a Rasa NLU Bot
 
-```ini
+```
 [GetTime]
 what time is it
 tell me the time

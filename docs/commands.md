@@ -121,7 +121,7 @@ During training, `voice2json` can **mix** the large, open ended language model i
 
 To see the effect of language model mixing, consder a simple `sentences.ini` file:
 
-```ini
+```
 [ChangeLightState]
 turn (on){state} the living room lamp
 ```
