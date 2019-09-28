@@ -10,9 +10,9 @@ this_dir="$( cd "$( dirname "$0" )" && pwd )"
 DEFINE_string 'venv' "${this_dir}/.venv" 'Path to create virtual environment'
 DEFINE_string 'download-dir' "${this_dir}/download" 'Directory to cache downloaded files'
 DEFINE_string 'build-dir' "${this_dir}/build" 'Directory to build dependencies in'
-DEFINE_boolean 'no-create' false 'Do not re-create the virtual environment'
-DEFINE_boolean 'no-kaldi' false 'Do not install Kaldi speech recognizer'
-DEFINE_boolean 'no-runtime' false 'Only install packages needed for building'
+DEFINE_boolean 'create' true 'Create a virtual environment'
+DEFINE_boolean 'kaldi' true 'Install Kaldi speech recognizer'
+DEFINE_boolean 'runtime' true 'Install packages needed for building and running'
 DEFINE_integer 'make-threads' 4 'Number of threads to use with make' 'j'
 
 FLAGS "$@" || exit $?
@@ -28,15 +28,15 @@ venv="${FLAGS_venv}"
 download_dir="${FLAGS_download_dir}"
 build_dir="${FLAGS_build_dir}"
 
-if [[ "${FLAGS_no_create}" -eq "${FLAGS_TRUE}" ]]; then
+if [[ "${FLAGS_create}" -eq "${FLAGS_FALSE}" ]]; then
     no_create='true'
 fi
 
-if [[ "${FLAGS_no_kaldi}" -eq "${FLAGS_TRUE}" ]]; then
+if [[ "${FLAGS_kaldi}" -eq "${FLAGS_FALSE}" ]]; then
     no_kaldi='true'
 fi
 
-if [[ "${FLAGS_no_runtime}" -eq "${FLAGS_TRUE}" ]]; then
+if [[ "${FLAGS_runtime}" -eq "${FLAGS_FALSE}" ]]; then
     no_runtime='true'
 fi
 

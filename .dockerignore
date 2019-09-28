@@ -1,7 +1,7 @@
 *
-!debian/
 !docker/multiarch_build/
 !etc/
 !download/
 !requirements.txt
+!install.sh
 !voice2json.spec

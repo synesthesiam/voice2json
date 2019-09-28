@@ -7,16 +7,17 @@ block_cipher = None
 venv = Path.cwd() / ".venv"
 bin_dir = Path(os.environ.get("spec_bin_dir", venv / "bin"))
 lib_dir = Path(os.environ.get("spec_lib_dir", venv / "lib"))
+site_dir = Path(
+    os.environ.get("spec_site_dir", venv / "lib" / "python3.6" / "site-packages")
+)
+
+pywrapfst_path = list(site_dir.glob("pywrapfst.*.so"))[0]
 
 a = Analysis(
     [Path.cwd() / "voice2json" "/__main__.py"],
     pathex=["."],
     binaries=[
-        (
-            lib_dir
-            / "python3.6/site-packages/pywrapfst.cpython-36m-x86_64-linux-gnu.so",
-            ".",
-        ),
+        (pywrapfst_path, "."),
         (lib_dir / "libfstfarscript.so.13", "."),
         (lib_dir / "libfstscript.so.13", "."),
         (lib_dir / "libfstfar.so.13", "."),

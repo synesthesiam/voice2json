@@ -20,7 +20,7 @@ docker: debian
 # -----------------------------------------------------------------------------
 
 docker-multiarch-build:
-	docker build . -f docker/multiarch_build/Dockerfile.debian \
+	docker build . -f docker/multiarch_build/Dockerfile \
         --build-arg DEBIAN_ARCH=armhf \
         --build-arg CPU_ARCH=armv7l \
         --build-arg BUILD_FROM=arm32v7/python:3.6-slim-stretch \
