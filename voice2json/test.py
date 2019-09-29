@@ -188,7 +188,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--voice2json", help="Directory with voice2json source code")
     parser.add_argument(
-        "--profile", "-p", action="append", help="Include profile in test"
+        "--profile", "-p", action="append", default=[], help="Include profile in test"
     )
     prog_name = sys.argv[0]
     args, rest = parser.parse_known_args()

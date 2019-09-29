@@ -2,6 +2,8 @@
 import os
 from pathlib import Path
 
+from PyInstaller.utils.hooks import copy_metadata
+
 block_cipher = None
 
 venv = Path.cwd() / ".venv"
@@ -12,12 +14,14 @@ site_dir = Path(
 )
 
 pywrapfst_path = list(site_dir.glob("pywrapfst.*.so"))[0]
+webrtcvad_path = list(site_dir.glob("_webrtcvad.*.so"))[0]
 
 a = Analysis(
     [Path.cwd() / "voice2json" "/__main__.py"],
     pathex=["."],
     binaries=[
         (pywrapfst_path, "."),
+        (webrtcvad_path, "."),
         (lib_dir / "libfstfarscript.so.13", "."),
         (lib_dir / "libfstscript.so.13", "."),
         (lib_dir / "libfstfar.so.13", "."),
@@ -33,7 +37,7 @@ a = Analysis(
         (bin_dir / "farcompilestrings", "."),
         (bin_dir / "phonetisaurus-apply", "."),
     ],
-    datas=[],
+    datas=copy_metadata("webrtcvad"),
     hiddenimports=["doit", "dbm.gnu", "antlr4-python3-runtime", "networkx", "numbers"],
     hookspath=[],
     runtime_hooks=[],

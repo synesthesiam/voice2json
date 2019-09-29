@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+this_dir="$( cd "$( dirname "$0" )" && pwd )"
+bash "${this_dir}/../../voice2json.sh" "$@"

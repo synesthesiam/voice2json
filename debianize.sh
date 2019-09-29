@@ -24,9 +24,9 @@ mkdir -p "${output_dir}/${name}"
 
 # Copy PyInstaller-generated files
 dist_dir="dist_${CPU_ARCH}/voice2json"
-if [[ -d "${dist_dir}/${name}" ]]; then
+if [[ -d "${dist_dir}" ]]; then
     rsync -av --delete \
-          "${dist_dir}/${name}/" \
+          "${dist_dir}/" \
           "${output_dir}/${name}"
     # Remove all symbols (Liantian warning)
     strip --strip-all "${output_dir}/${name}"/*.so* || true

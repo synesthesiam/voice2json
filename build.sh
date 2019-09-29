@@ -38,6 +38,6 @@ CPU_ARCH="$(lscpu | awk '/^Architecture/{print $2}')"
 
 pyinstaller\
     -y \
-    --workpath "build_${CPU_ARCH}/voice2json" \
-    --distpath "dist_${CPU_ARCH}/voice2json" \
+    --workpath "build_${CPU_ARCH}" \
+    --distpath "dist_${CPU_ARCH}" \
     "$@"
