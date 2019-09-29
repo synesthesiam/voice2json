@@ -24,9 +24,9 @@ if [[ "${FLAGS_venv}" -eq "${FLAGS_TRUE}" && -d "${venv}" ]]; then
     export spec_site_dir="${venv}/lib/python3.6/site-packages"
 else
     # Assume system install
-    export spec_bin_dir="/usr/local/bin"
-    export spec_lib_dir="/usr/local/lib"
-    export spec_site_dir="/usr/local/lib/python3.6/site-packages"
+    export spec_bin_dir="/usr/bin"
+    export spec_lib_dir="/usr/lib"
+    export spec_site_dir="/usr/lib/python3.6/site-packages"
 fi
 
 if [[ -z "$1" ]]; then

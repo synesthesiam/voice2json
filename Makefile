@@ -28,8 +28,16 @@ docker-multiarch-build:
         --build-arg CPU_ARCH=armv7l \
         --build-arg BUILD_FROM=arm32v7/python:3.6-slim-stretch \
         -t voice2json/multi-arch-build:armhf
+	docker run -it \
+      -v "$$(pwd):$$(pwd)" -w "$$(pwd)" \
+      voice2json/multi-arch-build:armhf \
+      DEBIAN_ARCH=armhf make debian
 	docker build . -f docker/multiarch_build/Dockerfile \
         --build-arg DEBIAN_ARCH=aarch64 \
         --build-arg CPU_ARCH=arm64v8 \
         --build-arg BUILD_FROM=arm64v8/python:3.6-slim-stretch \
         -t voice2json/multi-arch-build:aarch64
+	docker run -it \
+      -v "$$(pwd):$$(pwd)" -w "$$(pwd)" \
+      voice2json/multi-arch-build:aarch64 \
+      DEBIAN_ARCH=aarch64 make debian
