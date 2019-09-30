@@ -5,7 +5,7 @@ from typing import Optional, Dict, Set, List
 import pywrapfst as fst
 import networkx as nx
 
-from .JsgfParserListener import JsgfParserListener
+from .JsgfListener import JsgfListener
 
 # -----------------------------------------------------------------------------
 
@@ -17,8 +17,10 @@ from .JsgfParserListener import JsgfParserListener
 # * slot
 
 
-class DependencyListener(JsgfParserListener):
-    def __init__(self, eps="<eps>"):
+class DependencyListener(JsgfListener):
+    def __init__(self, grammar:str, eps="<eps>"):
+        super().__init__(grammar)
+
         # State
         self.grammar_name: Optional[str] = None
         self.in_rule: bool = False
@@ -103,7 +105,7 @@ class DependencyListener(JsgfParserListener):
     # -------------------------------------------------------------------------
 
     def enterTagBody(self, ctx):
-        self.tag_name = self._get_text(ctx)
+        self.tag_name = ctx.getText() #self._get_text(ctx)
         self.tag_substitution = None
 
         if ":" in self.tag_name:
@@ -129,7 +131,7 @@ class DependencyListener(JsgfParserListener):
         if (not self.in_rule) or self.in_rule_reference:
             return
 
-        literal_text = self._get_text(ctx)
+        literal_text = ctx.getText() #self._get_text(ctx)
         self.literal_words = []
 
         # Split words by whitespace
@@ -164,9 +166,9 @@ class DependencyListener(JsgfParserListener):
 
     # -------------------------------------------------------------------------
 
-    def _get_text(self, ctx):
-        # Get the original text *with* whitespace from ANTLR
-        input_stream = ctx.start.getInputStream()
-        start = ctx.start.start
-        stop = ctx.stop.stop
-        return input_stream.getText(start, stop)
+    # def _get_text(self, ctx):
+    #     # Get the original text *with* whitespace from ANTLR
+    #     input_stream = ctx.start.getInputStream()
+    #     start = ctx.start.start
+    #     stop = ctx.stop.stop
+    #     return input_stream.getText(start, stop)

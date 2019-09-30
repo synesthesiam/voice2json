@@ -18,10 +18,6 @@ import antlr4
 import pywrapfst as fst
 import networkx as nx
 
-from .JsgfParser import JsgfParser
-from .JsgfLexer import JsgfLexer
-from .JsgfParserListener import JsgfParserListener
-
 from .FSTListener import FSTListener
 from .DependencyListener import DependencyListener
 
@@ -44,26 +40,10 @@ JSGF_RESERVED = re.compile(r"[;=,*+()<>{}\[]]")
 # -----------------------------------------------------------------------------
 
 
-def get_parser(grammar: str) -> JsgfParser:
-    """Returns an ANTLR JSGF parser for a JSGF grammar."""
-    # Tokenize
-    input_stream = antlr4.InputStream(grammar)
-    lexer = JsgfLexer(input_stream)
-    tokens = antlr4.CommonTokenStream(lexer)
-
-    # Parse
-    return JsgfParser(tokens)
-
-
 def get_grammar_dependencies(grammar: str) -> DependencyListener:
     """Parses JSGF grammar and creates a dependency graph."""
-    # Parse
-    parser = get_parser(grammar)
-    context = parser.r()
-    walker = antlr4.ParseTreeWalker()
-
-    listener = DependencyListener()
-    walker.walk(listener, context)
+    listener = DependencyListener(grammar)
+    listener.walk()
 
     return listener
 
@@ -72,13 +52,8 @@ def grammar_to_fsts(
     grammar: str, replace_fsts: Dict[str, fst.Fst] = {}, eps: str = "<eps>"
 ) -> FSTListener:
     """Transforms JSGF grammar into an FST."""
-    # Parse
-    parser = get_parser(grammar)
-    context = parser.r()
-    walker = antlr4.ParseTreeWalker()
-
-    listener = FSTListener(eps=eps)
-    walker.walk(listener, context)
+    listener = FSTListener(grammar, eps=eps)
+    listener.walk()
 
     # Check for replacements
     grammar_name = listener.grammar_name

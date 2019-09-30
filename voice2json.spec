@@ -38,7 +38,7 @@ a = Analysis(
         (bin_dir / "phonetisaurus-apply", "."),
     ],
     datas=copy_metadata("webrtcvad"),
-    hiddenimports=["doit", "dbm.gnu", "antlr4-python3-runtime", "networkx", "numbers"],
+    hiddenimports=["doit", "dbm.gnu", "networkx", "numbers"],
     hookspath=[],
     runtime_hooks=[],
     excludes=[],

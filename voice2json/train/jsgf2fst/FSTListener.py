@@ -13,8 +13,8 @@ from .DependencyListener import DependencyListener
 
 
 class FSTListener(DependencyListener):
-    def __init__(self, eps: str = "<eps>"):
-        super().__init__()
+    def __init__(self, grammar: str, eps: str = "<eps>"):
+        super().__init__(grammar)
 
         self.input_symbols.add_symbol(eps)
         self.output_symbols.add_symbol(eps)
@@ -135,9 +135,11 @@ class FSTListener(DependencyListener):
         # Close previous alternative
         last_state = self.last_states[self.rule_name]
         end_state = self.alt_ends[self.group_depth]
-        self.fst.add_arc(
-            last_state, fst.Arc(self.in_eps, self.out_eps, self.weight_one, end_state)
-        )
+        if last_state != end_state:
+            self.fst.add_arc(
+                last_state,
+                fst.Arc(self.in_eps, self.out_eps, self.weight_one, end_state),
+            )
 
         # Add new intermediary state
         next_state = self.fst.add_state()
@@ -185,6 +187,12 @@ class FSTListener(DependencyListener):
         )
 
     def enterGroup(self, ctx):
+        # Critical for tags to work.
+        # Need to keep track of the adjacent expression, whether or not it's
+        # inside a group.
+        # So text{tag} and (text){tag} both work.
+        self.exp_states[self.group_depth] = self.last_states[self.rule_name]
+
         self.group_depth += 1
 
         # Save anchor state for alternatives

@@ -7,7 +7,7 @@ import os
 import re
 import sys
 import configparser
-from typing import TextIO, List, Iterable, Optional
+from typing import TextIO, List, Iterable, Optional, Dict
 from pathlib import Path
 
 
@@ -16,7 +16,7 @@ def make_grammars(
     grammar_dir: Path,
     whitelist: Optional[Iterable[str]] = None,
     no_overwrite: bool = False,
-) -> List[Path]:
+) -> Dict[str, Path]:
     # Create output directory
     grammar_dir.mkdir(parents=True, exist_ok=True)
 
@@ -59,9 +59,10 @@ def make_grammars(
         grammar_rules[sec_name] = rules
 
     # Write JSGF grammars
-    grammar_paths: List[Path] = []
+    grammar_paths: Dict[str, Path] = {}
     for name, rules in grammar_rules.items():
         grammar_path = grammar_dir / f"{name}.gram"
+        grammar_paths[name] = grammar_path
 
         if grammar_path.exists() and no_overwrite:
             logger.debug(f"Skipping {grammar_path}")
@@ -84,7 +85,6 @@ def make_grammars(
                     rule = re.sub(r"\\\[", "[", rule)
                     print(rule, file=grammar_file)
 
-            grammar_paths.append(grammar_path)
             logger.debug(f"Wrote {grammar_path} ({len(rules)} rule(s))")
         else:
             logger.debug(f"No rules for {grammar_path}")
