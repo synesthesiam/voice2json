@@ -56,9 +56,13 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
     )
     custom_words = ppath("training.custom-words-file", "custom_words.txt")
     g2p_model = ppath("training.grapheme-to-phoneme-model", "g2p.fst")
+    acoustic_model = ppath("speech-to-text.acoustic_model", "acoustic_model")
+
+    # Kaldi
     kaldi_graph_dir = ppath("training.kaldi.graph-directory", "acoustic_model/graph")
     kaldi_model_type = pydash.get(profile, "training.kaldi.model-type", "")
-    acoustic_model = ppath("speech-to-text.acoustic_model", "acoustic_model")
+    kaldi_final_model = acoustic_model / "model" / "final.mdl"
+    kaldi_hclg_fst = acoustic_model / "model" / "graph" / "HCLG.fst"
 
     # Outputs
     dictionary = ppath("training.dictionary", "dictionary.txt")
@@ -106,7 +110,13 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
             subprocess.run(["cat"] + [str(path) for path in paths], stdout=target_file)
 
     def task_reassemble_files():
-        for path in [base_dictionary, base_language_model, g2p_model]:
+        for path in [
+            base_dictionary,
+            base_language_model,
+            g2p_model,
+            kaldi_final_model,
+            kaldi_hclg_fst,
+        ]:
             gzip_path = Path(str(path) + ".gz")
             part_paths = sorted(list(profile_dir.glob(f"{gzip_path.name}.part-*")))
             if len(part_paths) > 0:
@@ -127,7 +137,13 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
 
     @create_after(executed="reassemble_files")
     def task_unzip_files():
-        for path in [base_dictionary, base_language_model, g2p_model]:
+        for path in [
+            base_dictionary,
+            base_language_model,
+            g2p_model,
+            kaldi_final_model,
+            kaldi_hclg_fst,
+        ]:
             gzip_path = Path(str(path) + ".gz")
             if gzip_path.exists():
                 if path.exists():

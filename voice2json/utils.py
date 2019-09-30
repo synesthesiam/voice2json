@@ -111,7 +111,7 @@ def read_dict(
     if word_dict is None:
         word_dict = {}
 
-    for line in dict_file:
+    for i, line in enumerate(dict_file):
         line = line.strip()
         if len(line) == 0:
             continue
@@ -133,7 +133,7 @@ def read_dict(
             else:
                 word_dict[word] = [pronounce]
         except Exception as e:
-            logger.warning(f"read_dict: {e}")
+            logger.warning(f"read_dict: {e} (line {i+1})")
 
     return word_dict
 

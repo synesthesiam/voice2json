@@ -7,11 +7,16 @@ A `voice2json` <strong>profile</strong> contains everything necessary to recogni
 * [sentences.ini](sentences.md)
     * A template file describing all of your voice commands
 * Speech/intent models
+    * `acoustic_model` - a directory with the speech model
+    * `intent.fst` - a [finite state transducer](http://www.openfst.org) generated during [training](commands.md#traing-profile)
     * See [the whitepaper](whitepaper.md) for more details
 * Pronunciation dictionaries
     * How `voice2json` expects words to be pronounced. You can [customize any word](commands.md#pronounce-word).
+    * `base_dictionary.txt` - large, pre-built pronunciations for most words
+    * `custom_words.txt` - small, custom pronunciations for your words
 * Grapheme to phoneme models
     * Used to guess how [unknown words](commands.md#unknown-words) *should* be pronounced.
+    * `g2p.fst` - a [finite state transducer](http://www.openfst.org) created using [phonetisaurus](https://github.com/AdolfVonKleist/Phonetisaurus)
 
 ---
 

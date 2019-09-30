@@ -3,6 +3,7 @@
 `voice2json` is a collection of [command-line tools](commands.md) for <strong>offline speech/intent recognition</strong> on Linux. It is free, open source, and [supports 15 languages](#supported-languages). 
 
 * [Getting Started](#getting-started)
+* [Commands](commands.md)
 * [Recipes](recipes.md)
 * [About](about.md)
 
@@ -163,7 +164,24 @@ Once you've [installed voice2json](install.md) and [downloaded a profile](instal
 
 ## Contributing
 
-Community contributions are welcomed.
+Community contributions are welcomed! There are many different ways to contribute:
+
+* Pull requests for bug fixes, new features, or corrections to the documentation
+* Help with each of the [supported language profiles](#supported-languages)
+    * Testing to make sure the acoustic models and default pronunciation dictionaries are working
+    * Translations of the [example voice commands](https://github.com/synesthesiam/en-us_pocketsphinx-cmu/blob/8e6c984183a43de0cc87930efff37b4a5c840a40/sentences.ini)
+    * Example of you speaking with transcriptions
+* Help with adding support for a different language by [contributing to Mozilla Common Voice](https://voice.mozilla.org/)
+* TODO Assist community members
+* Implement one of [my crazy ideas](#ideas)
+
+## Ideas
+
+### Yet Another Wake Word Library
+
+TODO
+
+### Acoustic Models From Audiobooks
 
 TODO
 
