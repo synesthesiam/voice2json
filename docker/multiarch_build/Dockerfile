@@ -11,6 +11,7 @@ COPY docker/multiarch_build/bin/qemu-* /usr/bin/
 
 RUN apt-get update && \
     apt-get install -y \
+        python3 python3-dev python3-pip python3-venv \
         build-essential \
         autoconf automake libtool \
         bison swig \
@@ -18,19 +19,8 @@ RUN apt-get update && \
         fakeroot build-essential wget \
         zlib1g-dev libbz2-dev libncurses5-dev \
         libreadline-dev liblzma-dev libsqlite3-dev \
-        curl subversion
-
-COPY download/ /download/
-COPY docker/multiarch_build/bin/sudo /usr/bin/
-COPY etc/shflags /etc/
-COPY install.sh /
-COPY requirements.txt /
-
-WORKDIR /
-RUN bash install.sh \
-    --nocreate --noruntime \
-    --download-dir /download \
-    --make-threads ${MAKE_THREADS}
+        curl subversion rsync \
+        libatlas-base-dev libatlas3-base
 
 # -----------------------------------------------------------------------------
 
@@ -45,5 +35,8 @@ RUN cd /PyInstaller-3.5 && \
     python3 -m pip install -e .
 
 # -----------------------------------------------------------------------------
+
+# Fake sudo
+COPY docker/multiarch_build/bin/sudo /usr/bin/
 
 ENTRYPOINT ["bash"]

@@ -26,7 +26,7 @@ else
     # Assume system install
     export spec_bin_dir="/usr/bin"
     export spec_lib_dir="/usr/lib"
-    export spec_site_dir="/usr/lib/python3.6/site-packages"
+    export spec_site_dir="/usr/local/lib/python3.6/site-packages"
 fi
 
 if [[ -z "$1" ]]; then

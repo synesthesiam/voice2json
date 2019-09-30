@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 this_dir="$( cd "$( dirname "$0" )" && pwd )"
-
 CPU_ARCH="$(lscpu | awk '/^Architecture/{print $2}')"
 
 # -----------------------------------------------------------------------------
@@ -9,7 +8,7 @@ CPU_ARCH="$(lscpu | awk '/^Architecture/{print $2}')"
 
 . "${this_dir}/etc/shflags"
 
-DEFINE_string 'venv' "${this_dir}/.venv" 'Path to create virtual environment'
+DEFINE_string 'venv' "${this_dir}/.venv_${CPU_ARCH}" 'Path to create virtual environment'
 DEFINE_string 'download-dir' "${this_dir}/download" 'Directory to cache downloaded files'
 DEFINE_string 'build-dir' "${this_dir}/build_${CPU_ARCH}" 'Directory to build dependencies in'
 DEFINE_boolean 'create' true 'Create a virtual environment'
@@ -122,6 +121,12 @@ fi
 if [[ -z "${no_kaldi}" && -z "$(which svn)" ]]; then
     echo "Installing subversion"
     install subversion
+fi
+
+# rsync
+if [[ -z "$(which rsync)" ]]; then
+    echo "Installing rsync"
+    install rsync
 fi
 
 # -----------------------------------------------------------------------------

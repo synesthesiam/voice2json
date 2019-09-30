@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 this_dir="$( cd "$( dirname "$0" )" && pwd )"
+CPU_ARCH="$(lscpu | awk '/^Architecture/{print $2}')"
 export voice2json_dir="$(realpath "${this_dir}")"
 
-venv="${this_dir}/.venv"
+venv="${this_dir}/.venv_${CPU_ARCH}"
 
 if [[ -d "${venv}" ]]; then
     # Use virtual environment
