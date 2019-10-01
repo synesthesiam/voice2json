@@ -1,18 +1,21 @@
 # -*- mode: python -*-
 import os
+import platform
 from pathlib import Path
 
 from PyInstaller.utils.hooks import copy_metadata
 
 block_cipher = None
 
-venv = Path.cwd() / ".venv"
+# Use either virtual environment or lib/bin dirs from environment variables
+venv = Path.cwd() / f".venv_{platform.machine()}"
 bin_dir = Path(os.environ.get("spec_bin_dir", venv / "bin"))
 lib_dir = Path(os.environ.get("spec_lib_dir", venv / "lib"))
 site_dir = Path(
     os.environ.get("spec_site_dir", venv / "lib" / "python3.6" / "site-packages")
 )
 
+# Need to specially handle these snowflakes
 pywrapfst_path = list(site_dir.glob("pywrapfst.*.so"))[0]
 webrtcvad_path = list(site_dir.glob("_webrtcvad.*.so"))[0]
 
@@ -36,6 +39,7 @@ a = Analysis(
         (bin_dir / "ngramperplexity", "."),
         (bin_dir / "farcompilestrings", "."),
         (bin_dir / "phonetisaurus-apply", "."),
+        (bin_dir / "julius", "."),
     ],
     datas=copy_metadata("webrtcvad"),
     hiddenimports=["doit", "dbm.gnu", "networkx", "numbers"],

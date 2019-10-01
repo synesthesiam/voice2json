@@ -1,22 +1,35 @@
 #!/usr/bin/env bash
+this_dir="$( cd "$( dirname "$0" )" && pwd )"
+
+# -----------------------------------------------------------------------------
+# Command-line Arguments
+# -----------------------------------------------------------------------------
+
+. "${this_dir}/etc/shflags"
+
+DEFINE_string 'architecture' '' 'Debian architecture'
+DEFINE_string 'version' '1.0' 'Package version'
+DEFINE_boolean 'package' true 'Create debian package (.deb)'
+
+FLAGS "$@" || exit $?
+eval set -- "${FLAGS_ARGV}"
+
+# -----------------------------------------------------------------------------
+
+architecture="${FLAGS_architecture}"
+version="${FLAGS_version}"
+
 set -e
 
-if [[ -z "$1" ]]; then
-    echo "Usage: debianize.sh ARCH [VERSION]"
-    exit 1
+if [[ -z "${architecture}" ]]; then
+    # Guess architecture
+    architecture="$(dpkg-architecture | grep 'DEB_BUILD_ARCH=' | sed 's/^[^=]\+=//')"
 fi
-
-CPU_ARCH="$(lscpu | awk '/^Architecture/{print $2}')"
 
 name='voice2json'
-arch="$1"
-version="$2"
+CPU_ARCH="$(lscpu | awk '/^Architecture/{print $2}')"
 
-if [[ -z "${verson}" ]]; then
-    version="1.0"
-fi
-
-package_name="${name}_${version}_${arch}"
+package_name="${name}_${version}_${architecture}"
 package_dir="debian/${package_name}"
 build_dir="build_${CPU_ARCH}"
 output_dir="${package_dir}/usr/lib/${name}"
@@ -64,5 +77,9 @@ do
           "${output_dir}/${artifact_dir}/"
 done
 
-# Actually build the package
-cd 'debian' && fakeroot dpkg --build "${package_name}"
+# -----------------------------------------------------------------------------
+
+if [[ "${FLAGS_package}" -eq "${FLAGS_TRUE}" ]]; then
+    # Actually build the package
+    cd 'debian' && fakeroot dpkg --build "${package_name}"
+fi

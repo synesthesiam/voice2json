@@ -46,6 +46,10 @@ intent-recognition:
 # -----------------------------------------------------------------------------
 
 training:
+  # Type of acoustic model.
+  # One of: pocketsphinx, kaldi, julius
+  acoustic-model-type: "pocketsphinx"
+
   # Path to file with custom intents and sentences
   sentences-file: !env "${profile_dir}/sentences.ini"
 

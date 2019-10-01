@@ -5,3 +5,4 @@
 !requirements.txt
 !install.sh
 !voice2json.spec
+!debian/

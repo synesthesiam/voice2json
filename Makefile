@@ -7,12 +7,13 @@ test:
 	bash test.sh
 
 debian: installer
-	bash debianize.sh $(DEBIAN_ARCH)
+	bash debianize.sh --architecture $(DEBIAN_ARCH)
 
 installer:
 	bash build.sh voice2json.spec
 
-docker: debian
+docker: installer
+	bash debianize.sh --nopackage --architecture $(DEBIAN_ARCH)
 	docker build . \
         --build-arg BUILD_ARCH=$(BUILD_ARCH) \
         --build-arg DEBIAN_ARCH=$(DEBIAN_ARCH) \
@@ -60,4 +61,4 @@ docker-multiarch-debian: docker-multiarch-build
 
 multiarch-debian:
 	bash build.sh --novenv voice2json.spec
-	bash debianize.sh $(DEBIAN_ARCH)
+	bash debianize.sh --architecture $(DEBIAN_ARCH)

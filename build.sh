@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 this_dir="$( cd "$( dirname "$0" )" && pwd )"
-venv="${this_dir}/.venv"
+
+CPU_ARCH="$(lscpu | awk '/^Architecture/{print $2}')"
+venv="${this_dir}/.venv_${CPU_ARCH}"
 
 # -----------------------------------------------------------------------------
 # Command-line Arguments
