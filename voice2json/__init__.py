@@ -5,6 +5,7 @@ import tempfile
 import subprocess
 import shutil
 import wave
+import time
 from typing import Dict, Any
 from pathlib import Path
 
@@ -26,15 +27,23 @@ def get_transcriber(
     profile_dir: Path, profile: Dict[str, Any], open_transcription=False, debug=False
 ) -> Transcriber:
     # Load settings
-    kaldi_model_type = pydash.get(profile, "speech-to-text.kaldi.model-type", "")
+    acoustic_model_type = pydash.get(
+        profile, "speech-to-text.acoustic-model-type", "pocketsphinx"
+    ).lower()
 
-    if len(kaldi_model_type) == 0:
-        # Pocketsphinx
-        return get_pocketsphinx_transcriber(
+    if acoustic_model_type == "kaldi":
+        # Kaldi
+        return get_kaldi_transcriber(
+            profile_dir, profile, open_transcription=open_transcription, debug=debug
+        )
+    elif acoustic_model_type == "julius":
+        # Julius
+        return get_julius_transcriber(
             profile_dir, profile, open_transcription=open_transcription, debug=debug
         )
     else:
-        return get_kaldi_transcriber(
+        # Pocketsphinx
+        return get_pocketsphinx_transcriber(
             profile_dir, profile, open_transcription=open_transcription, debug=debug
         )
 
@@ -165,6 +174,89 @@ def get_kaldi_transcriber(
                 return json.loads(result_json)
 
     return KaldiTranscriber(model_type, acoustic_model, graph_dir)
+
+
+def get_julius_transcriber(
+    profile_dir: Path, profile: Dict[str, Any], open_transcription=False, debug=False
+) -> Transcriber:
+    from voice2json.utils import maybe_convert_wav
+
+    # Load settings
+    acoustic_model = ppath(
+        profile, profile_dir, "speech-to-text.acoustic-model", "acoustic_model"
+    )
+
+    if open_transcription:
+        # Use base dictionary/language model
+        dictionary = ppath(
+            profile,
+            profile_dir,
+            "speech-to-text.base_dictionary",
+            "base_dictionary.txt",
+        )
+
+        language_model = ppath(
+            profile,
+            profile_dir,
+            "speech-to-text.base_language-model",
+            "base_language_model.bin",
+        )
+    else:
+        # Use custom dictionary/language model
+        dictionary = ppath(
+            profile, profile_dir, "speech-to-text.dictionary", "dictionary.txt"
+        )
+
+        language_model = ppath(
+            profile, profile_dir, "speech-to-text.language-model", "language_model.txt"
+        )
+
+    class JuliusTranscriber(Transcriber):
+        def __init__(self, model_dir, dictionary, language_model):
+            self.model_dir = model_dir
+            self.dictionary = dictionary
+            self.language_model = language_model
+
+        def transcribe_wav(self, wav_data: bytes) -> Dict[str, Any]:
+            julius_cmd = [
+                "julius-decode",
+                "--model-dir",
+                str(self.model_dir),
+                "--dictionary",
+                str(self.dictionary),
+                "--language-model",
+                str(self.language_model),
+            ]
+
+            logger.debug(julius_cmd)
+
+            with tempfile.NamedTemporaryFile(suffix=".wav", mode="wb") as temp_file:
+                # Convert WAV to 16-bit, 16Khz mono and save
+                converted_wav_data = maybe_convert_wav(profile, wav_data)
+                temp_file.write(converted_wav_data)
+
+                # Rewind
+                temp_file.seek(0)
+
+                julius_proc = subprocess.Popen(
+                    julius_cmd,
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    universal_newlines=True,
+                )
+
+                # Write path to WAV file
+                print(temp_file.name, file=julius_proc.stdin)
+                start_time = time.time()
+                result_text, _ = julius_proc.communicate()
+                end_time = time.time()
+
+                return {
+                    "text": result_text.strip(),
+                    "transcribe_seconds": end_time - start_time,
+                }
+
+    return JuliusTranscriber(acoustic_model, dictionary, language_model)
 
 
 # -----------------------------------------------------------------------------
@@ -327,7 +419,9 @@ def get_tuner(profile_dir: Path, profile: Dict[str, Any]) -> Tuner:
 
                                     # Convert/copy WAV file
                                     wav_file.seek(0)
-                                    converted_wav_data = convert_wav(profile, wav_file.read())
+                                    converted_wav_data = convert_wav(
+                                        profile, wav_file.read()
+                                    )
                                     temp_wav_path.write_bytes(converted_wav_data)
                                 else:
                                     # Create symbolic link to actual WAV file

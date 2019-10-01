@@ -13,6 +13,7 @@ DEFINE_string 'download-dir' "${this_dir}/download" 'Directory to cache download
 DEFINE_string 'build-dir' "${this_dir}/build_${CPU_ARCH}" 'Directory to build dependencies in'
 DEFINE_boolean 'create' true 'Create a virtual environment'
 DEFINE_boolean 'kaldi' true 'Install Kaldi speech recognizer'
+DEFINE_boolean 'julius' true 'Install Julius speech recognizer'
 DEFINE_boolean 'runtime' true 'Install packages needed for building and running'
 DEFINE_integer 'make-threads' 4 'Number of threads to use with make' 'j'
 
@@ -234,6 +235,19 @@ if [[ ! -z "${no_kaldi}" || ! -d "${kaldi_dir}/build" ]]; then
     fi
 fi
 
+# Julius
+julius_dir="${build_dir}/julius-master"
+if [[ ! -z "${no_julius}" || ! -d "${julius_dir}/build" ]]; then
+    install zlib1g-dev
+    julius_file="${download_dir}/julius-2019.tar.gz"
+
+    if [[ ! -f "${julius_file}" ]]; then
+        julius_url='https://github.com/julius-speech/julius/archive/master.tar.gz'
+        echo "Downloading julius (${julius_url})"
+        download "${julius_url}" "${julius_file}"
+    fi
+fi
+
 # -----------------------------------------------------------------------------
 # openfst
 # -----------------------------------------------------------------------------
@@ -300,9 +314,23 @@ if [[ ! -z "${no_kaldi}" || ! -d "${kaldi_dir}/build" ]]; then
         make -j "${make_threads}" && \
         cd "${kaldi_dir}/src" &&
         ./configure --shared --mathlib=ATLAS && \
-        make depend -j "${make_threads}" && \
+            make depend -j "${make_threads}" && \
+            make -j "${make_threads}"
+fi
+
+# -----------------------------------------------------------------------------
+# julius
+# -----------------------------------------------------------------------------
+
+if [[ ! -z "${no_julius}" || ! -d "${julius_dir}/build" ]]; then
+    echo "Installing julius"
+    tar -C "${build_dir}" -xf "${julius_file}" && \
+        cd "${julius_dir}" && \
+        ./configure --enable-word-ints && \
         make -j "${make_threads}"
 fi
+
+cp "${julius_dir}/julius/julius" "${venv}/bin/"
 
 # -----------------------------------------------------------------------------
 # Python requirements

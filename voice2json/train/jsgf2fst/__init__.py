@@ -14,7 +14,6 @@ import logging
 from pathlib import Path
 from typing import Set, List, Dict, Union, Any, Tuple, Optional
 
-import antlr4
 import pywrapfst as fst
 import networkx as nx
 

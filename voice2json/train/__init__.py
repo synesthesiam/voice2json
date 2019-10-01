@@ -27,7 +27,7 @@ from voice2json.train.jsgf2fst import (
 )
 
 from voice2json.train.ini_jsgf import make_grammars
-from voice2json.train.vocab_dict import make_dict
+from voice2json.train.vocab_dict import make_dict, FORMAT_CMU, FORMAT_JULIUS
 from voice2json.utils import ppath as utils_ppath, read_dict
 
 logger = logging.getLogger("train")
@@ -57,6 +57,9 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
     custom_words = ppath("training.custom-words-file", "custom_words.txt")
     g2p_model = ppath("training.grapheme-to-phoneme-model", "g2p.fst")
     acoustic_model = ppath("speech-to-text.acoustic_model", "acoustic_model")
+    acoustic_model_type = pydash.get(
+        profile, "training.acoustic-model-type", "pocketsphinx"
+    ).lower()
 
     # Kaldi
     kaldi_graph_dir = ppath("training.kaldi.graph-directory", "acoustic_model/graph")
@@ -391,8 +394,16 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
             if unknown_words.exists():
                 unknown_words.unlink()
 
+            dictionary_format = FORMAT_CMU
+            if acoustic_model_type == "julius":
+                dictionary_format = FORMAT_JULIUS
+
             make_dict(
-                vocab, dictionary_paths, dictionary_file, unknown_path=unknown_words
+                vocab,
+                dictionary_paths,
+                dictionary_file,
+                unknown_path=unknown_words,
+                dictionary_format=dictionary_format,
             )
 
             if unknown_words.exists() and g2p_model.exists():
@@ -439,7 +450,7 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
     @create_after(executed="vocab_dict")
     def task_kaldi_train():
         """Creates HCLG.fst for a Kaldi nnet3 or gmm model."""
-        if len(kaldi_model_type) > 0:
+        if acoustic_model_type == "kaldi":
             return {
                 "file_dep": [dictionary, language_model],
                 "targets": [kaldi_graph_dir / "HCLG.fst"],

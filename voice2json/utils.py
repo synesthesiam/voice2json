@@ -106,7 +106,7 @@ def read_dict(
     transform: Optional[Callable[[str], str]] = None,
 ) -> Dict[str, List[str]]:
     """
-    Loads a CMU word dictionary, optionally into an existing Python dictionary.
+    Loads a CMU/Julius word dictionary, optionally into an existing Python dictionary.
     """
     if word_dict is None:
         word_dict = {}
@@ -128,6 +128,12 @@ def read_dict(
                 word = transform(word)
 
             pronounce = pronounce.strip()
+
+            if pronounce.startswith("["):
+                # Julius format
+                # word [word] P1 P2 P3
+                pronounce = re.split(r"\s+", pronounce, maxsplit=1)[1]
+
             if word in word_dict:
                 word_dict[word].append(pronounce)
             else:

@@ -6,9 +6,13 @@ logger = logging.getLogger("vocab_dict")
 import os
 import sys
 from pathlib import Path
-from typing import Iterable, Optional, List, Dict, TextIO
+from typing import Iterable, Optional, List, Dict, TextIO, Set
 
 from voice2json.utils import read_dict
+
+FORMAT_CMU = "cmu"
+FORMAT_JULIUS = "julius"
+
 
 def make_dict(
     vocab_path: Path,
@@ -18,6 +22,8 @@ def make_dict(
     upper: bool = False,
     lower: bool = False,
     no_number: bool = False,
+    dictionary_format: str = FORMAT_CMU,
+    silence_words: Set[str] = set(["<s>", "</s>"]),
 ) -> List[str]:
     transform = lambda w: w
     if upper:
@@ -26,6 +32,8 @@ def make_dict(
     elif lower:
         transform = lambda w: w.lower()
         logger.debug("Forcing lower-case")
+
+    is_julius = dictionary_format == FORMAT_JULIUS
 
     # Read dictionaries
     word_dict: Dict[str, List[str]] = {}
@@ -48,18 +56,29 @@ def make_dict(
 
     logger.debug(f"Loaded {len(words_needed)} word(s) from {vocab_path}")
 
+    # Add silence words
+    words_needed.update(silence_words)
+
     # Write output dictionary
     unknown_words: List[str] = []
     for word in sorted(words_needed):
-        if not word in word_dict:
+        if (word not in word_dict) and (word not in silence_words):
             unknown_words.append(word)
             continue
 
-        for i, pronounce in enumerate(word_dict[word]):
-            if (i < 1) or no_number:
-                print(word, pronounce, file=dictionary_file)
+        for i, pronounce in enumerate(word_dict.get(word, [])):
+            if is_julius:
+                # Julius format
+                # word [word] P1 P2 P3
+                print(word, f"[{word}]", pronounce, file=dictionary_file)
             else:
-                print("%s(%s)" % (word, i + 1), pronounce, file=dictionary_file)
+                # CMU format
+                # word P1 P2 P3
+                # word(N) P1 P2 P3
+                if (i < 1) or no_number:
+                    print(word, pronounce, file=dictionary_file)
+                else:
+                    print("%s(%s)" % (word, i + 1), pronounce, file=dictionary_file)
 
     if len(unknown_words) > 0:
         logger.warning(f"{len(unknown_words)} word(s) are unknown")
@@ -75,4 +94,3 @@ def make_dict(
             logger.debug(f"Wrote unknown words to {unknown_path}")
 
     return unknown_words
-
