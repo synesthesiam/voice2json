@@ -361,6 +361,8 @@ def recognize(
         profile, profile_dir, "intent-recognition.intent-fst", "intent.fst"
     )
 
+    word_casing = pydash.get(profile, "training.word-casing", "ignore").lower()
+
     # Load intent recognizer
     recognizer = get_recognizer(profile_dir, profile)
 
@@ -382,6 +384,12 @@ def recognize(
             text = sentence_object.get("text", "")
 
         text = text.strip()
+
+        if word_casing == "upper":
+            text = text.upper()
+        elif word_casing == "lower":
+            text = text.lower()
+
         intent = recognizer.recognize(text)
 
         if args.perplexity:
@@ -581,6 +589,8 @@ def pronounce(
         "espeak -s 80 [[{phonemes}]]",
     )
 
+    word_casing = pydash.get(profile, "training.word-casing", "ignore").lower()
+
     # True if audio will go to stdout.
     # In this case, printing will go to stderr.
     wav_stdout = args.wav_sink == "-"
@@ -605,6 +615,11 @@ def pronounce(
         word_parts = re.split(r"\s+", word.strip())
         word = word_parts[0]
         dict_phonemes = []
+
+        if word_casing == "upper":
+            word = word.upper()
+        elif word_casing == "lower":
+            word = word.lower()
 
         if len(word_parts) > 1:
             # Pronunciation provided

@@ -17,6 +17,7 @@ from typing import (
     Any,
     BinaryIO,
     Mapping,
+    Set,
 )
 
 import pydash
@@ -104,6 +105,7 @@ def read_dict(
     dict_file: Iterable[str],
     word_dict: Optional[Dict[str, List[str]]] = None,
     transform: Optional[Callable[[str], str]] = None,
+    silence_words: Optional[Set[str]] = None,
 ) -> Dict[str, List[str]]:
     """
     Loads a CMU/Julius word dictionary, optionally into an existing Python dictionary.
@@ -124,7 +126,8 @@ def read_dict(
             if idx > 0:
                 word = word[:idx]
 
-            if transform:
+            # Don't transform silence words
+            if transform and ((silence_words is None) or (word not in silence_words)):
                 word = transform(word)
 
             pronounce = pronounce.strip()

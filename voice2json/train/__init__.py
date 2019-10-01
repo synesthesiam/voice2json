@@ -61,6 +61,8 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
         profile, "training.acoustic-model-type", "pocketsphinx"
     ).lower()
 
+    word_casing = pydash.get(profile, "training.word-casing", "ignore").lower()
+
     # Kaldi
     kaldi_graph_dir = ppath("training.kaldi.graph-directory", "acoustic_model/graph")
     kaldi_model_type = pydash.get(profile, "training.kaldi.model-type", "")
@@ -398,12 +400,20 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
             if acoustic_model_type == "julius":
                 dictionary_format = FORMAT_JULIUS
 
+            # Extra arguments for word casing
+            kwargs = {}
+            if word_casing == "upper":
+                kwargs["upper"] = True
+            elif word_casing == "lower":
+                kwargs["lower"] = True
+
             make_dict(
                 vocab,
                 dictionary_paths,
                 dictionary_file,
                 unknown_path=unknown_words,
                 dictionary_format=dictionary_format,
+                **kwargs,
             )
 
             if unknown_words.exists() and g2p_model.exists():
