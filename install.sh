@@ -147,10 +147,10 @@ if [[ -z "${no_runtime}" ]]; then
         install sox
     fi
 
-    # espeak
-    if [[ -z "$(which espeak)" ]]; then
-        echo "Installing espeak"
-        install espeak
+    # espeak-ng
+    if [[ -z "$(which espeak-ng)" ]]; then
+        echo "Installing espeak-ng"
+        install espeak-ng
     fi
 fi
 

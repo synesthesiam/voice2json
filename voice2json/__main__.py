@@ -202,6 +202,12 @@ def main():
     test_examples_parser.add_argument(
         "--results", "-r", help="Directory to save test results"
     )
+    test_examples_parser.add_argument(
+        "--open",
+        "-o",
+        action="store_true",
+        help="Use large pre-built model for transcription",
+    )
     test_examples_parser.set_defaults(func=test_examples)
 
     # tune-examples
@@ -303,8 +309,9 @@ def transcribe(
 ) -> None:
     from voice2json import get_transcriber
 
-    # Make sure profile has been trained
-    check_trained(profile, profile_dir)
+    if not args.open:
+        # Make sure profile has been trained
+        check_trained(profile, profile_dir)
 
     transcriber = get_transcriber(
         profile_dir, profile, open_transcription=args.open, debug=args.debug
@@ -589,7 +596,7 @@ def pronounce(
     espeak_cmd_format = pydash.get(
         profile,
         "text-to-speech.espeak.pronounce-command",
-        "espeak -s 80 [[{phonemes}]]",
+        "espeak-ng -s 80 [[{phonemes}]]",
     )
 
     word_casing = pydash.get(profile, "training.word-casing", "ignore").lower()
@@ -911,8 +918,9 @@ def test_examples(
 ) -> None:
     from voice2json import get_transcriber, get_recognizer
 
-    # Make sure profile has been trained
-    check_trained(profile, profile_dir)
+    if not args.open:
+        # Make sure profile has been trained
+        check_trained(profile, profile_dir)
 
     examples_dir = Path(args.directory) if args.directory is not None else Path.cwd()
     logger.debug(f"Looking for examples in {examples_dir}")
@@ -922,7 +930,9 @@ def test_examples(
         results_dir = Path(args.results)
 
     # Load WAV transcriber
-    transcriber = get_transcriber(profile_dir, profile, debug=args.debug)
+    transcriber = get_transcriber(
+        profile_dir, profile, debug=args.debug, open_transcription=args.open
+    )
 
     # Optional intent recognizer
     recognizer = None

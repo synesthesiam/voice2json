@@ -155,7 +155,7 @@ text-to-speech:
     phoneme-map: !env "${profile_dir}/espeak_phonemes.txt"
 
     # Command to execute to pronounce some espeak phonemes
-    pronounce-command: "espeak -s 80 [[{phonemes}]]"
+    pronounce-command: "espeak-ng -s 80 [[{phonemes}]]"
 
 # -----------------------------------------------------------------------------
 
