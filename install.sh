@@ -326,11 +326,12 @@ if [[ ! -z "${no_julius}" || ! -d "${julius_dir}/build" ]]; then
     echo "Installing julius"
     tar -C "${build_dir}" -xf "${julius_file}" && \
         cd "${julius_dir}" && \
-        ./configure --enable-word-ints && \
+        ./configure --enable-words-int --enable-sp-segment && \
         make -j "${make_threads}"
 fi
 
 cp "${julius_dir}/julius/julius" "${venv}/bin/"
+cp "${julius_dir}/adintool/adintool" "${venv}/bin/"
 
 # -----------------------------------------------------------------------------
 # Python requirements

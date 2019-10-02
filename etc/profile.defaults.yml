@@ -28,6 +28,10 @@ speech-to-text:
     # Path to directory with pre-built HCLG.fst (open transcription)
     base-graph-directory: !env "${profile_dir}/acoustic_model/model/graph"
 
+  # Julius-specific settings
+  julius:
+    adinnet-port: 5530
+
 # -----------------------------------------------------------------------------
 
 intent-recognition:

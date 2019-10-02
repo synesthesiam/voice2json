@@ -1,11 +1,14 @@
+import re
 import sys
 import json
 import logging
 import tempfile
 import subprocess
+import threading
 import shutil
 import wave
 import time
+import socket
 from typing import Dict, Any
 from pathlib import Path
 
@@ -20,6 +23,9 @@ from voice2json.utils import ppath
 
 class Transcriber:
     def transcribe_wav(self, wav_data: bytes) -> Dict[str, Any]:
+        pass
+
+    def stop(self):
         pass
 
 
@@ -186,6 +192,8 @@ def get_julius_transcriber(
         profile, profile_dir, "speech-to-text.acoustic-model", "acoustic_model"
     )
 
+    adinnet_port = pydash.get(profile, "speech-to-text.julius.adinnet-port", 5530)
+
     if open_transcription:
         # Use base dictionary/language model
         dictionary = ppath(
@@ -216,45 +224,95 @@ def get_julius_transcriber(
             self.model_dir = model_dir
             self.dictionary = dictionary
             self.language_model = language_model
+            self.julius_proc = None
 
-        def transcribe_wav(self, wav_data: bytes) -> Dict[str, Any]:
+        def _start_julius(self):
+            logger.debug("Staring Julius")
             julius_cmd = [
-                "julius-decode",
-                "--model-dir",
-                str(self.model_dir),
-                "--dictionary",
+                "julius",
+                "-quiet",
+                "-C",
+                str(self.model_dir / "julius.jconf"),
+                "-dnnconf",
+                str(self.model_dir / "dnn.jconf"),
+                "-input",
+                "adinnet",
+                "-adport",
+                str(adinnet_port),
+                "-v",
                 str(self.dictionary),
-                "--language-model",
-                str(self.language_model),
             ]
+
+            if language_model.suffix.lower() == ".txt":
+                # ARPA forward n-grams
+                julius_cmd.extend(["-nlr", str(language_model)])
+            else:
+                # Binary n-gram
+                julius_cmd.extend(["-d", str(language_model)])
 
             logger.debug(julius_cmd)
 
-            with tempfile.NamedTemporaryFile(suffix=".wav", mode="wb") as temp_file:
-                # Convert WAV to 16-bit, 16Khz mono and save
-                converted_wav_data = maybe_convert_wav(profile, wav_data)
-                temp_file.write(converted_wav_data)
+            # Start Julius server
+            self.julius_proc = subprocess.Popen(
+                julius_cmd, stdout=subprocess.PIPE, universal_newlines=True
+            )
 
-                # Rewind
-                temp_file.seek(0)
+        def stop(self):
+            if self.julius_proc is not None:
+                logger.debug("Stopping Julius")
+                self.julius_proc.terminate()
+                self.julius_proc.wait()
+                self.julius_proc = None
+                logger.debug("Stopped Julius")
 
-                julius_proc = subprocess.Popen(
-                    julius_cmd,
-                    stdin=subprocess.PIPE,
-                    stdout=subprocess.PIPE,
-                    universal_newlines=True,
-                )
+        def transcribe_wav(self, wav_data: bytes) -> Dict[str, Any]:
+            if self.julius_proc is None:
+                self._start_julius()
 
-                # Write path to WAV file
-                print(temp_file.name, file=julius_proc.stdin)
-                start_time = time.time()
-                result_text, _ = julius_proc.communicate()
-                end_time = time.time()
+            # Convert WAV to 16-bit, 16Khz mono
+            converted_wav_data = maybe_convert_wav(profile, wav_data)
+            adintool_cmd = [
+                "adintool",
+                "-in",
+                "stdin",
+                "-out",
+                "adinnet",
+                "-server",
+                "localhost",
+                "-port",
+                str(adinnet_port),
+                "-nostrip",
+            ]
 
-                return {
-                    "text": result_text.strip(),
-                    "transcribe_seconds": end_time - start_time,
-                }
+            logger.debug(adintool_cmd)
+
+            # Write path to WAV file
+            start_time = time.time()
+            subprocess.run(
+                adintool_cmd,
+                check=True,
+                input=converted_wav_data,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+
+            line = self.julius_proc.stdout.readline().strip()
+            while not line.startswith("sentence1:"):
+                line = self.julius_proc.stdout.readline().strip()
+
+            # Exclude <s> and </s>
+            result_text = (
+                line.split(":", maxsplit=1)[1]
+                .replace("<s>", "")
+                .replace("</s>", "")
+                .strip()
+            )
+            end_time = time.time()
+
+            return {
+                "text": result_text.strip(),
+                "transcribe_seconds": end_time - start_time,
+            }
 
     return JuliusTranscriber(acoustic_model, dictionary, language_model)
 
