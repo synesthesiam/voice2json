@@ -42,6 +42,7 @@ The following tools/libraries help to support voice2json:
 * [eSpeak](http://espeak.sourceforge.net) (text to speech)
 * [doit](https://pydoit.org) (training)
 * [jq](https://stedolan.github.io/jq/) (JSON formatting)
+* [Julius](https://github.com/julius-speech/julius) (speech to text)
 * [Kaldi](https://kaldi-asr.org) (speech to text)
 * [Montreal Forced Aligner](https://montreal-forced-aligner.readthedocs.io/en/latest/) (acoustic models)
 * [GNU Parallel](http://www.gnu.org/s/parallel) (parallel execution)

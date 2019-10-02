@@ -1,4 +1,4 @@
-import re
+import io
 import sys
 import json
 import logging
@@ -22,6 +22,7 @@ from voice2json.utils import ppath
 
 
 class Transcriber:
+    """Base class of WAV transcribers."""
     def transcribe_wav(self, wav_data: bytes) -> Dict[str, Any]:
         pass
 
@@ -48,7 +49,7 @@ def get_transcriber(
             profile_dir, profile, open_transcription=open_transcription, debug=debug
         )
     else:
-        # Pocketsphinx
+        # Pocketsphinx (default)
         return get_pocketsphinx_transcriber(
             profile_dir, profile, open_transcription=open_transcription, debug=debug
         )
@@ -254,8 +255,21 @@ def get_julius_transcriber(
 
             # Start Julius server
             self.julius_proc = subprocess.Popen(
-                julius_cmd, stdout=subprocess.PIPE, universal_newlines=True
+                julius_cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
             )
+
+            # Block until started.
+            # This is a pretty brittle way of detecting when Julius has
+            # started. If this isn't done here, though, the very first
+            # transcription time will be off.
+            line = self.julius_proc.stdout.readline()
+            while "system information end" not in line.lower():
+                line = self.julius_proc.stdout.readline()
+
+            logger.debug("Started Julius")
 
         def stop(self):
             if self.julius_proc is not None:
@@ -268,6 +282,13 @@ def get_julius_transcriber(
         def transcribe_wav(self, wav_data: bytes) -> Dict[str, Any]:
             if self.julius_proc is None:
                 self._start_julius()
+
+            # Compute WAV duration
+            with io.BytesIO(wav_data) as wav_buffer:
+                with wave.open(wav_buffer) as wav_file:
+                    frames = wav_file.getnframes()
+                    rate = wav_file.getframerate()
+                    wav_duration = frames / float(rate)
 
             # Convert WAV to 16-bit, 16Khz mono
             converted_wav_data = maybe_convert_wav(profile, wav_data)
@@ -312,6 +333,7 @@ def get_julius_transcriber(
             return {
                 "text": result_text.strip(),
                 "transcribe_seconds": end_time - start_time,
+                "wav_seconds": wav_duration,
             }
 
     return JuliusTranscriber(acoustic_model, dictionary, language_model)
@@ -321,6 +343,7 @@ def get_julius_transcriber(
 
 
 class Recognizer:
+    """Base class of intent recognizers."""
     def recognize(self, text: str) -> Dict[str, Any]:
         pass
 
