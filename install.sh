@@ -15,6 +15,7 @@ DEFINE_boolean 'create' true 'Create a virtual environment'
 DEFINE_boolean 'kaldi' true 'Install Kaldi speech recognizer'
 DEFINE_boolean 'julius' true 'Install Julius speech recognizer'
 DEFINE_boolean 'runtime' true 'Install packages needed for building and running'
+DEFINE_boolean 'python' true 'Install Python dependencies'
 DEFINE_integer 'make-threads' 4 'Number of threads to use with make' 'j'
 
 FLAGS "$@" || exit $?
@@ -38,8 +39,16 @@ if [[ "${FLAGS_kaldi}" -eq "${FLAGS_FALSE}" ]]; then
     no_kaldi='true'
 fi
 
+if [[ "${FLAGS_julius}" -eq "${FLAGS_FALSE}" ]]; then
+    no_julius='true'
+fi
+
 if [[ "${FLAGS_runtime}" -eq "${FLAGS_FALSE}" ]]; then
     no_runtime='true'
+fi
+
+if [[ "${FLAGS_python}" -eq "${FLAGS_FALSE}" ]]; then
+    no_python='true'
 fi
 
 make_threads="${FLAGS_make_threads}"
@@ -118,10 +127,32 @@ if [[ -z "$(which curl)" ]]; then
     install curl
 fi
 
-# subversion (needed by kaldi for some dumb reason)
-if [[ -z "${no_kaldi}" && -z "$(which svn)" ]]; then
-    echo "Installing subversion"
-    install subversion
+# all of this is needed by kaldi for some dumb reason
+if [[ -z "${no_kaldi}" ]]; then
+    if [[ -z "$(which svn)" ]]; then
+        echo "Installing subversion"
+        install subversion
+    fi
+
+    if [[ -z "$(which git)" ]]; then
+        echo "Installing git"
+        install git
+    fi
+
+    if [[ -z "$(which sox)" ]]; then
+        echo "Installing sox"
+        install sox
+    fi
+
+    if [[ -z "$(which unzip)" ]]; then
+        echo "Installing unzip"
+        install unzip
+    fi
+
+    if [[ -z "$(which python2.7)" ]]; then
+        echo "Installing Python 2.7"
+        install python2.7
+    fi
 fi
 
 # rsync
@@ -224,8 +255,9 @@ fi
 
 # Kaldi
 kaldi_dir="${build_dir}/kaldi-master"
-if [[ ! -z "${no_kaldi}" || ! -d "${kaldi_dir}/build" ]]; then
+if [[ -z "${no_kaldi}" || ! -d "${kaldi_dir}" ]]; then
     install libatlas-base-dev libatlas3-base
+    sudo ldconfig
     kaldi_file="${download_dir}/kaldi-2019.tar.gz"
 
     if [[ ! -f "${kaldi_file}" ]]; then
@@ -237,7 +269,7 @@ fi
 
 # Julius
 julius_dir="${build_dir}/julius-master"
-if [[ ! -z "${no_julius}" || ! -d "${julius_dir}/build" ]]; then
+if [[ -z "${no_julius}" || ! -d "${julius_dir}" ]]; then
     install zlib1g-dev
     julius_file="${download_dir}/julius-2019.tar.gz"
 
@@ -307,8 +339,14 @@ cp -R "${phonetisaurus_dir}"/build/bin/* "${venv}/bin/"
 # kaldi
 # -----------------------------------------------------------------------------
 
-if [[ ! -z "${no_kaldi}" || ! -d "${kaldi_dir}/build" ]]; then
+if [[ ! -z "${no_kaldi}" || ! -f "${kaldi_dir}/src/online2bin/online2-wav-nnet3-latgen-faster" ]]; then
     echo "Installing kaldi"
+
+    if [[ -f '/usr/lib/arm-linux-gnueabihf/libatlas.so' ]]; then
+        # Kaldi install doesn't check here, despite in being in ldconfig
+        export ATLASLIBDIR='/usr/lib/arm-linux-gnueabihf'
+    fi
+
     tar -C "${build_dir}" -xf "${kaldi_file}" && \
         cd "${kaldi_dir}/tools" && \
         make -j "${make_threads}" && \
@@ -322,7 +360,7 @@ fi
 # julius
 # -----------------------------------------------------------------------------
 
-if [[ ! -z "${no_julius}" || ! -d "${julius_dir}/build" ]]; then
+if [[ ! -z "${no_julius}" || ! -f "${julius_dir}/julius/julius" ]]; then
     echo "Installing julius"
     tar -C "${build_dir}" -xf "${julius_file}" && \
         cd "${julius_dir}" && \
@@ -337,13 +375,15 @@ cp "${julius_dir}/adintool/adintool" "${venv}/bin/"
 # Python requirements
 # -----------------------------------------------------------------------------
 
-# Pocketsphinx for Python (no sound)
-python3 -m pip install "${pocketsphinx_file}"
+if [[ -z "${no_python}" ]]; then
+    # Pocketsphinx for Python (no sound)
+    python3 -m pip install "${pocketsphinx_file}"
 
-# Other requirements
-python3 -m pip install \
-        --global-option=build_ext --global-option="-L${venv}/lib" \
-        -r "${this_dir}/requirements.txt"
+    # Other requirements
+    python3 -m pip install \
+            --global-option=build_ext --global-option="-L${venv}/lib" \
+            -r "${this_dir}/requirements.txt"
+fi
 
 # -----------------------------------------------------------------------------
 

@@ -4,6 +4,8 @@ FROM ${BUILD_ARCH}/ubuntu:bionic
 ARG BUILD_ARCH=amd64
 ARG DEBIAN_ARCH=${BUILD_ARCH}
 
+COPY docker/multiarch_build/bin/qemu-* /usr/bin/
+
 RUN apt-get update && \
     apt-get install -y \
         sox jq alsa-utils espeak sphinxtrain perl

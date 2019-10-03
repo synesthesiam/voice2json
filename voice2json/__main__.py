@@ -310,9 +310,8 @@ def transcribe(
 ) -> None:
     from voice2json import get_transcriber
 
-    if not args.open:
-        # Make sure profile has been trained
-        check_trained(profile, profile_dir)
+    # Make sure profile has been trained
+    check_trained(profile, profile_dir)
 
     transcriber = get_transcriber(
         profile_dir, profile, open_transcription=args.open, debug=args.debug
@@ -919,9 +918,8 @@ def test_examples(
 ) -> None:
     from voice2json import get_transcriber, get_recognizer
 
-    if not args.open:
-        # Make sure profile has been trained
-        check_trained(profile, profile_dir)
+    # Make sure profile has been trained
+    check_trained(profile, profile_dir)
 
     examples_dir = Path(args.directory) if args.directory is not None else Path.cwd()
     logger.debug(f"Looking for examples in {examples_dir}")
