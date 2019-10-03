@@ -54,7 +54,7 @@ It can be used to:
 
 ## Unique Features
 
-`voice2json` is more than just a wrapper around [pocketsphinx](https://github.com/cmusphinx/pocketsphinx) and [Kaldi](https://kaldi-asr.org)!
+`voice2json` is more than just a wrapper around [pocketsphinx](https://github.com/cmusphinx/pocketsphinx), [Kaldi](https://kaldi-asr.org), and [Julius](https://github.com/julius-speech/julius)!
 
 * Training produces **both** a speech and intent recognizer. By describing your voice commands with `voice2json`'s [templating language](sentences.md), you get [more than just transcriptions](formats.md#intents) for free.
 * Re-training is **fast enough** to be done at runtime (usually < 5s), even up to [millions of possible voice commands](recipes.md#set-and-run-times). This means you can change [referenced slot](sentences.md#slot-references) values or [add/remove intents](commands.md#intent-whitelist) on the fly.
@@ -149,6 +149,8 @@ Once you've [installed voice2json](install.md) and [downloaded a profile](instal
     * [kz_pocketsphinx-cmu](https://github.com/synesthesiam/kz_pocketsphinx-cmu)
 * Mandarin (中文)
     * [zh-cn_pocketsphinx-cmu](https://github.com/synesthesiam/zh-cn_pocketsphinx-cmu)
+* Polish (polski)
+    * [pl_julius-github](https://github.com/synesthesiam/pl_julius-github)
 * Portugese (Português)
     * [pt-br_pocketsphinx-cmu](https://github.com/synesthesiam/pt-br_pocketsphinx-cmu)
 * Russian (Русский)
@@ -182,6 +184,14 @@ Community contributions are welcomed! There are many different ways to contribut
 TODO
 
 ### Acoustic Models From Audiobooks
+
+TODO
+
+### Android Support
+
+TODO
+
+### Browser Based Pocketsphinx
 
 TODO
 

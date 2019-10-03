@@ -28,6 +28,10 @@ speech-to-text:
     # Path to directory with pre-built HCLG.fst (open transcription)
     base-graph-directory: !env "${profile_dir}/acoustic_model/model/graph"
 
+  # Julius-specific settings
+  julius:
+    adinnet-port: 5530
+
 # -----------------------------------------------------------------------------
 
 intent-recognition:
@@ -47,7 +51,7 @@ intent-recognition:
 
 training:
   # Type of acoustic model.
-  # One of: pocketsphinx, kaldi, julius
+  # One of: pocketsphinx, kaldi, julius.
   acoustic-model-type: "pocketsphinx"
 
   # Path to file with custom intents and sentences
@@ -89,6 +93,10 @@ training:
   
   # Path to model used to guess unknown word pronunciation
   grapheme-to-phoneme-model: !env "${profile_dir}/g2p.fst"
+
+  # Force word case during dictionary lookup/g2p.
+  # One of ignore, upper, lower.
+  word-casing: "ignore"
 
   # Kaldi-specific settings
   kaldi:

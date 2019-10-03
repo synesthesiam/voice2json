@@ -101,6 +101,8 @@ It can be used to:
     * [kz_pocketsphinx-cmu](https://github.com/synesthesiam/kz_pocketsphinx-cmu)
 * Mandarin (中文)
     * [zh-cn_pocketsphinx-cmu](https://github.com/synesthesiam/zh-cn_pocketsphinx-cmu)
+* Polish (polski)
+    * [pl_julius-github](https://github.com/synesthesiam/pl_julius-github)
 * Portugese (Português)
     * [pt-br_pocketsphinx-cmu](https://github.com/synesthesiam/pt-br_pocketsphinx-cmu)
 * Russian (Русский)

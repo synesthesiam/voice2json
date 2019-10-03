@@ -28,6 +28,10 @@ speech-to-text:
     # Path to directory with pre-built HCLG.fst (open transcription)
     base-graph-directory: !env "${profile_dir}/acoustic_model/model/graph"
 
+  # Julius-specific settings
+  julius:
+    adinnet-port: 5530
+
 # -----------------------------------------------------------------------------
 
 intent-recognition:
@@ -151,7 +155,7 @@ text-to-speech:
     phoneme-map: !env "${profile_dir}/espeak_phonemes.txt"
 
     # Command to execute to pronounce some espeak phonemes
-    pronounce-command: "espeak -s 80 [[{phonemes}]]"
+    pronounce-command: "espeak-ng -s 80 [[{phonemes}]]"
 
 # -----------------------------------------------------------------------------
 

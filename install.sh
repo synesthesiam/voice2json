@@ -147,10 +147,10 @@ if [[ -z "${no_runtime}" ]]; then
         install sox
     fi
 
-    # espeak
-    if [[ -z "$(which espeak)" ]]; then
-        echo "Installing espeak"
-        install espeak
+    # espeak-ng
+    if [[ -z "$(which espeak-ng)" ]]; then
+        echo "Installing espeak-ng"
+        install espeak-ng
     fi
 fi
 
@@ -326,11 +326,12 @@ if [[ ! -z "${no_julius}" || ! -d "${julius_dir}/build" ]]; then
     echo "Installing julius"
     tar -C "${build_dir}" -xf "${julius_file}" && \
         cd "${julius_dir}" && \
-        ./configure --enable-word-ints && \
+        ./configure --enable-words-int --enable-sp-segment && \
         make -j "${make_threads}"
 fi
 
 cp "${julius_dir}/julius/julius" "${venv}/bin/"
+cp "${julius_dir}/adintool/adintool" "${venv}/bin/"
 
 # -----------------------------------------------------------------------------
 # Python requirements
