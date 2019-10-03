@@ -66,12 +66,9 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
     # Kaldi
     kaldi_graph_dir = ppath("training.kaldi.graph-directory", "acoustic_model/graph")
     kaldi_model_type = pydash.get(profile, "training.kaldi.model-type", "")
-    kaldi_final_model = acoustic_model / "model" / "final.mdl"
-    kaldi_hclg_fst = acoustic_model / "model" / "graph" / "HCLG.fst"
 
-    # Julius
-    julius_am_model = acoustic_model / "model.am"
-    julius_layerout_weight = acoustic_model / "model.layerout_weight.npy"
+    # Large paths
+    large_paths = [Path(p) for p in pydash.get(profile, "training.large-files", [])]
 
     # Outputs
     dictionary = ppath("training.dictionary", "dictionary.txt")
@@ -113,16 +110,6 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
                     intents.add(line)
 
     # -----------------------------------------------------------------------------
-
-    large_paths = [
-        base_dictionary,
-        base_language_model,
-        g2p_model,
-        kaldi_final_model,
-        kaldi_hclg_fst,
-        julius_am_model,
-        julius_layerout_weight,
-    ]
 
     def do_reassemble(paths: List[Path], targets):
         with open(targets[0], "wb") as target_file:
