@@ -243,6 +243,7 @@ def main():
         profile_dir = Path(args.profile)
 
     # Set environment variable usually referenced in profile
+    profile_dir = profile_dir.resolve()
     os.environ["profile_dir"] = str(profile_dir)
 
     # x86_64, armv7l, armv6l, ...

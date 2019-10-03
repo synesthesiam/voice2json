@@ -23,6 +23,7 @@ from voice2json.utils import ppath
 
 class Transcriber:
     """Base class of WAV transcribers."""
+
     def transcribe_wav(self, wav_data: bytes) -> Dict[str, Any]:
         pass
 
@@ -303,11 +304,13 @@ def get_julius_transcriber(
                 "-port",
                 str(adinnet_port),
                 "-nostrip",
+                "-nosegment",
             ]
 
             logger.debug(adintool_cmd)
 
             # Write path to WAV file
+            logger.debug(f"Sending {len(converted_wav_data)} byte(s) to Julius")
             start_time = time.time()
             subprocess.run(
                 adintool_cmd,
@@ -318,8 +321,15 @@ def get_julius_transcriber(
             )
 
             line = self.julius_proc.stdout.readline().strip()
+            logger.debug(f"Julius> {line}")
             while not line.startswith("sentence1:"):
                 line = self.julius_proc.stdout.readline().strip()
+                logger.debug(f"Julius> {line}")
+
+                if "WARNING: input too short" in line:
+                    logger.warning(line)
+                    line = "sentence1:"
+                    break
 
             # Exclude <s> and </s>
             result_text = (
@@ -344,6 +354,7 @@ def get_julius_transcriber(
 
 class Recognizer:
     """Base class of intent recognizers."""
+
     def recognize(self, text: str) -> Dict[str, Any]:
         pass
 
@@ -439,9 +450,11 @@ def get_tuner(profile_dir: Path, profile: Dict[str, Any]) -> Tuner:
     from voice2json.utils import should_convert_wav, convert_wav
 
     # Load settings
-    kaldi_model_type = pydash.get(profile, "speech-to-text.kaldi.model-type", None)
+    acoustic_model_type = pydash.get(
+        profile, "speech-to-text.acoustic-model-type", "pocketsphinx"
+    ).lower()
 
-    if kaldi_model_type is not None:
+    if acoustic_model_type != "pocketsphinx":
         logger.fatal("Acoustic model tuning is only availble for pocketsphinx for now.")
         sys.exit(1)
 

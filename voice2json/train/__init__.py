@@ -118,7 +118,7 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
     def task_reassemble_files():
         for path in large_paths:
             gzip_path = Path(str(path) + ".gz")
-            part_paths = sorted(list(profile_dir.glob(f"{gzip_path.name}.part-*")))
+            part_paths = sorted(list(gzip_path.parent.glob(f"{gzip_path.name}.part-*")))
             if len(part_paths) > 0:
                 if gzip_path.exists():
                     # Delete unneeded .gz-part files
