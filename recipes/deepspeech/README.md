@@ -2,18 +2,36 @@
 
 Demonstrates using artifacts from a `voice2json` profile to "train" a [Mozilla DeepSpeech](https://github.com/mozilla/DeepSpeech) model.
 
+## Setup
+
+To get started, create a virtual environment in the `recipes/deepspeech` directory and install the requirements:
+
+```bash
+$ python3 -m venv .venv
+
+$ source .venv/bin/activate
+
+$ python3 -m pip install -r requirements
+```
+
 ## Model
 
-The `output_graph.pb` file from the [pre-trained model](https://github.com/mozilla/DeepSpeech#getting-the-pretrained-model) should go in the `model` directory.
+The `output_graph.pb` file from the [pre-trained model](https://github.com/mozilla/DeepSpeech#getting-the-pretrained-model) should go in the `model` directory (it's too big to put in git).
 
 ## Building and Running
 
-After training your profile, run `make` in the `recipes/deepspeech` directory. You should now be able to run `deep_transcribe.py` (from the same directory) with 16-bit 16Khz mono on standard in:
+After training your profile, run `make` in the `recipes/deepspeech` directory. You should now be able to run `deep_transcribe.py` (from the same directory) with WAV data on standard in:
 
 ```bash
-$ sox some-wav-file.wav -r 16000 -e signed-integer -c 1 -t raw - | \
-      ./deep_transcribe.py
+$ ./deep_transcribe.py < some-wav-file.wav
 ```
+or multiple WAV files as arguments:
+
+```bash
+$ ./deep_transcribe.py wav-file-1.wav wav-file-2.wav ...
+```
+
+The transcription will be printed as [jsonl](http://jsonlines.org) with `text` property and some other goodies.
 
 ## Requirements
 

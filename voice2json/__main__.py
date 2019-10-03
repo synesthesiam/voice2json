@@ -40,7 +40,7 @@ def main():
         nargs=1,
         action="append",
         default=[],
-        help="Override a profile settings",
+        help="Override profile setting(s)",
     )
     parser.add_argument(
         "--debug", action="store_true", help="Print DEBUG log to console"

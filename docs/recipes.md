@@ -2,6 +2,46 @@
 
 Below are small demonstrations of how to use `voice2json` for a specific problem or as part of a larger system.
 
+* [Picard's Tea](#picards-tea)
+* [MQTT Transcription Service](#create-an-mqtt-transcription-service)
+* [Launch Programs](#launch-a-program-via-voice)
+* [Set Timers](#set-and-run-timers)
+* [Parallel Recognition](#parallel-wav-recognition)
+* [Rasa NLU Bot](#train-a-rasa-nlu-bot)
+* [Microphone Over Network](#stream-microphone-audio-over-a-network)
+* [Use DeepSpeech](#use-mozillas-deepspeech)
+
+---
+
+## Picard's Tea
+
+This is a simple, fun example to recognize orders for tea from folks like [Jean-Luc Picard](https://memory-alpha.fandom.com/wiki/Earl_Grey_tea).
+It accepts the infamous "tea, earl grey, hot" order as well as a few others, such as "tea, green, lukewarm".
+
+```
+[MakeTea]
+type = (earl grey) | green | black
+temperature = hot | lukewarm | cold
+tea (<type>){type} (<temperature>){temperature}
+```
+
+Saying "tea, earl grey, hot" will output something like:
+
+```json
+{
+  "text": "tea earl grey hot",
+  "intent": {
+    "name": "MakeTea",
+  },
+  "slots": {
+    "type": "earl grey",
+    "temperature": "hot"
+  }
+}
+```
+
+The strength of `voice2json` is its ability to be quickly customized for how **you** expect a command to be given.
+
 ---
 
 ## Create an MQTT Transcription Service
@@ -51,6 +91,8 @@ turn on the light
 
 ## Launch a Program via Voice
 
+* [Source Code](https://github.com/synesthesiam/voice2json/tree/master/recipes/launch_program)
+
 Let's use `voice2json` to launch programs using voice commands. This will follow a typical voice assistant flow, meaning we will:
 
 1. Wait for a wake word to be spoken
@@ -84,6 +126,8 @@ After following the [installation instructions](https://github.com/synesthesiam/
 ---
 
 ## Set and Run Timers
+
+* [Source Code](https://github.com/synesthesiam/voice2json/tree/master/recipes/timers)
 
 A common task for voice assistants is to set timers. Here, we demonsrate a "simple" timer that supports a single timer that's less than 10 hours in one second increments:
 
@@ -146,11 +190,15 @@ for line in sys.stdin:
     print("Ready")
 ```
 
+After following the [installation instructions](https://github.com/synesthesiam/voice2json/tree/master/recipes/timers), execute the [listen_timer.sh](https://github.com/synesthesiam/voice2json/blob/master/recipes/timers/listen_timer.sh) script. It will wait for a "wake up" MQTT message on the `timer/wake-up` topic. If you'd like to use a wake word instead, see the [launch program example](#launch-a-program-via-voice).
+
+When the wake up message is received, you can say something like "set a timer for five seconds". After an acknowledgement beep, the example will wait the appropriate amount of time and then play an alarm sound (three short beeps). A response MQTT message is also published on the `timer/alarm` topic after the timer has finished, allowing a [Node-RED](https://nodered.org) or other IoT software to respond.
+
 ---
 
 ## Parallel WAV Recognition
 
-Want to recognize intents in a large number of WAV files as fast as possible? You can use the [GNU Parallel](http://www.gnu.org/s/parallel) with `voice2json` to put those extra CPU cores to good use!
+Want to recognize intents in a large number of WAV files as fast as possible? You can use the [GNU Parallel](http://www.gnu.org/s/parallel) utility with `voice2json` to put those extra CPU cores to good use!
 
 ```bash
 $ find /path/to/wav/files/ -name '*.wav' | \
@@ -161,9 +209,18 @@ $ find /path/to/wav/files/ -name '*.wav' | \
 
 This will run up to 10 copies of `voice2json` in parallel and output a line of JSON per WAV file *in the same order as they were printed by the find command*. For convenience, the file names are saved to a text file named `wav-file-names.txt`.
 
+If you want to check `voice2json`'s performance on a directory of WAV files and transcriptions, see the [test-examples](commands.md#test-examples) command.
+
 ---
 
 ## Train a Rasa NLU Bot
+
+* [Source Code](https://github.com/synesthesiam/voice2json/tree/master/recipes/train_rasa)
+
+Intent recognition in `voice2json` is not very flexible. Similar words and phrasings cannot be substituted, and there is little room for error.
+If your voice command system will also be accessible via chat, you may want to use a proper [natural language understanding system](https://rasa.com/docs/rasa/nlu/about/).
+
+`voice2json` can [generate training examples](commands.md#generate-examples) for machine learning systems like Rasa NLU. In this recipe, we use the default English sentences:
 
 ```
 [GetTime]
@@ -192,76 +249,14 @@ set [the] <light_name> [to] <color>
 make [the] <light_name> <color>
 ```
 
-```python
-#!/usr/bin/env python3
-import sys
-import json
-from collections import defaultdict
+For ease of installation, create a `rasa` script that calls out to the [offical Rasa Docker image](https://rasa.com/docs/rasa/user-guide/running-rasa-with-docker/):
 
-examples_by_intent = defaultdict(list)
-
-# Gather all examples by intent name
-for line in sys.stdin:
-    example = json.loads(line)
-    intent_name = example["intent"]["name"]
-    examples_by_intent[intent_name].append(example)
-
-# Write data in RasaNLU markdown training format
-for intent_name, examples in examples_by_intent.items():
-    print(f"## intent:{intent_name}")
-
-    for example in examples:
-        # Create mapping from start/stop character indexes to example entities
-        entities_by_start = {e["raw_start"]: e for e in example["entities"]}
-        entities_by_end = {e["raw_end"]: e for e in example["entities"]}
-
-        # Current character index
-        char_idx = 0
-
-        # Final list of tokens that will be printed for the example
-        tokens_to_print = []
-
-        # Current entity
-        entity = None
-
-        # Tokens that belong to the current entity
-        entity_tokens = []
-
-        # Process "raw" tokens without substitutions
-        for token in example["raw_tokens"]:
-            if char_idx in entities_by_start:
-                # Start entity
-                entity = entities_by_start[char_idx]
-                entity_tokens = []
-
-            if entity is None:
-                # Use token as-is
-                tokens_to_print.append(token)
-            else:
-                # Accumulate into entity token list
-                entity_tokens.append(token)
-
-            # Advance character index in raw text
-            char_idx += len(token) + 1  # space
-
-            if (char_idx - 1) in entities_by_end:
-                # Finish entity
-                entity_str = entity["entity"]
-                if entity["value"] != entity["raw_value"]:
-                    # Include substitution
-                    entity_str += f":{entity['value']}"
-
-                # Create Markdown-style entity
-                token_str = "[" + " ".join(entity_tokens) + f"]({entity_str})"
-                tokens_to_print.append(token_str)
-                entity = None
-
-        # Print example
-        print("-", " ".join(tokens_to_print))
-
-    # Blank line between intents
-    print("")
+```bash
+#!/usr/bin/env bash
+docker run -it -v "$(pwd):/app" -p 5005:5005 rasa/rasa:latest-spacy-en "$@"
 ```
+
+Note that the current directory is mounted and port 5005 is exposed. Next, we create a `config.yml`:
 
 ```yaml
 language: "en"
@@ -269,21 +264,55 @@ language: "en"
 pipeline: "pretrained_embeddings_spacy"
 ```
 
-```bash
-#!/usr/bin/env bash
-docker run -it -v "$(pwd):/app" -p 5005:5005 rasa/rasa:latest-spacy-en "$@"
-```
+We use the [generate-examples](commands.md#generate-examples) command to randomly generate 5,000 intents with slots.
+Beware that no attempt is made in this toy example to [balance classes](https://rasa.com/docs/rasa/nlu/choosing-a-pipeline/#id11).
 
 ```bash
 $ mkdir -p data && \
-      voice2json generate-examples -n 10000 | \
+      voice2json generate-examples -n 5000 | \
       python3 examples_to_rasa.py > data/training-data.md
 ```
+
+Next, we train a model. This can take a few minutes, depending on your hardware:
+
+```bash
+$ mkdir -p models && \
+      ./rasa train nlu
+```
+
+Once your model is trained, you can run a test shell:
 
 ```bash
 $ mkdir -p models && \
       ./rasa shell nlu
 ```
+
+Try typing in sentences and checking the output.
+
+### Intent HTTP Server
+
+If you want to recognize intents remotely, you should use Rasa's [HTTP Server](https://rasa.com/docs/rasa/user-guide/running-the-server/).
+
+```bash
+$ ./rasa run -m models --enable-api
+```
+
+
+With that running, you can `POST` some JSON to port 5005 in a different terminal and get a JSON response:
+
+```bash
+$ curl -X POST -d '{ "text": "turn on the living room lamp" }' localhost:5005/model/parse
+```
+
+You can easily combine this with `voice2json` to do transcription + intent recognition:
+
+```bash
+$ voice2json transcribe-wav \
+     ../../etc/test/turn_on_living_room_lamp.wav | \
+  curl -X POST -d @- localhost:5005/model/parse
+```
+
+Outputs:
 
 ```json
 {
@@ -335,6 +364,8 @@ $ mkdir -p models && \
 }
 ```
 
+Try something that `voice2json` would choke on, like "please turn off the light in the living room":
+
 ```json
 {
   "intent": {
@@ -384,6 +415,8 @@ $ mkdir -p models && \
   "text": "please turn off the light in the living room"
 ```
 
+Happy recognizing!
+
 ---
 
 ## Stream Microphone Audio Over a Network
@@ -417,3 +450,30 @@ $ gst-launch-1.0 \
 where `<Destination IP>` matches the first command and `<Command>` is [wait-wake](commands.md#wait-wake), [record-command](commands.md#record-command), or [record-examples](commands.md#record-examples).
 
 See the GStreamer [multiudpsink plugin](https://gstreamer.freedesktop.org/documentation/udp/multiudpsink.html) for streaming to multiple machines simultaneously (it also has multicast support too).
+
+---
+
+## Use Mozilla's DeepSpeech
+
+* [Source Code](https://github.com/synesthesiam/voice2json/tree/master/recipes/deepspeech)
+
+You can use some of [the artifacts](whitepaper.md#language-model) generated by `voice2json` with [Mozilla's DeepSpeech](https://github.com/mozilla/DeepSpeech). This has only been tested with their [pre-trained English model](https://github.com/mozilla/DeepSpeech#getting-the-pretrained-model).
+
+After following the [installation instructions](https://github.com/synesthesiam/voice2json/tree/master/recipes/deepspeech), you can run the `deep_transcribe.py` Python script to use DeepSpeech for transcriptions instead of `voice2json`. Unlike the general (open) language model, it should be better at recognizing commands from your profile.
+
+```bash
+$ ./deep_transcribe.py ../../etc/test/turn_on_living_room_lamp.wav
+```
+
+outputs (for me):
+
+```json
+{
+  "text": "turn on the living room lamp",
+  "transcribe_seconds": 2.377969980239868,
+  "wav_name": "turn_on_living_room_lamp.wav",
+  "wav_seconds": 2.402375
+}
+```
+
+With a supported GPU, you should be able to get better transcription times.

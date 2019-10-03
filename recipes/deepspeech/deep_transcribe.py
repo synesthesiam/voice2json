@@ -1,12 +1,19 @@
 #!/usr/bin/env python3
+import io
 import sys
+import json
+import wave
+import time
 import argparse
 import logging
 import subprocess
+import shlex
 from pathlib import Path
+from typing import Dict, Any, Tuple
 
 logger = logging.getLogger("deep_transcribe")
 
+import jsonlines
 import numpy as np
 from deepspeech import Model
 
@@ -15,6 +22,9 @@ def main():
     parser = argparse.ArgumentParser(
         prog="deep_transcribe.py",
         description="Transcribe WAV files using Mozilla's DeepSpeech",
+    )
+    parser.add_argument(
+        "wav_file", nargs="*", default=[], help="WAV files to transcribe"
     )
     parser.add_argument(
         "--debug", action="store_true", help="Print DEBUG log to console"
@@ -61,14 +71,68 @@ def main():
         valid_word_count_weight,
     )
 
-    # Read raw audio data.
-    # Assume 16-bit 16Khz mono.
-    audio_data = sys.stdin.buffer.read()
+    def transcribe_raw(audio_data: bytes) -> Dict[str, Any]:
+        start_time = time.time()
+        text = ds.stt(np.frombuffer(audio_data, dtype=np.int16), 16000)
+        return {"text": text, "transcribe_seconds": time.time() - start_time}
 
-    # DeepSpeech expects an int16 numpy array
-    logging.debug(f"Transcribing {len(audio_data)} byte(s)")
-    text = ds.stt(np.frombuffer(audio_data, dtype=np.int16), 16000)
-    print(text)
+    def print_json(value):
+        with jsonlines.Writer(sys.stdout) as out:
+            out.write(value)
+
+    if len(args.wav_file) > 0:
+        # Process WAV files from arguments
+        for wav_path_str in args.wav_file:
+            wav_path = Path(wav_path_str)
+            logger.debug(f"Transcribing {wav_path}")
+            wav_data = wav_path.read_bytes()
+            audio_data, wav_seconds = maybe_convert_wav(wav_data)
+
+            # Output jsonl
+            result = transcribe_raw(audio_data)
+            result["wav_name"] = wav_path.name
+            result["wav_seconds"] = wav_seconds
+            print_json(result)
+
+    else:
+        # Assume WAV data on stdin
+        logger.debug("Reading WAV data from stdin")
+        wav_data = sys.stdin.buffer.read()
+        audio_data, wav_seconds = maybe_convert_wav(wav_data)
+
+        # Output jsonl
+        result = transcribe_raw(audio_data)
+        result["wav_seconds"] = wav_seconds
+        print_json(result)
+
+
+# -----------------------------------------------------------------------------
+
+
+def convert_wav(wav_data: bytes) -> bytes:
+    """Converts WAV data to 16-bit, 16Khz mono raw."""
+    convert_cmd_str = "sox -t wav - -r 16000 -e signed-integer -b 16 -c 1 -t raw -"
+    convert_cmd = shlex.split(convert_cmd_str)
+    logger.debug(convert_cmd)
+    return subprocess.run(
+        convert_cmd, check=True, stdout=subprocess.PIPE, input=wav_data
+    ).stdout
+
+
+def maybe_convert_wav(wav_data: bytes) -> Tuple[bytes, float]:
+    """Converts WAV data to 16-bit, 16Khz mono WAV if necessary."""
+    with io.BytesIO(wav_data) as wav_io:
+        with wave.open(wav_io, "rb") as wav_file:
+            frames = wav_file.getnframes()
+            rate = wav_file.getframerate()
+            wav_duration = frames / float(rate)
+            width, channels = (wav_file.getsampwidth(), wav_file.getnchannels())
+            if (rate != 16000) or (width != 2) or (channels != 1):
+                # Do conversion
+                return convert_wav(wav_data), wav_duration
+            else:
+                # Return original data
+                return wav_file.readframes(frames), wav_duration
 
 
 # -----------------------------------------------------------------------------

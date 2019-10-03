@@ -572,23 +572,23 @@ where `statistics` describes the overall accuracy of the examples relative to ex
 
 The `statistics` section of the report contains:
 
-* `num_wavs` - total number of WAV files that were tested
-* `num_words` - total number of expected words across all test WAVs
-* `num_entities` - total number of distinct entity/value pairs accross all test WAVs
-* `correct_transcriptions` - number of WAV files whose actual transcriptions **exactly** matched expectations
-* `correct_intent_names` - number of WAV files whose actual  intent **exactly** matched expectations
-* `correct_entities` - number of entity/value pairs that **exactly** matched expectations **if and only if** the actual intent matched too
-* `transcription_accuracy` - correct words / num words (1 = perfect)
-* `intent_accuracy` - correct intents / num wavs (1 = perfect)
-* `entity_accuracy` - correct entities / num entities (1 = perfect)
+* `num_wavs` - total number of WAV files that were tested (number)
+* `num_words` - total number of expected words across all test WAVs (number)
+* `num_entities` - total number of distinct entity/value pairs accross all test WAVs (number)
+* `correct_transcriptions` - number of WAV files whose actual transcriptions **exactly** matched expectations (number)
+* `correct_intent_names` - number of WAV files whose actual  intent **exactly** matched expectations (number)
+* `correct_entities` - number of entity/value pairs that **exactly** matched expectations **if and only if** the actual intent matched too (number)
+* `transcription_accuracy` - correct words / num words (number, 1 = perfect)
+* `intent_accuracy` - correct intents / num wavs (number, 1 = perfect)
+* `entity_accuracy` - correct entities / num entities (number, 1 = perfect)
 
 The `actual` section of the report contains the [recognized intent](formats.md#intents) of each WAV file as well as a `word_error` section with:
 
-* `expected` - text from expected transcription (capitalized sections are incorrect)
-* `actual` - text from actual transcription ('*' means missing letter)
-* `words` - number of expected words
-* `correct` - number of correct words
-* `errors` - number of incorrect words
+* `expected` - text from expected transcription (string, capitalized sections are incorrect)
+* `actual` - text from actual transcription (string, '*' means missing letter)
+* `words` - number of expected words (number)
+* `correct` - number of correct words (number)
+* `errors` - number of incorrect words (number)
 
 The `expected` section is just the intent or transcription recorded in the examples directory alongside each WAV file. For example, a WAV file named `example-1.wav` should ideally have an `example-1.json` file with an [expected intent](formats.md#intents). Failing that, an `example-1.txt` file with the transcription **must** be present.
 
