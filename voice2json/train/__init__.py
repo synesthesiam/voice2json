@@ -69,6 +69,10 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
     kaldi_final_model = acoustic_model / "model" / "final.mdl"
     kaldi_hclg_fst = acoustic_model / "model" / "graph" / "HCLG.fst"
 
+    # Julius
+    julius_am_model = acoustic_model / "model.am"
+    julius_layerout_weight = acoustic_model / "model.layerout_weight.npy"
+
     # Outputs
     dictionary = ppath("training.dictionary", "dictionary.txt")
     language_model = ppath("training.language-model", "language_model.txt")
@@ -110,18 +114,22 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
 
     # -----------------------------------------------------------------------------
 
+    large_paths = [
+        base_dictionary,
+        base_language_model,
+        g2p_model,
+        kaldi_final_model,
+        kaldi_hclg_fst,
+        julius_am_model,
+        julius_layerout_weight,
+    ]
+
     def do_reassemble(paths: List[Path], targets):
         with open(targets[0], "wb") as target_file:
             subprocess.run(["cat"] + [str(path) for path in paths], stdout=target_file)
 
     def task_reassemble_files():
-        for path in [
-            base_dictionary,
-            base_language_model,
-            g2p_model,
-            kaldi_final_model,
-            kaldi_hclg_fst,
-        ]:
+        for path in large_paths:
             gzip_path = Path(str(path) + ".gz")
             part_paths = sorted(list(profile_dir.glob(f"{gzip_path.name}.part-*")))
             if len(part_paths) > 0:
@@ -142,13 +150,7 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
 
     @create_after(executed="reassemble_files")
     def task_unzip_files():
-        for path in [
-            base_dictionary,
-            base_language_model,
-            g2p_model,
-            kaldi_final_model,
-            kaldi_hclg_fst,
-        ]:
+        for path in large_paths:
             gzip_path = Path(str(path) + ".gz")
             if gzip_path.exists():
                 if path.exists():
