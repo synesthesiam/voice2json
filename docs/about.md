@@ -4,6 +4,10 @@
 
 ![Mike head](img/mike-head.png)
 
+* [License](#license)
+* [Supporting Tools](#supporting-tools)
+* [History](#history)
+
 ---
 
 ## License
@@ -124,7 +128,7 @@ Some limitations with this approach become apparent with use, however:
 * Intent handling is baked into each individual module, making it difficult to interact with other IoT systems (e.g., [Node-RED](https://nodered.org))
 * Users unfamiliar with Python cannot extend the system
 
-Rhasspy v1 shared many of the same sub-systems with Jasper, such as pocketsphinx for wake word detection, [phonetisaurus](https://github.com/AdolfVonKleist/Phonetisaurus) for guessing unknown word prounciations, and [MaryTTS](http://mary.dfki.de) for text to speech.
+Rhasspy v1 shared many of the same sub-systems with Jasper, such as pocketsphinx for wake word detection, [phonetisaurus](https://github.com/AdolfVonKleist/Phonetisaurus) for guessing unknown word pronunciations, and [MaryTTS](http://mary.dfki.de) for text to speech.
 
 ### Rhasspy v1.5
 
@@ -172,6 +176,4 @@ Through its REST API and a websocket connection, Rhasspy was also able to intera
 
 ### The Road to voice2json
 
-Rhasspy v2 represented a significant leap forward from v1, but there was still much to do.
-
-TODO
+Rhasspy v2 represented a significant leap forward from v1, but there was still much to do. `voice2json` represents a distillation of Rhasspy, taking the [core operations](commands.md) out and making them usable as traditional Linux command-line tools. In the future, Rhasspy will be based on `voice2json`, focusing more on the voice assistant/integration aspects of IoT.

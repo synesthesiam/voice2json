@@ -121,7 +121,7 @@ For practical purposes, a word is just the "stuff between whitespace". What matt
 
 #### Grapheme to Phoneme
 
-A **grapheme to phoneme** model can be used to predict the pronunciation of words outside of the dictionary. This is a statisical model that maps sequences of characters (graphemes) to sequences of phonemes. `voice2json` uses a tool called [Phonetisaurus](https://github.com/AdolfVonKleist/Phonetisaurus) for this purpose.
+A **grapheme to phoneme** model can be used to predict the pronunciation of words outside of the dictionary. This is a statistical model that maps sequences of characters (graphemes) to sequences of phonemes. `voice2json` uses a tool called [Phonetisaurus](https://github.com/AdolfVonKleist/Phonetisaurus) for this purpose.
 
 ### Language Model
 
@@ -158,7 +158,7 @@ The language model will only give you **sentence fragments** because that's what
 * Add virtual start/stop sentence words (`<s>`, `</s>`)
     * The language model will now capture statistics about which words frequently occur at the beginning and end of sentences
 * Use sliding time windows
-    * Fragments are stitched together using overlapping windows that take statistics into accout
+    * Fragments are stitched together using overlapping windows that take statistics into account
 * Break audio at long pauses or assume single sentence
     * You need to know where to insert `<s>` and `</s>`.
 

@@ -7,15 +7,23 @@ A `voice2json` <strong>profile</strong> contains everything necessary to recogni
 * [sentences.ini](sentences.md)
     * A template file describing all of your voice commands
 * Speech/intent models
-    * `acoustic_model` - a directory with the speech model
-    * `intent.fst` - a [finite state transducer](http://www.openfst.org) generated during [training](commands.md#traing-profile)
+    * `acoustic_model` - a directory with the speech model artifacts
+        * [Kaldi](https://kaldi-asr.org) models typically have a large pre-trained `HCLG.fst` in `acoustic_model/model/graph`
+    * `intent.fst` - a [finite state transducer](http://www.openfst.org) generated during [training](commands.md#train-profile)
     * See [the whitepaper](whitepaper.md) for more details
 * Pronunciation dictionaries
     * How `voice2json` expects words to be pronounced. You can [customize any word](commands.md#pronounce-word).
     * `base_dictionary.txt` - large, pre-built pronunciations for most words
-    * `custom_words.txt` - small, custom pronunciations for your words
+    * `custom_words.txt` - small, custom pronunciation dictionary for [words that voice2json doesn't know](commands.md#unknown-words)
+    * `dictionary.txt` - pronunciation dictionary generated during [training](commands.md#train-profile) containing all needed words
+* Language models
+    * Captures statistics about [which words follow others](whitepaper.md#language-model) in your voice commands
+    * `base_language_model.txt` - large, pre-built [ARPA language model](https://cmusphinx.github.io/wiki/arpaformat/) for profile language
+        * Used in [open transcription](commands.md#open-transcription) and [language model mixing](commands.md#language-model-mixing)
+        * [Julius](https://github.com/julius-speech/julius)-based profiles may have a pre-compiled `base_language_model.bin` file instead
+    * `language_model.txt` - custom language model generated generated during [training](commands.md#train-profile)
 * Grapheme to phoneme models
-    * Used to guess how [unknown words](commands.md#unknown-words) *should* be pronounced.
+    * Used to guess how [unknown words](commands.md#unknown-words) *should* be pronounced
     * `g2p.fst` - a [finite state transducer](http://www.openfst.org) created using [phonetisaurus](https://github.com/AdolfVonKleist/Phonetisaurus)
 
 ---
@@ -70,6 +78,10 @@ speech-to-text:
     # Path to directory with pre-built HCLG.fst (open transcription)
     base-graph-directory: !env "${profile_dir}/acoustic_model/model/graph"
 
+  # Julius-specific settings
+  julius:
+    adinnet-port: 5530
+
 # -----------------------------------------------------------------------------
 
 intent-recognition:
@@ -88,16 +100,20 @@ intent-recognition:
 # -----------------------------------------------------------------------------
 
 training:
+  # Type of acoustic model.
+  # One of: pocketsphinx, kaldi, julius.
+  acoustic-model-type: "pocketsphinx"
+
   # Path to file with custom intents and sentences
   sentences-file: !env "${profile_dir}/sentences.ini"
-  
+
   # Path to text file with intents that will be considered for training.
   # All intents will be considered if this file is missing.
-  intent_whitelist: !env "${profile_dir}/intent_whitelist"
+  intent-whitelist: !env "${profile_dir}/intent_whitelist"
 
   # Directory containing text files, one for each $slot referenced in sentences.ini
   slots-directory: !env "${profile_dir}/slots"
-
+  
   # Path to write custom intent finite state transducer
   intent-fst: !env "${profile_dir}/intent.fst"
   
@@ -121,12 +137,16 @@ training:
 
   # Amount of base language model to mix into custom language model
   base-language-model-weight: 0.0
-
+  
   # Path to pre-built pronunciation dictionary
   base-dictionary: !env "${profile_dir}/base_dictionary.txt"
   
   # Path to model used to guess unknown word pronunciation
   grapheme-to-phoneme-model: !env "${profile_dir}/g2p.fst"
+
+  # Force word case during dictionary lookup/g2p.
+  # One of ignore, upper, lower.
+  word-casing: "ignore"
 
   # Kaldi-specific settings
   kaldi:
@@ -185,7 +205,7 @@ text-to-speech:
     phoneme-map: !env "${profile_dir}/espeak_phonemes.txt"
 
     # Command to execute to pronounce some espeak phonemes
-    pronounce-command: "espeak -s 80 [[{phonemes}]]"
+    pronounce-command: "espeak-ng -s 80 [[{phonemes}]]"
 
 # -----------------------------------------------------------------------------
 

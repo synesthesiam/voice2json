@@ -129,7 +129,7 @@ After following the [installation instructions](https://github.com/synesthesiam/
 
 * [Source Code](https://github.com/synesthesiam/voice2json/tree/master/recipes/timers)
 
-A common task for voice assistants is to set timers. Here, we demonsrate a "simple" timer that supports a single timer that's less than 10 hours in one second increments:
+A common task for voice assistants is to set timers. Here, we demonstrate a "simple" timer that supports a single timer that's less than 10 hours in one second increments:
 
 ```
 [SetTimer]
@@ -192,7 +192,7 @@ for line in sys.stdin:
 
 After following the [installation instructions](https://github.com/synesthesiam/voice2json/tree/master/recipes/timers), execute the [listen_timer.sh](https://github.com/synesthesiam/voice2json/blob/master/recipes/timers/listen_timer.sh) script. It will wait for a "wake up" MQTT message on the `timer/wake-up` topic. If you'd like to use a wake word instead, see the [launch program example](#launch-a-program-via-voice).
 
-When the wake up message is received, you can say something like "set a timer for five seconds". After an acknowledgement beep, the example will wait the appropriate amount of time and then play an alarm sound (three short beeps). A response MQTT message is also published on the `timer/alarm` topic after the timer has finished, allowing a [Node-RED](https://nodered.org) or other IoT software to respond.
+When the wake up message is received, you can say something like "set a timer for five seconds". After an acknowledgment beep, the example will wait the appropriate amount of time and then play an alarm sound (three short beeps). A response MQTT message is also published on the `timer/alarm` topic after the timer has finished, allowing a [Node-RED](https://nodered.org) or other IoT software to respond.
 
 ---
 
@@ -249,7 +249,7 @@ set [the] <light_name> [to] <color>
 make [the] <light_name> <color>
 ```
 
-For ease of installation, create a `rasa` script that calls out to the [offical Rasa Docker image](https://rasa.com/docs/rasa/user-guide/running-rasa-with-docker/):
+For ease of installation, create a `rasa` script that calls out to the [official Rasa Docker image](https://rasa.com/docs/rasa/user-guide/running-rasa-with-docker/):
 
 ```bash
 #!/usr/bin/env bash

@@ -1,5 +1,19 @@
 # Installing voice2json
 
+`voice2json` has been tested on Ubuntu 18.04. It should be able to run on most any flavor of Linux using the [Docker image](#docker-image). It may even run on Mac OSX, but I don't have a Mac to test this out.
+
+Installation options:
+
+* [Debian Package](#debian-package)
+* [Docker Image](#docker-image)
+* [From Source](#from-source)
+
+After installation:
+
+* [Download Profile](#download-profile)
+
+---
+
 ## Debian Package
 
 Pre-compiled packages are available for Debian-based distributions (Ubuntu, Linux Mint, etc.) on `amd64`, `armhf`, and `aarch64` architectures. These packages are built using [PyInstaller](https://www.pyinstaller.org) and `dpkg`.
@@ -97,15 +111,23 @@ $ ./install.sh
 Installing may take a **long time** and requires an Internet connection to download dependencies (cached in `voice2json/download`). The `install.sh` script does the following:
 
 1. Installs required packages (assumes Debian)
-2. Creates a Python virtual environment at `voice2json/.venv`
-3. Downloads and compiles these libraries in `voice2json/build`:
-    * [openfst](http://www.openfst.org)
+2. Creates a Python virtual environment at `voice2json/.venv_<CPU_ARCH>`
+    * `CPU_ARCH="$(lscpu | awk '/^Architecture/{print $2}')"`
+    * Override location with `--venv <DIR>`
+    * Avoid re-creating virtual environment with `--nocreate`
+3. Downloads and compiles these libraries in `voice2json/build_<CPU_ARCH>`:
+    * [openfst](http://www.openfst.org) - takes **forever** to compile
+        * Speed up compilation with `--make-threads 8`
     * [opengrm](http://www.opengrm.org/twiki/bin/view/GRM/NGramLibrary)
     * [phonetisaurus](https://github.com/AdolfVonKleist/Phonetisaurus)
-    * [Kaldi](https://kaldi-asr.org)
+    * [Kaldi](https://kaldi-asr.org) - disable with `--nokaldi`
+    * [Julius](https://github.com/julius-speech/julius) - disable with `--nojulius`
 4. Installs Python dependencies into virtual environment
+    * Disable with `--nopython`
 
 If `install.sh` succeeds, you will be able to run the `voice2json.sh` script in the root of the repository in place of any `voice2json` example command.
+
+---
 
 ## Download Profile
 

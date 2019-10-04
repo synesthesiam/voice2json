@@ -119,7 +119,7 @@ During training, `voice2json` can **mix** the large, open ended language model i
 
 ![Diagram of training process](img/training.svg)
 
-To see the effect of language model mixing, consder a simple `sentences.ini` file:
+To see the effect of language model mixing, consider a simple `sentences.ini` file:
 
 ```
 [ChangeLightState]
@@ -285,7 +285,7 @@ Output:
 
 When given the `--open` argument, `transcribe-wav` **will ignore** your [custom voice commands](sentences.md) and instead use the large, pre-trained speech model present in [your profile](profiles.md). Do this if you want to use `voice2json` for general transcription tasks that are not domain specific. Keep in mind, of course, that this is not what `voice2json` is optimized for!
 
-If you want the best of both worlds (transcriptions focused on a particular domain, but still able to accomodate general speech), check out [language model mixing](#language-model-mixing). This comes at a performance cost, however, in training, loading, and transcription times. Consider using `transcribe-wav` [as a service](recipes.md#create-an-mqtt-transcription-service) to avoid re-loading your mixed speech model.
+If you want the best of both worlds (transcriptions focused on a particular domain, but still able to accommodate general speech), check out [language model mixing](#language-model-mixing). This comes at a performance cost, however, in training, loading, and transcription times. Consider using `transcribe-wav` [as a service](recipes.md#create-an-mqtt-transcription-service) to avoid re-loading your mixed speech model.
 
 ---
 
@@ -365,7 +365,7 @@ Records from a live audio stream until a voice command has been spoken. Outputs 
 $ voice2json record-command > my-voice-command.wav
 ```
 
-`record-command` uses the [webrtcvad](https://github.com/wiseman/py-webrtcvad) library to detect live speech. Once speech has been detected, `voice2json` begins recording until there is silence. If speech goes on too long, a timeout is reached and recording stops. The [profile settings](profiles.md) under the `voice-command** section control exactly how many seconds of speech and silence are needed to segement live audio.
+`record-command` uses the [webrtcvad](https://github.com/wiseman/py-webrtcvad) library to detect live speech. Once speech has been detected, `voice2json` begins recording until there is silence. If speech goes on too long, a timeout is reached and recording stops. The [profile settings](profiles.md) under the `voice-command** section control exactly how many seconds of speech and silence are needed to segment live audio.
 
 See [audio sources](#audio-sources) for a description of how `record-command` gets audio input.
 
@@ -379,7 +379,7 @@ $ voice2json record-command \
       --wav-sink /dev/null
 ```
 
-will output something lile:
+will output something like:
 
 ```json
 {"event": "speech", "time_seconds": 0.24}
@@ -574,7 +574,7 @@ The `statistics` section of the report contains:
 
 * `num_wavs` - total number of WAV files that were tested (number)
 * `num_words` - total number of expected words across all test WAVs (number)
-* `num_entities` - total number of distinct entity/value pairs accross all test WAVs (number)
+* `num_entities` - total number of distinct entity/value pairs across all test WAVs (number)
 * `correct_transcriptions` - number of WAV files whose actual transcriptions **exactly** matched expectations (number)
 * `correct_intent_names` - number of WAV files whose actual  intent **exactly** matched expectations (number)
 * `correct_entities` - number of entity/value pairs that **exactly** matched expectations **if and only if** the actual intent matched too (number)

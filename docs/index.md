@@ -164,36 +164,66 @@ Once you've [installed voice2json](install.md) and [downloaded a profile](instal
 * Vietnamese (Tiếng Việt)
     * [vi_kaldi-montreal](https://github.com/synesthesiam/vi_kaldi-montreal)
 
+---
+
 ## Contributing
 
 Community contributions are welcomed! There are many different ways to contribute:
 
 * Pull requests for bug fixes, new features, or corrections to the documentation
-* Help with each of the [supported language profiles](#supported-languages)
+* Help with any of the [supported language profiles](#supported-languages)
     * Testing to make sure the acoustic models and default pronunciation dictionaries are working
     * Translations of the [example voice commands](https://github.com/synesthesiam/en-us_pocketsphinx-cmu/blob/8e6c984183a43de0cc87930efff37b4a5c840a40/sentences.ini)
-    * Example of you speaking with transcriptions
+    * Example WAV files of you speaking with text transcriptions
 * Help with adding support for a different language by [contributing to Mozilla Common Voice](https://voice.mozilla.org/)
-* TODO Assist community members
-* Implement one of [my crazy ideas](#ideas)
+* Assist other community members
+* Implement or critique one of [my crazy ideas](#ideas)
+
+---
 
 ## Ideas
 
+Here are some ideas I have for making `voice2json` better that I don't have time to implement.
+
 ### Yet Another Wake Word Library
 
-TODO
+[Porcupine](https://github.com/Picovoice/Porcupine) is the best free wake word library I've found to date, but it has two major limitations for me:
+
+1. It is not entirely open source
+    * I can't build it for architecture that aren't currently supported
+2. Custom wake words expire after 30 days
+    * I can't include custom wake words in pre-built packages/images
+    
+[Picovoice](https://picovoice.ai) has been very generous to release porcupine for free, so I'm not suggesting they change anything. Instead, I'd love to see a free and open source wake word library that has these features:
+
+* Free and completely open source
+* Performance *close* to porcupine or [snowboy](https://snowboy.kitt.ai)
+* Able to run on a Raspberry Pi alongside other software (no 100% CPU usage)
+* Can add custom wake words without hours of training
+
+[Mycroft Precise](https://github.com/MycroftAI/mycroft-precise) comes close, but requires a lot of expertise and time to train custom wake words. It's performance is also unfortunately also poorer than porcupine (in my limited experience).
+
+I've wondered if Mycroft Precise's approach ([a GRU](https://github.com/MycroftAI/mycroft-precise#how-it-works)) could be extended to include Pocketsphinx's [keyword search mode](https://cmusphinx.github.io/wiki/tutoriallm/#using-keyword-lists-with-pocketsphinx) as an input feature during training and at runtime. On it's own, Pocketsphinx's performance as a wake word detector [is abysmal](https://github.com/Picovoice/wake-word-benchmark#results). But perhaps as one of several features in a neural network, it could help more than hurt.
 
 ### Acoustic Models From Audiobooks
 
-TODO
+The paper [LibriSpeech: An ASR Corpus Based on Public Domain Audio Books](http://www.danielpovey.com/files/2015_icassp_librispeech.pdf) describes a method for taking free audio books from [LibriVox](https://librivox.org) and training [acoustic models](whitepaper.md#acoustic-model) from it using [Kaldi](https://kaldi-asr.org). For languages besides English, this may be a way of getting around the lack of free transcribed audio datasets! Although not ideal, it's better than nothing.
+
+For some languages, the audiobook approach may be especially useful with end-to-end machine learning approaches, like [Mozilla's DeepSpeech](https://github.com/mozilla/DeepSpeech) and [Facebook's wav2letter](https://github.com/facebookresearch/wav2letter). Typical approaches to building acoustic models require the identification of a language's phonemes and the construction of a large [pronunciation dictionary](whitepaper.md#pronunciation-dictionary). End-to-end approaches go directly from acoustic features to graphemes (letters), subsuming the phonetic dictionary step. More data is required, of course, but books tend to be quite long.
 
 ### Android Support
 
-TODO
+`voice2json` uses [pocketsphinx](https://github.com/cmusphinx/pocketsphinx), [Kaldi](https://kaldi-asr.org), and [Julius](https://github.com/julius-speech/julius) for speech recognition. All of these libraries have at least a proof-of-concept Android build:
 
-### Browser Based Pocketsphinx
+* [Pocketsphinx on Android](https://cmusphinx.github.io/wiki/tutorialandroid/)
+* [Compile Kaldi for Android](http://jcsilva.github.io/2017/03/18/compile-kaldi-android/)
+* [Julius on Android](https://github.com/julius-speech/julius/speech/104)
 
-TODO
+It seems feasible that `voice2json` could be ported to Android, providing decent offline mobile speech/intent recognition.
+
+### Browser-Based voice2json
+
+Could [empscripten](https://empscripten.org) be used to compile WebAssembly versions of `voice2json`'s dependencies? Combined with something like [pyodide](https://github.com/iodide-project/pyodide), it might be possible to run (most of) `voice2json` entirely in a modern web browser.
 
 ---
 
