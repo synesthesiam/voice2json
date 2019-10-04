@@ -219,6 +219,18 @@ def main():
     )
     tune_examples_parser.set_defaults(func=tune_examples)
 
+    # show-documentation
+    show_documentation_parser = sub_parsers.add_parser(
+        "show-documentation", help="Run local HTTP server with documentation"
+    )
+    show_documentation_parser.add_argument(
+        "--port",
+        type=int,
+        default=8000,
+        help="Port to host web server on (default: 8000)",
+    )
+    show_documentation_parser.set_defaults(func=show_documentation)
+
     # -------------------------------------------------------------------------
 
     args = parser.parse_args()
@@ -251,7 +263,9 @@ def main():
 
     # Load profile defaults
     defaults_yaml = (
-        Path(os.environ.get("voice2json_dir")) / "etc" / "profile.defaults.yml"
+        Path(os.environ.get("voice2json_dir", os.getcwd()))
+        / "etc"
+        / "profile.defaults.yml"
     )
     if defaults_yaml.exists():
         logger.debug(f"Loading profile defaults from {defaults_yaml}")
@@ -1152,6 +1166,25 @@ def tune_examples(
 
     end_time = time.time()
     print("Tuning completed in", end_time - start_time, "second(s)")
+
+
+# -----------------------------------------------------------------------------
+
+
+def show_documentation(
+    args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]
+) -> None:
+    import http.server
+    import socketserver
+
+    voice2json_dir = Path(os.environ.get("voice2json_dir", os.getcwd()))
+    site_dir = voice2json_dir / "site"
+
+    os.chdir(site_dir)
+    Handler = http.server.SimpleHTTPRequestHandler
+    httpd = socketserver.TCPServer(("", args.port), Handler)
+    print(f"Running HTTP server at http://127.0.0.1:{args.port}")
+    httpd.serve_forever()
 
 
 # -----------------------------------------------------------------------------

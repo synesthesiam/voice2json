@@ -48,6 +48,13 @@ if [[ -d "${dist_dir}" ]]; then
     chmod -x "${output_dir}/${name}"/*.so* || true
 fi
 
+# Copy documentation
+docs_dir="${this_dir}/site"
+mkdir -p "${output_dir}/site"
+rsync -av --delete \
+      "${docs_dir}/" \
+      "${output_dir}/site/"
+
 # Copy Kaldi
 kaldi_output_dir="${package_dir}/usr/lib/${name}/build_${CPU_ARCH}/kaldi-master"
 rm -rf "${kaldi_output_dir}"
@@ -59,7 +66,7 @@ rsync -av \
       "${kaldi_output_dir}/"
 
 # Avoid link recursion
-rm -f '${build_dir}/kaldi-master/egs/wsj/s5/utils/utils'
+rm -f "${build_dir}/kaldi-master/egs/wsj/s5/utils/utils"
 
 for kaldi_sync_dir in 'egs/wsj/s5/utils' 'tools/openfst/bin' 'src/lib';
 do

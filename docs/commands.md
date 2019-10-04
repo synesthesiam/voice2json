@@ -19,6 +19,7 @@ The following commands are available:
 * [record-examples](#record-examples) - Generate and record speech examples
 * [test-examples](#test-examples) - Test recorded speech examples
 * [tune-examples](#tune-examples) - Tune acoustic model using recorded speech examples
+* [show-documentation](#show-documentation) - Run HTTP server locally with documentation
     
 ---
 
@@ -603,3 +604,17 @@ $ voice2json tune-examples --directory /path/to/examples/
 ```
 
 This will use the recorded WAV files and transcriptions to [adapt the sphinx acoustic model](https://cmusphinx.github.io/wiki/tutorialadapt/) with MLLR. When it's finished, `tune-examples` will write an [MLLR matrix](https://cmusphinx.github.io/wiki/tutorialadapt/#creating-a-transformation-with-mllr) to the file path in `speech-to-text.pocketsphinx.mllr-matrix` in your [profile](profiles.md). When `transcibe-wav` runs next, it will use this matrix during transcription.
+
+---
+
+## show-documentation
+
+Runs a local HTTP server with this documentation. The default port is 8000, which can be changed with `--port`:
+
+```bash
+$ voice2json show-documentation --port 8000
+```
+
+The documentation should now be accessible at [http://localhost:8000](http://localhost:8000)
+
+If you're running `voice2json` inside [Docker](installation.md#docker-image), make sure you use `-p` to expose the correct port via `docker run`.

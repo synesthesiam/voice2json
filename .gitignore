@@ -18,3 +18,4 @@ recipes/deepspeech/model/trie
 recipes/deepspeech/model/lm.binary
 recipes/deepspeech/model/clean-vocab.txt
 nohup.out
+site/

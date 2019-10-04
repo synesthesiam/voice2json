@@ -36,6 +36,10 @@ if [[ -z "$1" ]]; then
     exit 1
 fi
 
+# Generate documentation
+mkdocs build
+
+# Create install files
 CPU_ARCH="$(lscpu | awk '/^Architecture/{print $2}')"
 
 pyinstaller\

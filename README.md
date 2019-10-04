@@ -72,6 +72,7 @@ It can be used to:
 * [record-examples](https://voice2json.org/commands.html#record-examples) - Generate and record speech examples
 * [test-examples](https://voice2json.org/commands.html#test-examples) - Test recorded speech examples
 * [tune-examples](https://voice2json.org/commands.html#tune-examples) - Tune acoustic model using recorded speech examples
+* [show-documentation](https://voice2json.org/commands.html#show-documentation) - Run HTTP server locally with documentation
 
 ## Supported Languages
 
