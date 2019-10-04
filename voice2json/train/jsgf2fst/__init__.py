@@ -115,11 +115,25 @@ def grammar_to_fsts(
 
 
 def slots_to_fsts(
-    slots_dir: Path, slot_names: Optional[Set[str]] = None, eps: str = "<eps>"
+    slots_dir: Path,
+    slot_names: Optional[Set[str]] = None,
+    eps: str = "<eps>",
+    upper: bool = False,
+    lower: bool = False,
 ) -> Dict[str, fst.Fst]:
     """Transform slot values into FSTs."""
     slot_fsts: Dict[str, fst.Fst] = {}
 
+    # Casing transformation
+    transform = lambda w: w
+    if upper:
+        transform = lambda w: w.upper()
+        logger.debug("Forcing upper-case")
+    elif lower:
+        transform = lambda w: w.lower()
+        logger.debug("Forcing lower-case")
+
+    # Process slots
     for slot_path in slots_dir.glob("*"):
         # Skip directories
         if not slot_path.is_file():
@@ -153,6 +167,9 @@ def slots_to_fsts(
                 line = line.strip()
                 if len(line) == 0:
                     continue
+
+                # Handle casing
+                line = transform(line)
 
                 replace_symbol = f"__replace__{len(replacements)}"
                 out_replace = output_symbols.add_symbol(replace_symbol)

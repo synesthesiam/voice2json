@@ -72,14 +72,14 @@ def get_pocketsphinx_transcriber(
         dictionary = ppath(
             profile,
             profile_dir,
-            "speech-to-text.base_dictionary",
+            "speech-to-text.base-dictionary",
             "base_dictionary.txt",
         )
 
         language_model = ppath(
             profile,
             profile_dir,
-            "speech-to-text.base_language-model",
+            "speech-to-text.base-language-model",
             "base_language_model.txt",
         )
 
@@ -201,14 +201,14 @@ def get_julius_transcriber(
         dictionary = ppath(
             profile,
             profile_dir,
-            "speech-to-text.base_dictionary",
+            "speech-to-text.base-dictionary",
             "base_dictionary.txt",
         )
 
         language_model = ppath(
             profile,
             profile_dir,
-            "speech-to-text.base_language-model",
+            "speech-to-text.base-language-model",
             "base_language_model.bin",
         )
     else:
@@ -230,13 +230,12 @@ def get_julius_transcriber(
 
         def _start_julius(self):
             logger.debug("Staring Julius")
+
             julius_cmd = [
                 "julius",
-                "-quiet",
+                "-nosectioncheck",
                 "-C",
                 str(self.model_dir / "julius.jconf"),
-                "-dnnconf",
-                str(self.model_dir / "dnn.jconf"),
                 "-input",
                 "adinnet",
                 "-adport",
@@ -244,6 +243,14 @@ def get_julius_transcriber(
                 "-v",
                 str(self.dictionary),
             ]
+
+            if not debug:
+                julius_cmd.append("-quiet")
+
+            dnn_conf = self.model_dir / "dnn.jconf"
+            if dnn_conf.exists():
+                # DNN model
+                julius_cmd.extend(["-dnnconf", str(dnn_conf)])
 
             if language_model.suffix.lower() == ".txt":
                 # ARPA forward n-grams
@@ -266,9 +273,14 @@ def get_julius_transcriber(
             # This is a pretty brittle way of detecting when Julius has
             # started. If this isn't done here, though, the very first
             # transcription time will be off.
-            line = self.julius_proc.stdout.readline()
-            while "system information end" not in line.lower():
-                line = self.julius_proc.stdout.readline()
+            line = self.julius_proc.stdout.readline().lower()
+            if "error" in line:
+                raise Exception(line)
+
+            while "system information end" not in line:
+                line = self.julius_proc.stdout.readline().lower()
+                if "error" in line:
+                    raise Exception(line)
 
             logger.debug("Started Julius")
 
@@ -330,6 +342,8 @@ def get_julius_transcriber(
                     logger.warning(line)
                     line = "sentence1:"
                     break
+                elif "ERROR" in line:
+                    raise Exception(line)
 
             # Exclude <s> and </s>
             result_text = (

@@ -164,8 +164,17 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
             maybe_deps.append(intent_whitelist)
 
         def ini_to_grammars(targets):
+            # Extra arguments for word casing
+            kwargs = {}
+            if word_casing == "upper":
+                kwargs["upper"] = True
+            elif word_casing == "lower":
+                kwargs["lower"] = True
+
             with open(sentences_ini, "r") as sentences_file:
-                make_grammars(sentences_file, grammar_dir, whitelist=whitelist)
+                make_grammars(
+                    sentences_file, grammar_dir, whitelist=whitelist, **kwargs
+                )
 
         return {
             "file_dep": [sentences_ini] + maybe_deps,
@@ -176,7 +185,14 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
     # -----------------------------------------------------------------------------
 
     def do_slots_to_fst(slot_names, targets):
-        slot_fsts = slots_to_fsts(slots_dir, slot_names=slot_names)
+        # Extra arguments for word casing
+        kwargs = {}
+        if word_casing == "upper":
+            kwargs["upper"] = True
+        elif word_casing == "lower":
+            kwargs["lower"] = True
+
+        slot_fsts = slots_to_fsts(slots_dir, slot_names=slot_names, **kwargs)
         for slot_name, slot_fst in slot_fsts.items():
             # Slot name will already have "$"
             slot_fst.write(str(fsts_dir / f"{slot_name}.fst"))
