@@ -58,7 +58,7 @@ It can be used to:
 
 * Training produces **both** a speech and intent recognizer. By describing your voice commands with `voice2json`'s [templating language](sentences.md), you get [more than just transcriptions](formats.md#intents) for free.
 * Re-training is **fast enough** to be done at runtime (usually < 5s), even up to [millions of possible voice commands](recipes.md#set-and-run-times). This means you can change [referenced slot](sentences.md#slot-references) values or [add/remove intents](commands.md#intent-whitelist) on the fly.
-* All of the [available commands](commands.md) are designed to work well in Unix pipelines, typically consuming/emitting plaintext or [newline-delimited JSON](http://jsonlines.org). Audio input/output is [file-based](commands.md#audio-sources), so you receive audio from [any source](recipes.md#stream-microphone-audio-over-a-network).
+* All of the [available commands](commands.md) are designed to work well in **Unix pipelines**, typically consuming/emitting plaintext or [newline-delimited JSON](http://jsonlines.org). Audio input/output is [file-based](commands.md#audio-sources), so you receive audio from [any source](recipes.md#stream-microphone-audio-over-a-network).
 
 ---
 
@@ -111,7 +111,9 @@ Why not just use [Google](https://assistant.google.com/), [Dragon](https://www.n
 
 Cloud-based speech and intent recognition services, such as Google Assistant or Amazon's Alexa, require a constant Internet connection to function. Additionally, they keep a copy of everything you say on their servers. Despite the high accuracy and deep integration with other services, this approach is **too brittle and uncomfortable** for me.
 
-Dragon Naturally Speaking and Snips offer local installations and offline functionality. Unfortunately, Dragon requires Microsoft Windows to function. It is *possible* to use [Dragon in Wine on Linux](http://appdb.winehq.org/objectManager.php?sClass=application&iId=2077) or via a virtual machine, but is difficult to set up and not officially supported by [Nuance](https://www.nuance.com). Snips offers an impressive amount of functionality and is [easy to interoperate with](https://docs.snips.ai/reference/hermes), but [requires an online account](https://console.snips.ai/login) just to create an assistant. Additionally, Snips is not yet fully open source, so any artifacts created for a Snips-based assistant may **not be portable** to another platform in the future.
+Dragon Naturally Speaking and Snips offer local installations and offline functionality. Great! Unfortunately, Dragon requires Microsoft Windows to function. It is *possible* to use [Dragon in Wine on Linux](http://appdb.winehq.org/objectManager.php?sClass=application&iId=2077) or via a virtual machine, but is difficult to set up and not officially supported by [Nuance](https://www.nuance.com). Snips offers an impressive amount of functionality and is [easy to interoperate with](https://docs.snips.ai/reference/hermes), but [requires an online account](https://console.snips.ai/login) just to create an assistant. Additionally, Snips is not yet fully open source, so any artifacts created for a Snips-based assistant may **not be portable** to another platform in the future.
+
+If you know enough about the voice commands you'd like to be recognized, why not just [tell the computer what you want](sentences.md)?
 
 ### No Magic, No Surprises
 
@@ -123,7 +125,7 @@ Once you've [installed voice2json](install.md) and [downloaded a profile](instal
 
 ## Supported Languages
 
-`voice2json` supports the following languages/locales:
+`voice2json` supports the following languages/locales. I don't speak or write any language besides U.S. English, so **please** let me know if any profile is broken or has poor performance.
 
 * Catalan
     * [ca-es_pocketsphinx-cmu](https://github.com/synesthesiam/ca-es_pocketsphinx-cmu)
@@ -171,12 +173,12 @@ Once you've [installed voice2json](install.md) and [downloaded a profile](instal
 Community contributions are welcomed! There are many different ways to contribute:
 
 * Pull requests for bug fixes, new features, or corrections to the documentation
-* Help with any of the [supported language profiles](#supported-languages)
+* Help with any of the [supported language profiles](#supported-languages), including:
     * Testing to make sure the acoustic models and default pronunciation dictionaries are working
     * Translations of the [example voice commands](https://github.com/synesthesiam/en-us_pocketsphinx-cmu/blob/8e6c984183a43de0cc87930efff37b4a5c840a40/sentences.ini)
-    * Example WAV files of you speaking with text transcriptions
-* Help with adding support for a different language by [contributing to Mozilla Common Voice](https://voice.mozilla.org/)
-* Assist other community members
+    * Example WAV files of you speaking with text transcriptions for performance testing
+* [Contributing to Mozilla Common Voice](https://voice.mozilla.org/)
+* Assist other `voice2json` community members
 * Implement or critique one of [my crazy ideas](#ideas)
 
 ---
