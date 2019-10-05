@@ -191,17 +191,12 @@ def fstprintall(
     output_symbols = in_fst.output_symbols()
     out_eps = output_symbols.find(eps)
     zero_weight = fst.Weight.Zero(in_fst.weight_type())
-    visited_states = set()
 
     state_queue = deque()
     state_queue.append((in_fst.start(), []))
 
     while len(state_queue) > 0:
         state, sentence = state_queue.popleft()
-        if state in visited_states:
-            continue
-
-        visited_states.add(state)
 
         if in_fst.final(state) != zero_weight:
             if out_file:

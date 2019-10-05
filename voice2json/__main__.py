@@ -745,10 +745,11 @@ def generate(
     intent_fst = fst.Fst.read(str(intent_fst_path))
 
     if args.number <= 0:
-        return
-
-    # Generate samples
-    rand_fst = fst.randgen(intent_fst, npath=args.number)
+        # Generatel all possible examples
+        rand_fst = intent_fst
+    else:
+        # Generate samples
+        rand_fst = fst.randgen(intent_fst, npath=args.number)
 
     # Convert to words/tokens
     for symbols in fstprintall(rand_fst, exclude_meta=False):
