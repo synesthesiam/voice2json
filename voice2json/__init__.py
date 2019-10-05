@@ -387,7 +387,9 @@ def get_recognizer(profile_dir: Path, profile: Dict[str, Any]) -> Recognizer:
     intent_fst_path = ppath(
         profile, profile_dir, "intent-recognition.intent-fst", "intent.fst"
     )
-    stop_words_path = ppath(profile, profile_dir, "intent-recognition.stop-words")
+    stop_words_path = ppath(
+        profile, profile_dir, "intent-recognition.stop-words", "stop_words.txt"
+    )
     lower_case = pydash.get(profile, "intent-recognition.lower-case", False)
     fuzzy = pydash.get(profile, "intent-recognition.fuzzy", True)
     skip_unknown = pydash.get(profile, "intent-recognition.skip_unknown", True)
@@ -397,8 +399,8 @@ def get_recognizer(profile_dir: Path, profile: Dict[str, Any]) -> Recognizer:
 
     # Load stop words (common words that can be safely ignored)
     stop_words: Set[str] = set()
-    if stop_words_path is not None:
-        stop_words.extend(w.strip() for w in stop_words_path.read_text().splitlines())
+    if (stop_words_path is not None) and stop_words_path.exists():
+        stop_words.update(w.strip() for w in stop_words_path.read_text().splitlines())
 
     # Ignore words outside of input symbol table
     known_tokens: Set[str] = set()
