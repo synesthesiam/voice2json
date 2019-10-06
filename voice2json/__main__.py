@@ -1018,7 +1018,9 @@ def test_examples(
             # Transcribe WAV
             wav_data = wav_path.read_bytes()
             actual_transcription = transcriber.transcribe_wav(wav_data)
-            actual_text = actual_transcription["text"]
+            actual_text = actual_transcription.get(
+                "raw_text", actual_transcription["text"]
+            )
             logger.debug(actual_text)
 
             if expected_text == actual_text:
@@ -1039,18 +1041,21 @@ def test_examples(
                         actual_intent[key] = value
 
                 logger.debug(actual_intent)
+                intents_match = (
+                    expected_intent["intent"]["name"] == actual_intent["intent"]["name"]
+                )
 
-                if expected_intent["intent"]["name"] == actual_intent["intent"]["name"]:
+                # Count entities
+                expected_entities: List[Tuple[str, str]] = []
+                for entity_dict in expected_intent.get("entities", []):
+                    num_entities += 1
+                    entity_tuple = (entity_dict["entity"], entity_dict["value"])
+                    expected_entities.append(entity_tuple)
+
+                # Verify actual entities.
+                # Only check entities if intent was correct.
+                if intents_match:
                     correct_intent_names += 1
-
-                    # Only check entities if intent was correct
-                    expected_entities: List[Tuple[str, str]] = []
-                    for entity_dict in expected_intent.get("entities", []):
-                        num_entities += 1
-                        entity_tuple = (entity_dict["entity"], entity_dict["value"])
-                        expected_entities.append(entity_tuple)
-
-                    # Verify actual entities
                     for entity_dict in actual_intent.get("entities", []):
                         entity_tuple = (entity_dict["entity"], entity_dict["value"])
 
@@ -1066,6 +1071,12 @@ def test_examples(
 
             num_wavs += 1
 
+        # ---------------------------------------------------------------------
+
+        if num_wavs < 1:
+            logger.fatal("No WAV files found")
+            sys.exit(1)
+
         # Compute word error rate (WER)
         align_results: Dict[str, Any] = {}
         if shutil.which("word_align.pl"):
@@ -1075,7 +1086,7 @@ def test_examples(
                 # Write references
                 for expected_key, expected_intent in expected.items():
                     print(
-                        expected_intent["text"],
+                        expected_intent.get("raw_text", expected_intent["text"]),
                         f"({expected_key})",
                         file=reference_file,
                     )
@@ -1084,7 +1095,7 @@ def test_examples(
                     # Write hypotheses
                     for actual_key, actual_intent in actual.items():
                         print(
-                            actual_intent["text"],
+                            actual_intent.get("raw_text", actual_intent["text"]),
                             f"({actual_key})",
                             file=hypothesis_file,
                         )
