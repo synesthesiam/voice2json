@@ -48,10 +48,24 @@ def get_grammar_dependencies(grammar: str) -> DependencyListener:
 
 
 def grammar_to_fsts(
-    grammar: str, replace_fsts: Dict[str, fst.Fst] = {}, eps: str = "<eps>"
+    grammar: str,
+    replace_fsts: Dict[str, fst.Fst] = {},
+    eps: str = "<eps>",
+    lower: bool = False,
+    upper: bool = False,
 ) -> FSTListener:
     """Transforms JSGF grammar into an FST."""
-    listener = FSTListener(grammar, eps=eps)
+
+    # Casing transformation
+    transform = lambda w: w
+    if upper:
+        transform = lambda w: w.upper()
+        logger.debug("Forcing upper-case")
+    elif lower:
+        transform = lambda w: w.lower()
+        logger.debug("Forcing lower-case")
+
+    listener = FSTListener(grammar, eps=eps, transform=transform)
     listener.walk()
 
     # Check for replacements

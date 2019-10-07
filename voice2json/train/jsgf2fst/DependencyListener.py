@@ -18,7 +18,7 @@ from .JsgfListener import JsgfListener
 
 
 class DependencyListener(JsgfListener):
-    def __init__(self, grammar:str, eps="<eps>"):
+    def __init__(self, grammar:str, eps="<eps>", transform=None):
         super().__init__(grammar)
 
         # State
@@ -40,6 +40,9 @@ class DependencyListener(JsgfListener):
         self.input_symbols = fst.SymbolTable()
         self.output_symbols = fst.SymbolTable()
         self.eps = eps
+
+        # Word transformation (casing)
+        self.transform = transform or (lambda w: w)
 
     # -------------------------------------------------------------------------
 
@@ -158,6 +161,9 @@ class DependencyListener(JsgfListener):
             else:
                 # Use word for both input and output
                 in_word, out_word = word, word
+
+            # Correct casing
+            in_word = self.transform(in_word)
 
             self.input_symbols.add_symbol(in_word)
             self.output_symbols.add_symbol(out_word)

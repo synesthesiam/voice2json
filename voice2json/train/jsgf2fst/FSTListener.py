@@ -13,8 +13,8 @@ from .DependencyListener import DependencyListener
 
 
 class FSTListener(DependencyListener):
-    def __init__(self, grammar: str, eps: str = "<eps>"):
-        super().__init__(grammar)
+    def __init__(self, grammar: str, eps: str = "<eps>", transform=None):
+        super().__init__(grammar, transform=transform)
 
         self.input_symbols.add_symbol(eps)
         self.output_symbols.add_symbol(eps)

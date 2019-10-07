@@ -16,17 +16,7 @@ def make_grammars(
     grammar_dir: Path,
     whitelist: Optional[Iterable[str]] = None,
     no_overwrite: bool = False,
-    upper: bool = False,
-    lower: bool = False,
 ) -> Dict[str, Path]:
-    transform = lambda w: w
-    if upper:
-        transform = lambda w: w.upper()
-        logger.debug("Forcing upper-case")
-    elif lower:
-        transform = lambda w: w.lower()
-        logger.debug("Forcing lower-case")
-
     # Create output directory
     grammar_dir.mkdir(parents=True, exist_ok=True)
 
@@ -53,10 +43,10 @@ def make_grammars(
         for k, v in config[sec_name].items():
             if v is None:
                 # Collect non-valued keys as sentences
-                sentences.append("({0})".format(transform(k.strip())))
+                sentences.append("({0})".format(k.strip()))
             else:
                 # Collect key/value pairs as JSGF rules
-                rule = "<{0}> = ({1});".format(k, transform(v))
+                rule = "<{0}> = ({1});".format(k, v)
                 rules.append(rule)
 
         if len(sentences) > 0:

@@ -1,4 +1,5 @@
 import io
+import os
 import sys
 import json
 import logging
@@ -9,6 +10,7 @@ import shutil
 import wave
 import time
 import socket
+import xml.etree.ElementTree as ET
 from typing import Dict, Any
 from pathlib import Path
 
@@ -195,6 +197,11 @@ def get_julius_transcriber(
     )
 
     adinnet_port = pydash.get(profile, "speech-to-text.julius.adinnet-port", 5530)
+    module_port = pydash.get(profile, "speech-to-text.julius.module-port", 10500)
+
+    # TODO: Expose these as settings
+    connect_retries = 50
+    connect_seconds = 0.1
 
     if open_transcription:
         # Use base dictionary/language model
@@ -227,9 +234,15 @@ def get_julius_transcriber(
             self.dictionary = dictionary
             self.language_model = language_model
             self.julius_proc = None
+            self.temp_dir = None
+            self.julius_out = None
 
         def _start_julius(self):
-            logger.debug("Staring Julius")
+            logger.debug("Starting Julius")
+            self.temp_dir = tempfile.TemporaryDirectory()
+
+            fifo_path = os.path.join(self.temp_dir.name, "filelist")
+            os.mkfifo(fifo_path)
 
             julius_cmd = [
                 "julius",
@@ -237,9 +250,16 @@ def get_julius_transcriber(
                 "-C",
                 str(self.model_dir / "julius.jconf"),
                 "-input",
-                "adinnet",
-                "-adport",
-                str(adinnet_port),
+                "file",
+                "-filelist",
+                fifo_path,
+                # "adinnet",
+                # "-adport",
+                # str(adinnet_port),
+                # "-module",
+                # str(module_port),
+                "-nocutsilence",
+                "-norealtime",
                 "-v",
                 str(self.dictionary),
             ]
@@ -269,22 +289,33 @@ def get_julius_transcriber(
                 universal_newlines=True,
             )
 
-            # Block until started.
-            # This is a pretty brittle way of detecting when Julius has
-            # started. If this isn't done here, though, the very first
-            # transcription time will be off.
-            line = self.julius_proc.stdout.readline().lower()
+            self.julius_out = open(fifo_path, "w")
+
+            # -----
+
+            # Read until Julius has started
+            line = self.julius_proc.stdout.readline().lower().strip()
             if "error" in line:
                 raise Exception(line)
 
             while "system information end" not in line:
-                line = self.julius_proc.stdout.readline().lower()
+                line = self.julius_proc.stdout.readline().lower().strip()
                 if "error" in line:
                     raise Exception(line)
 
-            logger.debug("Started Julius")
+            self.julius_in = self.julius_proc.stdout
+
+            logger.debug("Julius started")
 
         def stop(self):
+            if self.julius_out is not None:
+                self.julius_out.close()
+                self.julius_out = None
+
+            if self.temp_dir is not None:
+                self.temp_dir.cleanup()
+                self.temp_dir = None
+
             if self.julius_proc is not None:
                 logger.debug("Stopping Julius")
                 self.julius_proc.terminate()
@@ -305,54 +336,39 @@ def get_julius_transcriber(
 
             # Convert WAV to 16-bit, 16Khz mono
             converted_wav_data = maybe_convert_wav(profile, wav_data)
-            adintool_cmd = [
-                "adintool",
-                "-in",
-                "stdin",
-                "-out",
-                "adinnet",
-                "-server",
-                "localhost",
-                "-port",
-                str(adinnet_port),
-                "-nostrip",
-                "-nosegment",
-            ]
-
-            logger.debug(adintool_cmd)
 
             # Write path to WAV file
             logger.debug(f"Sending {len(converted_wav_data)} byte(s) to Julius")
             start_time = time.time()
-            subprocess.run(
-                adintool_cmd,
-                check=True,
-                input=converted_wav_data,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
 
-            line = self.julius_proc.stdout.readline().strip()
-            logger.debug(f"Julius> {line}")
-            while not line.startswith("sentence1:"):
-                line = self.julius_proc.stdout.readline().strip()
+            with tempfile.NamedTemporaryFile(suffix=".wav", mode="wb+") as temp_file:
+                temp_file.write(converted_wav_data)
+                temp_file.seek(0)
+
+                print(temp_file.name, file=self.julius_out)
+                self.julius_out.flush()
+
+                sentence_line = ""
+                line = self.julius_in.readline().strip()
                 logger.debug(f"Julius> {line}")
 
-                if "WARNING: input too short" in line:
-                    logger.warning(line)
-                    line = "sentence1:"
-                    break
-                elif "ERROR" in line:
-                    raise Exception(line)
+                while True:
+                    if line.startswith("sentence1:"):
+                        sentence_line = line.split(":", maxsplit=1)[1]
+                        break
 
-            # Exclude <s> and </s>
-            result_text = (
-                line.split(":", maxsplit=1)[1]
-                .replace("<s>", "")
-                .replace("</s>", "")
-                .strip()
-            )
-            end_time = time.time()
+                    if "error" in line.lower():
+                        raise Exception(line)
+
+                    line = self.julius_in.readline().strip()
+                    logger.debug(f"Julius> {line}")
+
+                # Exclude <s> and </s>
+                logger.debug(sentence_line)
+                result_text = (
+                    sentence_line.replace("<s>", "").replace("</s>", "").strip()
+                )
+                end_time = time.time()
 
             return {
                 "text": result_text.strip(),

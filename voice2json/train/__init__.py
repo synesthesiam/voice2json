@@ -164,17 +164,8 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
             maybe_deps.append(intent_whitelist)
 
         def ini_to_grammars(targets):
-            # Extra arguments for word casing
-            kwargs = {}
-            if word_casing == "upper":
-                kwargs["upper"] = True
-            elif word_casing == "lower":
-                kwargs["lower"] = True
-
             with open(sentences_ini, "r") as sentences_file:
-                make_grammars(
-                    sentences_file, grammar_dir, whitelist=whitelist, **kwargs
-                )
+                make_grammars(sentences_file, grammar_dir, whitelist=whitelist)
 
         return {
             "file_dep": [sentences_ini] + maybe_deps,
@@ -206,8 +197,15 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
             for replace_name, replace_path in replace_fst_paths.items()
         }
 
+        # Extra arguments for word casing
+        kwargs = {}
+        if word_casing == "upper":
+            kwargs["upper"] = True
+        elif word_casing == "lower":
+            kwargs["lower"] = True
+
         grammar = grammar_path.read_text()
-        listener = grammar_to_fsts(grammar, replace_fsts=replace_fsts)
+        listener = grammar_to_fsts(grammar, replace_fsts=replace_fsts, **kwargs)
         grammar_name = listener.grammar_name
 
         # Write FST for each JSGF rule

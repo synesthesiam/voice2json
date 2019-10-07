@@ -115,9 +115,7 @@ class JsgfListener:
                 if c == "<":
                     # Rule name
                     next_index = current_index + self._walk_expression(
-                        text[current_index + 1 :],
-                        end=">",
-                        is_literal=False,
+                        text[current_index + 1 :], end=">", is_literal=False
                     )
 
                     # Include <>
@@ -148,9 +146,7 @@ class JsgfListener:
                 elif c == "{":
                     # Tag bodies are *not* expressions
                     next_index = current_index + self._walk_expression(
-                        text[current_index + 1 :],
-                        end="}",
-                        is_literal=False,
+                        text[current_index + 1 :], end="}", is_literal=False
                     )
 
                     # Exclude {}
