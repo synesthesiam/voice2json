@@ -129,19 +129,13 @@ def get_kaldi_transcriber(
     if open_transcription:
         # Use base graph
         graph_dir = ppath(
-            profile,
-            profile_dir,
-            "speech-to-text.kaldi.base-graph-directory",
-            "acoustic_model/model/graph",
-        )
+            profile, profile_dir, "speech-to-text.kaldi.base-graph-directory"
+        ) or (acoustic_model / "model" / "graph")
     else:
         # Use custom graph
         graph_dir = ppath(
-            profile,
-            profile_dir,
-            "speech-to-text.kaldi.graph-directory",
-            "acoustic_model/graph",
-        )
+            profile, profile_dir, "speech-to-text.kaldi.graph-directory"
+        ) or (acoustic_model / "graph")
 
     class KaldiTranscriber(Transcriber):
         def __init__(self, model_type, model_dir, graph_dir):

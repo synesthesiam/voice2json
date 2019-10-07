@@ -617,4 +617,4 @@ $ voice2json show-documentation --port 8000
 
 The documentation should now be accessible at [http://localhost:8000](http://localhost:8000)
 
-If you're running `voice2json` inside [Docker](installation.md#docker-image), make sure you use `-p` to expose the correct port via `docker run`.
+If you're running `voice2json` inside [Docker](install.md#docker-image), make sure you use `-p` to expose the correct port via `docker run`.

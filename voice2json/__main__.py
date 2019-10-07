@@ -240,6 +240,8 @@ def main():
 
     logger.debug(args)
 
+    profile_yaml: Optional[Path] = None
+
     if args.profile is None:
         # Guess profile location in $HOME/.config/voice2json
         if "XDG_CONFIG_HOME" in os.environ:
@@ -252,7 +254,14 @@ def main():
 
     else:
         # Use profile provided on command line
-        profile_dir = Path(args.profile)
+        profile_dir_or_file = Path(args.profile)
+        if profile_dir_or_file.is_dir():
+            # Assume directory with profile.yaml
+            profile_dir = profile_dir_or_file
+        else:
+            # Assume YAML file
+            profile_dir = profile_dir_or_file.parent
+            profile_yaml = profile_dir_or_file
 
     # Set environment variable usually referenced in profile
     profile_dir = profile_dir.resolve()
@@ -276,7 +285,9 @@ def main():
         profile = {}
 
     # Load profile
-    profile_yaml = profile_dir / "profile.yml"
+    if profile_yaml is None:
+        profile_yaml = profile_dir / "profile.yml"
+
     logger.debug(f"Loading profile from {profile_yaml}")
 
     if profile_yaml.exists():

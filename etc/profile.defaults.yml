@@ -54,6 +54,9 @@ training:
   # One of: pocketsphinx, kaldi, julius.
   acoustic-model-type: "pocketsphinx"
 
+  # Path to pre-built acoustic model directory
+  acoustic-model: !env "${profile_dir}/acoustic_model"
+
   # Path to file with custom intents and sentences
   sentences-file: !env "${profile_dir}/sentences.ini"
 

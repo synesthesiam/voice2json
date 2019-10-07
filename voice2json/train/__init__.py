@@ -38,7 +38,7 @@ logger = logging.getLogger("train")
 def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
 
     # Compact
-    def ppath(query, default):
+    def ppath(query, default=None):
         return utils_ppath(profile, profile_dir, query, default)
 
     # Inputs
@@ -56,7 +56,7 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
     )
     custom_words = ppath("training.custom-words-file", "custom_words.txt")
     g2p_model = ppath("training.grapheme-to-phoneme-model", "g2p.fst")
-    acoustic_model = ppath("speech-to-text.acoustic_model", "acoustic_model")
+    acoustic_model = ppath("training.acoustic-model", "acoustic_model")
     acoustic_model_type = pydash.get(
         profile, "training.acoustic-model-type", "pocketsphinx"
     ).lower()
@@ -64,7 +64,9 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
     word_casing = pydash.get(profile, "training.word-casing", "ignore").lower()
 
     # Kaldi
-    kaldi_graph_dir = ppath("training.kaldi.graph-directory", "acoustic_model/graph")
+    kaldi_graph_dir = ppath("training.kaldi.graph-directory") or (
+        acoustic_model / "graph"
+    )
     kaldi_model_type = pydash.get(profile, "training.kaldi.model-type", "")
 
     # Large paths
