@@ -257,7 +257,11 @@ class FSTListener(DependencyListener):
 
                     # Create "WORD:" that will never output anything.
                     # Substitution token is added later below.
-                    output_symbol = self.output_symbols.find(arc.olabel).decode()
+                    if arc.olabel == self.out_eps:
+                        output_symbol = ""
+                    else:
+                        output_symbol = self.output_symbols.find(arc.olabel).decode()
+
                     arc.olabel = self.output_symbols.add_symbol(output_symbol + ":")
                     state_queue.append(arc.nextstate)
 
