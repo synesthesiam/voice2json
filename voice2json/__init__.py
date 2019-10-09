@@ -352,7 +352,9 @@ def get_julius_transcriber(
                         break
 
                     if "error" in line.lower():
-                        raise Exception(line)
+                        # Give up with an empty transcription
+                        logger.warning(line)
+                        break
 
                     line = self.julius_in.readline().strip()
                     logger.debug(f"Julius> {line}")

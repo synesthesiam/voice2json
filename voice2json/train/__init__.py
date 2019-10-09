@@ -480,6 +480,8 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
                         dictionary,
                         "--language-model",
                         language_model,
+                        "--graph-dir",
+                        kaldi_graph_dir,
                     ]
                 ],
             }
