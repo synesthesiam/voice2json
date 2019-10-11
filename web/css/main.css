@@ -1,0 +1,17 @@
+body {
+    padding-top: 4rem;
+}
+
+.logo {
+    height: 3rem;
+}
+
+.body-container {
+    padding-top: 0.5rem;
+}
+
+.language {
+    font-size: 1rem;
+    margin-left: 0.1rem;
+    margin-right: 0.5rem;
+}
