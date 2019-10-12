@@ -948,6 +948,8 @@ def record_examples(
 def _get_actual_results(
     args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]
 ):
+    from voice2json import get_transcriber, get_recognizer
+
     examples_dir = Path(args.directory) if args.directory is not None else Path.cwd()
     logger.debug(f"Looking for examples in {examples_dir}")
 
@@ -998,8 +1000,6 @@ def _get_actual_results(
 def test_examples(
     args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]
 ) -> None:
-    from voice2json import get_transcriber, get_recognizer
-
     # Make sure profile has been trained
     check_trained(profile, profile_dir)
 
@@ -1036,7 +1036,7 @@ def test_examples(
                 logger.warn(f"Skipping {wav_path} (no transcription or intent files)")
                 continue
 
-            expected[wav_path.name] = {"text": expected_text}
+            expected[wav_path.name] = expected_intent
     else:
         # Load expected results from jsonl file
         with open(args.expected, "r") as expected_file:
@@ -1140,6 +1140,7 @@ def test_examples(
                 ):
                     correct_intent_and_entities += 1
 
+            actual_intent["intent"]["expected_name"] = expected_intent["intent"]["name"]
             actual_intent["wrong_entities"] = wrong_entities
             actual_intent["missing_entities"] = missing_entities
 
