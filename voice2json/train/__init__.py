@@ -62,6 +62,9 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
     ).lower()
 
     word_casing = pydash.get(profile, "training.word-casing", "ignore").lower()
+    g2p_word_casing = pydash.get(
+        profile, "training.g2p-word-casing", word_casing
+    ).lower()
 
     # Kaldi
     kaldi_graph_dir = ppath("training.kaldi.graph-directory") or (
@@ -438,12 +441,20 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
                     stdout=subprocess.PIPE,
                 )
 
+                g2p_transform = lambda w: w
+                if g2p_word_casing == "upper":
+                    g2p_transform = lambda w: w.upper()
+                elif g2p_word_casing == "lower":
+                    g2p_transform = lambda w: w.lower()
+
                 # Append to dictionary and custom words
                 with open(custom_words, "a") as words_file:
                     for line in g2p_proc.stdout:
                         line = line.decode().strip()
-                        print(line, file=dictionary_file)
-                        print(line, file=words_file)
+                        word, phonemes = re.split(r"\s+", maxsplit=1)
+                        word = g2p_transform(word)
+                        print(word, phonemes, file=dictionary_file)
+                        print(word, phonemes, file=words_file)
 
     @create_after(executed="vocab")
     def task_vocab_dict():

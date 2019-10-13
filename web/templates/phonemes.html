@@ -1,0 +1,51 @@
+{% extends "layout.html" %}
+{% block body %}
+
+<h2>Phonemes</h2>
+
+<form class="form" method="POST">
+    <div class="form-group">
+        <button class="btn btn-primary form-control" type="submit">Save</button>
+    </div>
+
+    <div class="form-group">
+        <table class="table form-control">
+            <thead>
+                <th>Phoneme</th>
+                <th>eSpeak</th>
+                <th>Example Word</th>
+                <th>&nbsp</th>
+                <th>Pronunciation</th>
+                <th>Expected</th>
+                <th>Actual</th>
+                <th>&nbsp</th>
+            </thead>
+            <tbody style="font-family: monospace;">
+{% for phoneme in sorted(phoneme_map) %}
+                <tr>
+                    <td>{{ phoneme }}</td>
+                    <td>
+                        <input name="espeak_{{ phoneme }}" type="text" size="5" class="form-control" value="{{ phoneme_map.get(phoneme, '') }}">
+                    </td>
+                    <td>{{ phoneme_examples[phoneme][0] }} </td>
+                    <td>
+                        <audio controls src="/pronounce/phoneme_{{ phoneme }}_{{ phoneme_examples[phoneme][1].replace(' ', '_') }}"></audio>
+                    </td>
+                    <td> {{ phoneme_examples[phoneme][1] }} </td>
+                    <td>{{ phoneme_examples[phoneme][2] }} </td>
+                    <td>{{ phoneme_examples[phoneme][3] }} </td>
+                    <td>
+                        <audio controls src="/pronounce/word_{{ phoneme_examples[phoneme][0] }}"></audio>
+                    </td>
+                </tr>
+            </tbody>
+{% endfor %}
+        </table>
+    </div>
+
+    <div class="form-group">
+        <button class="btn btn-primary form-control" type="submit">Save</button>
+    </div>
+</form>
+
+{% endblock %}

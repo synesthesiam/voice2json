@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import io
+import re
 import json
 import argparse
 import subprocess
@@ -9,12 +10,13 @@ import shlex
 import tempfile
 import threading
 import wave
+import atexit
 from uuid import uuid4
 from pathlib import Path
 from typing import Optional, Dict, Any, Tuple, BinaryIO, List
 
 import pydash
-from flask import Flask, request, render_template, send_from_directory, flash
+from flask import Flask, request, render_template, send_from_directory, flash, send_file
 
 # -----------------------------------------------------------------------------
 
@@ -243,6 +245,116 @@ def words():
         custom_words=custom_words_text,
         word=word,
     )
+
+
+# -----------------------------------------------------------------------------
+
+espeak_words = {}
+wav_cache = {}
+espeak_cache_dir = tempfile.TemporaryDirectory()
+
+atexit.register(lambda: espeak_cache_dir.cleanup())
+
+
+@app.route("/phonemes", methods=["GET", "POST"])
+def phonemes():
+    phoneme_map_path = Path(pydash.get(profile, "text-to-speech.espeak.phoneme-map"))
+    phoneme_map = {}
+
+    if request.method == "POST":
+        for var_name, var_value in request.form.items():
+            if var_name.startswith("espeak_"):
+                phoneme = var_name[7:]
+                phoneme_map[phoneme] = var_value.strip()
+
+        with open(phoneme_map_path, "w") as phoneme_map_file:
+            for phoneme in sorted(phoneme_map):
+                print(phoneme, phoneme_map[phoneme], file=phoneme_map_file)
+
+        flash(f"Wrote {phoneme_map_path}", "success")
+
+        # Clear phoneme cache
+        for key in list(wav_cache.keys()):
+            if key.startswith("phoneme_"):
+                wav_cache.pop(key, None)
+    else:
+        # Load map from dictionary phonemes to eSpeak phonemes
+        with open(phoneme_map_path, "r") as phoneme_map_file:
+            for line in phoneme_map_file:
+                line = line.strip()
+                if len(line) == 0 or line.startswith("#"):
+                    continue
+
+                dict_phoneme, espeak_phoneme = re.split("\s+", line, maxsplit=1)
+                phoneme_map[dict_phoneme] = espeak_phoneme
+
+    # Load word examples for each phoneme
+    phoneme_examples_path = Path(
+        pydash.get(profile, "speech-to-text.phoneme-examples-file")
+    )
+    voice = pydash.get(profile, "text-to-speech.espeak.voice", "")
+    phoneme_examples = {}
+
+    with open(phoneme_examples_path, "r") as phoneme_examples_file:
+        for line in phoneme_examples_file:
+            line = line.strip()
+            if len(line) == 0 or line.startswith("#"):
+                continue
+
+            phoneme, word, pronunciation = re.split(r"\s+", line, maxsplit=2)
+
+            word_cache_key = f"word_{word}"
+            phoneme_cache_key = f"phoneme_{phoneme}_{pronunciation.replace(' ', '_')}"
+
+            if word_cache_key not in wav_cache:
+                # Speak whole word
+                wav_path = Path(espeak_cache_dir.name) / f"{word_cache_key}.wav"
+                espeak_cmd = ["espeak-ng", "--sep= ", "-s", "80", "-w", str(wav_path)]
+                if len(voice) > 0:
+                    espeak_cmd.extend(["-v", str(voice)])
+
+                espeak_cmd.append(word)
+                logger.debug(espeak_cmd)
+                result = subprocess.check_output(
+                    espeak_cmd, universal_newlines=True
+                ).strip()
+
+                espeak_word_str = result.replace("'", "")
+                espeak_words[word] = espeak_word_str
+                wav_cache[word_cache_key] = wav_path
+
+            if phoneme_cache_key not in wav_cache:
+                # Speak mapped phonemes
+                espeak_phoneme_str = "".join(
+                    phoneme_map[p] for p in pronunciation.split()
+                )
+                wav_path = Path(espeak_cache_dir.name) / f"{phoneme_cache_key}.wav"
+                espeak_cmd = ["espeak-ng", "-s", "80", "-w", str(wav_path)]
+                logger.debug(espeak_cmd)
+                if len(voice) > 0:
+                    espeak_cmd.extend(["-v", str(voice)])
+
+                espeak_cmd.append(f"[[{espeak_phoneme_str}]]")
+                subprocess.check_call(espeak_cmd)
+                wav_cache[phoneme_cache_key] = wav_path
+
+            actual_espeak = " ".join(phoneme_map[p] for p in pronunciation.split())
+            phoneme_examples[phoneme] = (word, pronunciation, espeak_words[word], actual_espeak)
+
+    return render_template(
+        "phonemes.html",
+        sorted=sorted,
+        profile=profile,
+        pydash=pydash,
+        phoneme_examples=phoneme_examples,
+        phoneme_map=phoneme_map,
+    )
+
+
+@app.route("/pronounce/<name>", methods=["GET"])
+def pronounce(name):
+    wav_path = wav_cache[name]
+    return send_file(open(wav_path, "rb"), mimetype="audio/wav")
 
 
 # -----------------------------------------------------------------------------

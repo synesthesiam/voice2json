@@ -1087,9 +1087,17 @@ def test_examples(
     # Number of intents where name and entities match exactly
     correct_intent_and_entities = 0
 
+    # Real time vs transcription time
+    speedups = []
+
     # Compute statistics
     for wav_name, actual_intent in actual.items():
         expected_intent = expected[wav_name]
+
+        wav_seconds = actual_intent.get("wav_seconds", 0)
+        transcribe_seconds = actual_intent.get("transcribe_seconds", 0)
+        if (transcribe_seconds > 0) and (wav_seconds > 0):
+            speedups.append(wav_seconds / transcribe_seconds)
 
         # Check transcriptions
         actual_text = actual_intent.get("raw_text", actual_intent.get("text", ""))
@@ -1201,6 +1209,10 @@ def test_examples(
         num_words += wer["words"]
         correct_words += wer["correct"]
 
+    average_transcription_speedup = 0
+    if len(speedups) > 0:
+        average_transcription_speedup = sum(speedups) / len(speedups)
+
     # Summarize results
     summary = {
         "statistics": {
@@ -1221,6 +1233,7 @@ def test_examples(
             "intent_entity_accuracy": correct_intent_and_entities / num_intents
             if num_intents > 0
             else 1,
+            "average_transcription_speedup": average_transcription_speedup,
         },
         "actual": actual,
         "expected": expected,
