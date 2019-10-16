@@ -457,13 +457,17 @@ def recognize(
                         ]
                     )
 
+                    verbosity = 1 if args.debug else 0
                     output = subprocess.check_output(
                         [
                             "ngramperplexity",
+                            f"--v={verbosity}",
                             str(profile_dir / "intent.fst.model"),
                             str(far_path),
                         ]
                     ).decode()
+
+                    logger.debug(output)
 
                     last_line = output.strip().splitlines()[-1]
                     perplexity = float(
@@ -631,6 +635,7 @@ def pronounce(
     )
 
     word_casing = pydash.get(profile, "training.word-casing", "ignore").lower()
+    voice = pydash.get(profile, "text-to-speech.espeak.voice")
 
     # True if audio will go to stdout.
     # In this case, printing will go to stderr.
@@ -712,7 +717,7 @@ def pronounce(
 
             if not args.quiet:
                 if map_exists:
-                    # Map to espeak phonemes
+                    # Map to eSpeak
                     phoneme_map = dict(
                         re.split(r"\s+", line.strip(), maxsplit=1)
                         for line in map_path.read_text().splitlines()
@@ -725,6 +730,9 @@ def pronounce(
                 # Speak with espeak
                 espeak_str = "".join(espeak_phonemes)
                 espeak_cmd = shlex.split(espeak_cmd_format.format(phonemes=espeak_str))
+
+                if voice is not None:
+                    espeak_cmd.extend(["-v", str(voice)])
 
                 # Determine where to output WAV data
                 if args.wav_sink is not None:
@@ -1003,9 +1011,6 @@ def test_examples(
     # Make sure profile has been trained
     check_trained(profile, profile_dir)
 
-    examples_dir = Path(args.directory) if args.directory is not None else Path.cwd()
-    logger.debug(f"Looking for examples in {examples_dir}")
-
     results_dir = None
     if args.results is not None:
         results_dir = Path(args.results)
@@ -1015,6 +1020,9 @@ def test_examples(
     actual: Dict[str, Dict[str, Any]] = {}
 
     if args.expected is None:
+        examples_dir = Path(args.directory) if args.directory is not None else Path.cwd()
+        logger.debug(f"Looking for examples in {examples_dir}")
+
         # Load expected transcriptions/intents from examples directory
         logger.debug("Loading expected transcriptions/intents")
         for wav_path in examples_dir.glob("*.wav"):

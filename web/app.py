@@ -11,6 +11,7 @@ import tempfile
 import threading
 import wave
 import atexit
+import base64
 from uuid import uuid4
 from pathlib import Path
 from typing import Optional, Dict, Any, Tuple, BinaryIO, List
@@ -302,9 +303,15 @@ def phonemes():
                 continue
 
             phoneme, word, pronunciation = re.split(r"\s+", line, maxsplit=2)
+            espeak_phoneme_str = "".join(phoneme_map[p] for p in pronunciation.split())
 
             word_cache_key = f"word_{word}"
-            phoneme_cache_key = f"phoneme_{phoneme}_{pronunciation.replace(' ', '_')}"
+            phoneme_cache_key = (
+                "phoneme_"
+                + phoneme
+                + "_"
+                + base64.b64encode(espeak_phoneme_str.encode()).decode()
+            )
 
             if word_cache_key not in wav_cache:
                 # Speak whole word
@@ -325,21 +332,26 @@ def phonemes():
 
             if phoneme_cache_key not in wav_cache:
                 # Speak mapped phonemes
-                espeak_phoneme_str = "".join(
-                    phoneme_map[p] for p in pronunciation.split()
-                )
                 wav_path = Path(espeak_cache_dir.name) / f"{phoneme_cache_key}.wav"
                 espeak_cmd = ["espeak-ng", "-s", "80", "-w", str(wav_path)]
-                logger.debug(espeak_cmd)
                 if len(voice) > 0:
                     espeak_cmd.extend(["-v", str(voice)])
 
                 espeak_cmd.append(f"[[{espeak_phoneme_str}]]")
+                logger.debug(espeak_cmd)
                 subprocess.check_call(espeak_cmd)
                 wav_cache[phoneme_cache_key] = wav_path
 
             actual_espeak = " ".join(phoneme_map[p] for p in pronunciation.split())
-            phoneme_examples[phoneme] = (word, pronunciation, espeak_words[word], actual_espeak)
+            phoneme_examples[phoneme] = {
+                "word": word,
+                "pronunciation": pronunciation,
+                "expected": espeak_words[word],
+                "actual": actual_espeak,
+                "phoneme_key": phoneme_cache_key,
+            }
+
+    # logger.debug(phoneme_examples)
 
     return render_template(
         "phonemes.html",

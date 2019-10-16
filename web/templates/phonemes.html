@@ -16,8 +16,8 @@
                 <th>Example Word</th>
                 <th>&nbsp</th>
                 <th>Pronunciation</th>
-                <th>Expected</th>
                 <th>Actual</th>
+                <th>Expected</th>
                 <th>&nbsp</th>
             </thead>
             <tbody style="font-family: monospace;">
@@ -27,15 +27,15 @@
                     <td>
                         <input name="espeak_{{ phoneme }}" type="text" size="5" class="form-control" value="{{ phoneme_map.get(phoneme, '') }}">
                     </td>
-                    <td>{{ phoneme_examples[phoneme][0] }} </td>
+                    <td>{{ phoneme_examples[phoneme]["word"] }} </td>
                     <td>
-                        <audio controls src="/pronounce/phoneme_{{ phoneme }}_{{ phoneme_examples[phoneme][1].replace(' ', '_') }}"></audio>
+                        <audio controls src="/pronounce/{{ phoneme_examples[phoneme]['phoneme_key'] }}"></audio>
                     </td>
-                    <td> {{ phoneme_examples[phoneme][1] }} </td>
-                    <td>{{ phoneme_examples[phoneme][2] }} </td>
-                    <td>{{ phoneme_examples[phoneme][3] }} </td>
+                    <td> {{ phoneme_examples[phoneme]["pronunciation"] }} </td>
+                    <td>{{ phoneme_examples[phoneme]["actual"] }} </td>
+                    <td>{{ phoneme_examples[phoneme]["expected"] }} </td>
                     <td>
-                        <audio controls src="/pronounce/word_{{ phoneme_examples[phoneme][0] }}"></audio>
+                        <audio controls src="/pronounce/word_{{ phoneme_examples[phoneme]['word'] }}"></audio>
                     </td>
                 </tr>
             </tbody>

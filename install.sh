@@ -256,7 +256,7 @@ fi
 # Kaldi
 kaldi_dir="${build_dir}/kaldi-master"
 if [[ -z "${no_kaldi}" || ! -d "${kaldi_dir}" ]]; then
-    install libatlas-base-dev libatlas3-base
+    install libatlas-base-dev libatlas3-base gfortran
     sudo ldconfig
     kaldi_file="${download_dir}/kaldi-2019.tar.gz"
 
