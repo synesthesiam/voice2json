@@ -19,3 +19,6 @@ recipes/deepspeech/model/lm.binary
 recipes/deepspeech/model/clean-vocab.txt
 nohup.out
 site/
+recipes/fluent_dataset/wavs/
+recipes/fluent_dataset/results/intents.jsonl
+recipes/fluent_dataset/results/transcriptions.jsonl
