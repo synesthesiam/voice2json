@@ -59,6 +59,7 @@ def main():
     train_parser = sub_parsers.add_parser(
         "train-profile", help="Train voice2json profile"
     )
+    train_parser.add_argument("--db-file", help="Path to save doit DB")
     train_parser.set_defaults(func=train)
 
     # transcribe-wav
@@ -329,6 +330,9 @@ def train(args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]) 
 
     # Strip voice2json command-line arguments so doit won't pick them up
     sys.argv = [sys.argv[0]]
+
+    if args.db_file is not None:
+        sys.argv.extend(["--db-file", str(args.db_file)])
 
     train_profile(profile_dir, profile)
 
@@ -1020,7 +1024,9 @@ def test_examples(
     actual: Dict[str, Dict[str, Any]] = {}
 
     if args.expected is None:
-        examples_dir = Path(args.directory) if args.directory is not None else Path.cwd()
+        examples_dir = (
+            Path(args.directory) if args.directory is not None else Path.cwd()
+        )
         logger.debug(f"Looking for examples in {examples_dir}")
 
         # Load expected transcriptions/intents from examples directory
