@@ -77,7 +77,7 @@ steps_dir="${kaldi_dir}/egs/wsj/s5/steps"
 
 # Create a symbolic link to the "utils" directory.
 # Some Kaldi scripts will crash without this.
-if [[ ! -f "${model_dir}/utils" ]]; then
+if [[ ! -e "${model_dir}/utils" ]]; then
     ln -fs "${utils_dir}" "${model_dir}/utils"
 fi
 

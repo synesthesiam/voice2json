@@ -10,7 +10,8 @@ RUN apt-get update && \
     apt-get install -y \
         sox jq alsa-utils espeak sphinxtrain perl \
         python3 python3-pip \
-        libatlas-base-dev libatlas3-base
+        libatlas-base-dev libatlas3-base \
+        bc
 
 COPY debian/voice2json_1.0_${DEBIAN_ARCH}/usr/lib/voice2json/ /usr/lib/voice2json/
 COPY debian/voice2json_1.0_${DEBIAN_ARCH}/usr/bin/voice2json /usr/bin/
