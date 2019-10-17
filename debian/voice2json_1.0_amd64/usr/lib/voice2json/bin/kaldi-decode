@@ -75,10 +75,11 @@ openfst_dir="${kaldi_dir}/tools/openfst"
 utils_dir="${kaldi_dir}/egs/wsj/s5/utils"
 steps_dir="${kaldi_dir}/egs/wsj/s5/steps"
 
-# Force create a symbolic link to the "utils" directory.
+# Create a symbolic link to the "utils" directory.
 # Some Kaldi scripts will crash without this.
-rm -rf "${model_dir}/utils"
-ln -fs "${utils_dir}" "${model_dir}/utils"
+if [[ ! -f "${model_dir}/utils" ]]; then
+    ln -fs "${utils_dir}" "${model_dir}/utils"
+fi
 
 # Set up paths for Kaldi programs
 export PATH="${kaldi_dir}/src/featbin:${kaldi_dir}/src/latbin:${kaldi_dir}/src/gmmbin:${kaldi_dir}/src/online2bin:$PATH"
