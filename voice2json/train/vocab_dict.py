@@ -24,6 +24,7 @@ def make_dict(
     no_number: bool = False,
     dictionary_format: str = FORMAT_CMU,
     silence_words: Set[str] = set(["<s>", "</s>"]),
+    merge_rule: str = "all",
 ) -> List[str]:
     transform = lambda w: w
     if upper:
@@ -65,13 +66,20 @@ def make_dict(
     words_needed.update(silence_words)
 
     # Write output dictionary
+    merge_first = merge_rule == "first"
+    words_in_dict: Set[str] = set()
     unknown_words: List[str] = []
+
     for word in sorted(words_needed):
         if (word not in word_dict) and (word not in silence_words):
             unknown_words.append(word)
             continue
 
         for i, pronounce in enumerate(word_dict.get(word, [])):
+            if merge_first and (word in words_in_dict):
+                # Only use first pronunciation when merge_rule is "first"
+                continue
+
             if is_julius:
                 # Julius format
                 # word [word] P1 P2 P3
@@ -84,6 +92,10 @@ def make_dict(
                     print(word, pronounce, file=dictionary_file)
                 else:
                     print("%s(%s)" % (word, i + 1), pronounce, file=dictionary_file)
+
+            words_in_dict.add(word)
+
+    # -------------------------------------------------------------------------
 
     if len(unknown_words) > 0:
         logger.warning(f"{len(unknown_words)} word(s) are unknown")

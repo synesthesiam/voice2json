@@ -80,6 +80,9 @@ def main():
         help="Use large pre-built model for transcription",
     )
     transcribe_parser.add_argument(
+        "--relative-directory", help="Set wav_name as path relative to this directory"
+    )
+    transcribe_parser.add_argument(
         "wav_file", nargs="*", default=[], help="Path(s) to WAV file(s)"
     )
 
@@ -352,6 +355,10 @@ def transcribe(
         profile_dir, profile, open_transcription=args.open, debug=args.debug
     )
 
+    relative_dir = (
+        None if args.relative_directory is None else Path(args.relative_directory)
+    )
+
     try:
         if (len(args.wav_file) > 0) or args.stdin_files:
             # Read WAV file paths
@@ -372,8 +379,12 @@ def transcribe(
                 # Transcribe
                 result = transcriber.transcribe_wav(wav_data)
 
-                # Add name of WAV file to result
-                result["wav_name"] = wav_path.name
+                if relative_dir is None:
+                    # Add name of WAV file to result
+                    result["wav_name"] = wav_path.name
+                else:
+                    # Make relative to some directory
+                    result["wav_name"] = str(wav_path.relative_to(relative_dir))
 
                 print_json(result)
         else:

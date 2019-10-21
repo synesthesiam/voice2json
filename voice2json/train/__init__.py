@@ -61,9 +61,17 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
         profile, "training.acoustic-model-type", "pocketsphinx"
     ).lower()
 
+    # ignore/upper/lower
     word_casing = pydash.get(profile, "training.word-casing", "ignore").lower()
+
+    # default/ignore/upper/lower
     g2p_word_casing = pydash.get(
         profile, "training.g2p-word-casing", word_casing
+    ).lower()
+
+    # all/first
+    dict_merge_rule = pydash.get(
+        profile, "training.dictionary-merge-rule", "all"
     ).lower()
 
     # Kaldi
@@ -421,6 +429,7 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
                 dictionary_file,
                 unknown_path=unknown_words,
                 dictionary_format=dictionary_format,
+                merge_rule=dict_merge_rule,
                 **kwargs,
             )
 
@@ -451,7 +460,7 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
                 with open(custom_words, "a") as words_file:
                     for line in g2p_proc.stdout:
                         line = line.decode().strip()
-                        word, phonemes = re.split(r"\s+", maxsplit=1)
+                        word, phonemes = re.split(r"\s+", line, maxsplit=1)
                         word = g2p_transform(word)
                         print(word, phonemes, file=dictionary_file)
                         print(word, phonemes, file=words_file)
@@ -461,8 +470,11 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
         """Creates custom pronunciation dictionary based on desired vocabulary."""
         dictionary_paths = [base_dictionary]
         if custom_words.exists():
-            dictionary_paths.append(custom_words)
+            # Custom dictionary goes first so that the "first" dictionary merge
+            # rule will choose pronunciations from it.
+            dictionary_paths.insert(0, custom_words)
 
+        # Exclude dictionaries that don't exist
         dictionary_paths = [p for p in dictionary_paths if p.exists()]
 
         return {
