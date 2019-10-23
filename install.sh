@@ -342,9 +342,16 @@ cp -R "${phonetisaurus_dir}"/build/bin/* "${venv}/bin/"
 if [[ ! -z "${no_kaldi}" || ! -f "${kaldi_dir}/src/online2bin/online2-wav-nnet3-latgen-faster" ]]; then
     echo "Installing kaldi"
 
+    # armhf
     if [[ -f '/usr/lib/arm-linux-gnueabihf/libatlas.so' ]]; then
         # Kaldi install doesn't check here, despite in being in ldconfig
         export ATLASLIBDIR='/usr/lib/arm-linux-gnueabihf'
+    fi
+
+    # aarch64
+    if [[ -f '/usr/lib/aarch64-linux-gnu/libatlas.so' ]]; then
+        # Kaldi install doesn't check here, despite in being in ldconfig
+        export ATLASLIBDIR='/usr/lib/aarch64-linux-gnu'
     fi
 
     tar -C "${build_dir}" -xf "${kaldi_file}" && \

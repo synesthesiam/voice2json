@@ -8,7 +8,7 @@ COPY docker/multiarch_build/bin/qemu-* /usr/bin/
 
 RUN apt-get update && \
     apt-get install -y \
-        sox jq alsa-utils espeak sphinxtrain perl \
+        sox jq alsa-utils espeak-ng sphinxtrain perl \
         python3 python3-pip \
         libatlas-base-dev libatlas3-base \
         bc

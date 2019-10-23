@@ -17,7 +17,7 @@ docker: installer
 	docker build . \
         --build-arg BUILD_ARCH=$(BUILD_ARCH) \
         --build-arg DEBIAN_ARCH=$(DEBIAN_ARCH) \
-        -t voice2json/voice2json:$(DEBIAN_ARCH)
+        -t synesthesiam/voice2json:$(DEBIAN_ARCH)
 
 # -----------------------------------------------------------------------------
 # Multi-Arch Builds
