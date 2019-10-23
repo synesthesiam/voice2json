@@ -252,7 +252,7 @@ Untested profiles (highlighted below) *may* work, but I don't have the necessary
       <td><strong>UNTESTED</strong></td>
     </tr>
     <tr>
-      <td><a href="https://github.com/synesthesiam/pl_pocketsphinx-cmu/archive/v1.0.tar.gz">Download</a></td>
+      <td><a href="https://github.com/synesthesiam/pl_julius-github/archive/v1.0.tar.gz">Download</a></td>
       <td>Polish (polski)</td>
       <td>pl</td>
       <td>julius</td>

@@ -1,8 +1,9 @@
 ![voice2json logo](docs/img/voice2json.svg)
 
-`voice2json` is a collection of [command-line tools](https://voice2json.org/commands.html) for <strong>offline speech/intent recognition</strong> on Linux. It is free, open source, and [supports 15 languages](#supported-languages). 
+`voice2json` is a collection of [command-line tools](https://voice2json.org/commands.html) for <strong>offline speech/intent recognition</strong> on Linux. It is free, open source, and [supports 15 languages](https://voice2json.org/index.html#supported-languages). 
 
 * [Getting Started](https://voice2json.org/#getting-started)
+* [Commands](https://voice2json.org/comands.html)
 * [Recipes](https://voice2json.org/recipes.html)
 * [About](https://voice2json.org/about.html)
 
@@ -73,46 +74,3 @@ It can be used to:
 * [test-examples](https://voice2json.org/commands.html#test-examples) - Test recorded speech examples
 * [tune-examples](https://voice2json.org/commands.html#tune-examples) - Tune acoustic model using recorded speech examples
 * [show-documentation](https://voice2json.org/commands.html#show-documentation) - Run HTTP server locally with documentation
-
-## Supported Languages
-
-`voice2json` supports the following languages/locales:
-
-* Catalan
-    * [ca-es_pocketsphinx-cmu](https://github.com/synesthesiam/ca-es_pocketsphinx-cmu)
-* Dutch (Nederlands)
-    * [nl_pocketsphinx-cmu](https://github.com/synesthesiam/nl_pocketsphinx-cmu)
-* English
-    * U.S. English
-        * [en-us_pocketsphinx-cmu](https://github.com/synesthesiam/en-us_pocketsphinx-cmu)
-        * [en-us_kaldi-zamia](https://github.com/synesthesiam/en-us_kaldi-zamia)
-    * Indian English
-        * [en-in_pocketsphinx-cmu](https://github.com/synesthesiam/en-in_pocketsphinx-cmu)
-* French (Français)
-    * [fr_pocketsphinx-cmu](https://github.com/synesthesiam/fr_pocketsphinx-cmu)
-* German (Deutsch)
-    * [de_pocketsphinx-cmu](https://github.com/synesthesiam/de_pocketsphinx-cmu)
-* Greek (Ελληνικά)
-    * [el-gr_pocketsphinx-cmu](https://github.com/synesthesiam/el-gr_pocketsphinx-cmu)
-* Hindi (Devanagari)
-    * [hi_pocketsphinx-cmu](https://github.com/synesthesiam/hi_pocketsphinx-cmu)
-* Italian (Italiano)
-    * [it_pocketsphinx-cmu](https://github.com/synesthesiam/it_pocketsphinx-cmu)
-* Kazakh (қазақша)
-    * [kz_pocketsphinx-cmu](https://github.com/synesthesiam/kz_pocketsphinx-cmu)
-* Mandarin (中文)
-    * [zh-cn_pocketsphinx-cmu](https://github.com/synesthesiam/zh-cn_pocketsphinx-cmu)
-* Polish (polski)
-    * [pl_julius-github](https://github.com/synesthesiam/pl_julius-github)
-* Portugese (Português)
-    * [pt-br_pocketsphinx-cmu](https://github.com/synesthesiam/pt-br_pocketsphinx-cmu)
-* Russian (Русский)
-    * [ru_pocketsphinx-cmu](https://github.com/synesthesiam/ru_pocketsphinx-cmu)
-* Spanish (Español)
-    * [es_pocketsphinx-cmu](https://github.com/synesthesiam/es_pocketsphinx-cmu)
-    * Mexian Spanish
-        * [es_mexican_pocketsphinx-cmu](https://github.com/synesthesiam/es_mexican_pocketsphinx-cmu)
-* Swedish (svenska)
-    * [sv_kaldi-montreal](https://github.com/synesthesiam/sv_kaldi-montreal)
-* Vietnamese (Tiếng Việt)
-    * [vi_kaldi-montreal](https://github.com/synesthesiam/vi_kaldi-montreal)
