@@ -58,13 +58,13 @@ It can be used to:
 
 * Training produces **both** a speech and intent recognizer. By describing your voice commands with `voice2json`'s [templating language](sentences.md), you get [more than just transcriptions](formats.md#intents) for free.
 * Re-training is **fast enough** to be done at runtime (usually < 5s), even up to [millions of possible voice commands](recipes.md#set-and-run-times). This means you can change [referenced slot](sentences.md#slot-references) values or [add/remove intents](commands.md#intent-whitelist) on the fly.
-* All of the [available commands](commands.md) are designed to work well in **Unix pipelines**, typically consuming/emitting plaintext or [newline-delimited JSON](http://jsonlines.org). Audio input/output is [file-based](commands.md#audio-sources), so you receive audio from [any source](recipes.md#stream-microphone-audio-over-a-network).
+* All of the [available commands](commands.md) are designed to work well in **Unix pipelines**, typically consuming/emitting plaintext or [newline-delimited JSON](http://jsonlines.org). Audio input/output is [file-based](commands.md#audio-sources), so you can receive audio from [any source](recipes.md#stream-microphone-audio-over-a-network).
 
 ---
 
 ## How it Works
 
-`voice2json` needs a description of the voice commands you want to be recognized in a file named `sentences.ini`. This can be as simple as a listing of intents and sentences:
+`voice2json` needs a description of the voice commands you want to be recognized in a file named `sentences.ini`. This can be as simple as a listing of `[Intents]` and sentences:
 
 ```
 [GarageDoor]
@@ -113,11 +113,9 @@ Cloud-based speech and intent recognition services, such as Google Assistant or 
 
 Dragon Naturally Speaking and Snips offer local installations and offline functionality. Great! Unfortunately, Dragon requires Microsoft Windows to function. It is *possible* to use [Dragon in Wine on Linux](http://appdb.winehq.org/objectManager.php?sClass=application&iId=2077) or via a virtual machine, but is difficult to set up and not officially supported by [Nuance](https://www.nuance.com). Snips offers an impressive amount of functionality and is [easy to interoperate with](https://docs.snips.ai/reference/hermes), but [requires an online account](https://console.snips.ai/login) just to create an assistant. Additionally, Snips is not yet fully open source, so any artifacts created for a Snips-based assistant may **not be portable** to another platform in the future.
 
-If you know enough about the voice commands you'd like to be recognized, why not just [tell the computer what you want](sentences.md)?
-
 ### No Magic, No Surprises
 
-`voice2json` is **not an A.I.**. It does not attempt to guess what you want to do, and keeps **everything** on your local machine. There is no online account sign-up needed, **no privacy policy** to review, and no advertisements. All generated artifacts are in [standard data formats](formats.md); typically just text.
+`voice2json` is **not an A.I.** or gee-whizzy machine learning system. It does not attempt to guess what you want to do, and keeps **everything** on your local machine. There is no online account sign-up needed, **no privacy policy** to review, and no advertisements. All generated artifacts are in [standard data formats](formats.md); typically just text.
 
 Once you've [installed voice2json](install.md) and [downloaded a profile](install.md#download-profile), there is no longer a need for an Internet connection. At runtime, `voice2json` will only every write to your [profile directory](profiles.md) or the system's temporary directory (`/tmp`).
 
@@ -125,46 +123,99 @@ Once you've [installed voice2json](install.md) and [downloaded a profile](instal
 
 ## Supported Languages
 
-`voice2json` supports the following languages/locales. I don't speak or write any language besides U.S. English, so **please** let me know if any profile is broken or has poor performance.
+`voice2json` supports the following languages/locales. I don't speak or write any language besides U.S. English very well, so **please** let me know if any profile is broken or could be improved!
+Untested profiles may work, but I don't have the necessary data or enough understanding of the language to test them.
 
-* Catalan
-    * [ca-es_pocketsphinx-cmu](https://github.com/synesthesiam/ca-es_pocketsphinx-cmu)
-* Dutch (Nederlands)
-    * [nl_pocketsphinx-cmu](https://github.com/synesthesiam/nl_pocketsphinx-cmu)
-* English
-    * U.S. English
-        * [en-us_pocketsphinx-cmu](https://github.com/synesthesiam/en-us_pocketsphinx-cmu)
-        * [en-us_kaldi-zamia](https://github.com/synesthesiam/en-us_kaldi-zamia)
-    * Indian English
-        * [en-in_pocketsphinx-cmu](https://github.com/synesthesiam/en-in_pocketsphinx-cmu)
-* French (Français)
-    * [fr_pocketsphinx-cmu](https://github.com/synesthesiam/fr_pocketsphinx-cmu)
-* German (Deutsch)
-    * [de_pocketsphinx-cmu](https://github.com/synesthesiam/de_pocketsphinx-cmu)
-* Greek (Ελληνικά)
-    * [el-gr_pocketsphinx-cmu](https://github.com/synesthesiam/el-gr_pocketsphinx-cmu)
-* Hindi (Devanagari)
-    * [hi_pocketsphinx-cmu](https://github.com/synesthesiam/hi_pocketsphinx-cmu)
-* Italian (Italiano)
-    * [it_pocketsphinx-cmu](https://github.com/synesthesiam/it_pocketsphinx-cmu)
-* Kazakh (қазақша)
-    * [kz_pocketsphinx-cmu](https://github.com/synesthesiam/kz_pocketsphinx-cmu)
-* Mandarin (中文)
-    * [zh-cn_pocketsphinx-cmu](https://github.com/synesthesiam/zh-cn_pocketsphinx-cmu)
-* Polish (polski)
-    * [pl_julius-github](https://github.com/synesthesiam/pl_julius-github)
-* Portugese (Português)
-    * [pt-br_pocketsphinx-cmu](https://github.com/synesthesiam/pt-br_pocketsphinx-cmu)
-* Russian (Русский)
-    * [ru_pocketsphinx-cmu](https://github.com/synesthesiam/ru_pocketsphinx-cmu)
-* Spanish (Español)
-    * [es_pocketsphinx-cmu](https://github.com/synesthesiam/es_pocketsphinx-cmu)
-    * Mexian Spanish
-        * [es_mexican_pocketsphinx-cmu](https://github.com/synesthesiam/es_mexican_pocketsphinx-cmu)
-* Swedish (svenska)
-    * [sv_kaldi-montreal](https://github.com/synesthesiam/sv_kaldi-montreal)
-* Vietnamese (Tiếng Việt)
-    * [vi_kaldi-montreal](https://github.com/synesthesiam/vi_kaldi-montreal)
+|                                                                                             | Language                | Locale     | System       | Closed                                        | Open                                          |
+|---------------------------------------------------------------------------------------------|-------------------------|------------|--------------|-----------------------------------------------|-----------------------------------------------|
+| [Download](https://github.com/synesthesiam/ca_pocketsphinx-cmu/archive/v1.0.tar.gz)         | Catalan                 | ca-es      | pocketsphinx | **UNTESTED**                                  | **UNTESTED**                                  |
+| [Download](https://github.com/synesthesiam/nl_pocketsphinx-cmu/archive/v1.0.tar.gz)         | Dutch  (Nederlands)     | nl         | pocketsphinx | &#9733; &#9733; &#9733; (36x)                 | &#9785; (6x)                                  |
+| [Download](https://github.com/synesthesiam/en-us_kaldi-zamia/archive/v1.0.tar.gz)           | English                 | en-us      | kaldi        | &#9733; &#9733; &#9733; &#9733; &#9733; (3x)  | &#9733; &#9733; &#9733; &#9733; &#9733; (4x)  |
+| [Download](https://github.com/synesthesiam/en-us_pocketsphinx-cmu/archive/v1.0.tar.gz)      | English                 | en-us      | pocketsphinx | &#9733; &#9733; &#9733; &#9733; &#9733; (17x) | &#9733; &#9733; (2x)                          |
+| [Download](https://github.com/synesthesiam/en-us_julius-github/archive/v1.0.tar.gz)         | English                 | en-us      | julius       | &#9733; &#9733; &#9733; &#9733; &#9733; (2x)  | &#9785; (1x)                                  |
+| [Download](https://github.com/synesthesiam/en-us_julius-github/archive/v1.0.tar.gz)         | Indian English          | en-in      | pocketsphinx | **UNTESTED**                                  | **UNTESTED**                                  |
+| [Download](https://github.com/synesthesiam/fr_pocketsphinx-cmu/archive/v1.0.tar.gz)         | French (Français)       | fr         | pocketsphinx | &#9733; &#9733; &#9733; (49x)                 | &#9785; (4x)                                  |
+| [Download](https://github.com/synesthesiam/de_kaldi-zamia/archive/v1.0.tar.gz)              | German                  | de         | kaldi        | &#9733; &#9733; &#9733; &#9733; &#9733; (3x)  | &#9733; &#9733; &#9733; &#9733; &#9733; (3x)  |
+| [Download](https://github.com/synesthesiam/de_pocketsphinx-cmu/archive/v1.0.tar.gz)         | German                  | de         | pocketsphinx | &#9733; &#9733; &#9733; &#9733; &#9733; (29x) | &#9733; &#9733; &#9733; &#9733; &#9733; (5x)  |
+| [Download](https://github.com/synesthesiam/el-gr_pocketsphinx-cmu/archive/v1.0.tar.gz)      | Greek  (Ελληνικά)       | el-gr      | pocketsphinx | &#9733; &#9733; (17x)                         | &#9785; (1x)                                  |
+| [Download](https://github.com/synesthesiam/hi_pocketsphinx-cmu/archive/v1.0.tar.gz)         | Hindi (Devanagari)      | hi         | pocketsphinx | **UNTESTED**                                  | **UNTESTED**                                  |
+| [Download](https://github.com/synesthesiam/it_pocketsphinx-cmu/archive/v1.0.tar.gz)         | Italian (Italiano)      | it         | pocketsphinx | &#9733; &#9733; &#9733; &#9733; &#9733; (39x) | &#9733; &#9733; &#9733; &#9733; &#9733; (14x) |
+| [Download](https://github.com/synesthesiam/kz_pocketsphinx-cmu/archive/v1.0.tar.gz)         | Kazakh (қазақша)        | kz         | pocketsphinx | **UNTESTED**                                  | **UNTESTED**                                  |
+| [Download](https://github.com/synesthesiam/zh-cn_pocketsphinx-cmu/archive/v1.0.tar.gz)      | Mandarin (中文)         | zh-cn      | pocketsphinx | **UNTESTED**                                  | **UNTESTED**                                  |
+| [Download](https://github.com/synesthesiam/pl_pocketsphinx-cmu/archive/v1.0.tar.gz)         | Polish (polski)         | pl         | julius       | &#9733; (1x)                                  | **UNTESTED**                                  |
+| [Download](https://github.com/synesthesiam/pt-br_pocketsphinx-cmu/archive/v1.0.tar.gz)      | Portugese (Português)   | pt-br      | pocketsphinx | &#9733; &#9733; (77x)                         | &#9785; (20x)                                 |
+| [Download](https://github.com/synesthesiam/ru_pocketsphinx-cmu/archive/v1.0.tar.gz)         | Russian (Русский)       | ru         | pocketsphinx | &#9733; &#9733; &#9733; &#9733; &#9733; (21x) | &#9785; (1x)                                  |
+| [Download](https://github.com/synesthesiam/es_pocketsphinx-cmu/archive/v1.0.tar.gz)         | Spanish (Español)       | es         | pocketsphinx | &#9733; &#9733; &#9733; &#9733; (35x)         | &#9733; &#9733; &#9733; (22x)                 |
+| [Download](https://github.com/synesthesiam/es-mexican_pocketsphinx-cmu/archive/v1.0.tar.gz) | Mexican Spanish         | es-mexican | pocketsphinx | **UNTESTED**                                  | **UNTESTED**                                  |
+| [Download](https://github.com/synesthesiam/sv_kaldi-montreal/archive/v1.0.tar.gz)           | Swedish (svenska)       | sv         | kaldi        | &#9733; (13x)                                 | &#9785; (1x)                                  |
+| [Download](https://github.com/synesthesiam/vi_kaldi-montreal/archive/v1.0.tar.gz)           | Vietnamese (Tiếng Việt) | vi         | kaldi        | &#9733; &#9733; &#9733; &#9733; &#9733; (10x) | &#9785; (0.15x)                               |
+
+### Legend
+
+Each profile is given a &#9733; rating, indicating how accurate it was at transcribing a set of test WAV files. I'm considering anything below 75% accuracy to be effectively unusable (&#9785;).
+
+ | Transcription Accuracy                   |              |
+ | ---------------------------------------- | ------------ |
+ | &#9733; &#9733; &#9733; &#9733; &#9733;  | [95%, 100%]  |
+ | &#9733; &#9733; &#9733; &#9733;          | [90%, 95%)   |
+ | &#9733; &#9733; &#9733;                  | [85%, 90%)   |
+ | &#9733; &#9733;                          | [80%, 85%)   |
+ | &#9733;                                  | [75%, 80%)   |
+ | &#9785;                                  | [0%, 75%)    |
+
+Profiles are tested in two conditions:
+
+1. **Closed**
+    * All example sentences from the profile's [sentences.ini](sentences.md) are run through [Google WaveNet](https://cloud.google.com/text-to-speech/docs/wavenet) to produce synthetic speech
+    * The profile is trained and tested on *exactly* the sentences it should recognize (ideal case)
+    * This resembles the intended use case of `voice2json`, though real world speech will be less perfect
+2. **Open**
+    * Speech examples are provided by contributors, [VoxForge](http://voxforge.org), or [Mozilla Common Voice](https://voice.mozilla.org/)
+    * The profile is tested using the sample WAV files with the `--open` flag
+    * This (usually) demonstrates why its best to define voice commands first!
+    
+Transcription **speed-up** is given as (*Nx*) where *N* is the average ratio of real-time to transcription time.
+A value of 2x means that `voice2json` was able to transcribe the test WAV files twice as fast as their real-time durations on average.
+The reported values come from an Intel Core i7-based laptop with 16GB of RAM, so expect slower transcriptions on Raspberry Pi's.
+
+<!-- * Catalan -->
+<!--     * [ca-es_pocketsphinx-cmu](https://github.com/synesthesiam/ca-es_pocketsphinx-cmu) -->
+<!-- * Dutch (Nederlands) -->
+<!--     * [nl_pocketsphinx-cmu](https://github.com/synesthesiam/nl_pocketsphinx-cmu) -->
+<!-- * English -->
+<!--     * U.S. English -->
+<!--         * [en-us_pocketsphinx-cmu](https://github.com/synesthesiam/en-us_pocketsphinx-cmu) -->
+<!--         * [en-us_kaldi-zamia](https://github.com/synesthesiam/en-us_kaldi-zamia) -->
+<!--     * Indian English -->
+<!--         * [en-in_pocketsphinx-cmu](https://github.com/synesthesiam/en-in_pocketsphinx-cmu) -->
+<!-- * French (Français) -->
+<!--     * [fr_pocketsphinx-cmu](https://github.com/synesthesiam/fr_pocketsphinx-cmu) -->
+<!-- * German (Deutsch) -->
+<!--     * [de_pocketsphinx-cmu](https://github.com/synesthesiam/de_pocketsphinx-cmu) -->
+<!-- * Greek (Ελληνικά) -->
+<!--     * [el-gr_pocketsphinx-cmu](https://github.com/synesthesiam/el-gr_pocketsphinx-cmu) -->
+<!-- * Hindi (Devanagari) -->
+<!--     * [hi_pocketsphinx-cmu](https://github.com/synesthesiam/hi_pocketsphinx-cmu) -->
+<!-- * Italian (Italiano) -->
+<!--     * [it_pocketsphinx-cmu](https://github.com/synesthesiam/it_pocketsphinx-cmu) -->
+<!-- * Kazakh (қазақша) -->
+<!--     * [kz_pocketsphinx-cmu](https://github.com/synesthesiam/kz_pocketsphinx-cmu) -->
+<!-- * Mandarin (中文) -->
+<!--     * [zh-cn_pocketsphinx-cmu](https://github.com/synesthesiam/zh-cn_pocketsphinx-cmu) -->
+<!-- * Polish (polski) -->
+<!--     * [pl_julius-github](https://github.com/synesthesiam/pl_julius-github) -->
+<!-- * Portugese (Português) -->
+<!--     * [pt-br_pocketsphinx-cmu](https://github.com/synesthesiam/pt-br_pocketsphinx-cmu) -->
+<!-- * Russian (Русский) -->
+<!--     * [ru_pocketsphinx-cmu](https://github.com/synesthesiam/ru_pocketsphinx-cmu) -->
+<!-- * Spanish (Español) -->
+<!--     * [es_pocketsphinx-cmu](https://github.com/synesthesiam/es_pocketsphinx-cmu) -->
+<!--     * Mexian Spanish -->
+<!--         * [es_mexican_pocketsphinx-cmu](https://github.com/synesthesiam/es_mexican_pocketsphinx-cmu) -->
+<!-- * Swedish (svenska) -->
+<!--     * [sv_kaldi-montreal](https://github.com/synesthesiam/sv_kaldi-montreal) -->
+<!-- * Vietnamese (Tiếng Việt) -->
+<!--     * [vi_kaldi-montreal](https://github.com/synesthesiam/vi_kaldi-montreal) -->
 
 ---
 
