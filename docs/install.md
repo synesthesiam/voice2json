@@ -21,14 +21,14 @@ Pre-compiled packages are available for Debian-based distributions (Ubuntu, Linu
 Before installing `voice2json`, you will need to install a few dependencies:
 
 ```bash
-$ sudo apt-get install sox jq alsa-utils espeak sphinxtrain perl
+$ sudo apt-get install sox jq alsa-utils espeak-ng sphinxtrain perl
 ```
 
 Next, download the appropriate `.deb` file for your CPU architecture:
 
-* [amd64](https://github.com/synesthesiam/voice2json) - Desktops, laptops, and servers
-* [armhf](https://github.com/synesthesiam/voice2json) - Raspberry Pi 1, 2, and 3
-* [aarch64](https://github.com/synesthesiam/voice2json) - Raspberry Pi 3+, 4
+* [amd64](https://github.com/synesthesiam/voice2json/releases/download/v1.0-beta/voice2json_1.0_amd64.deb) - Desktops, laptops, and servers
+* [armhf](https://github.com/synesthesiam/voice2json/releases/download/v1.0-beta/voice2json_1.0_armhf.deb) - Raspberry Pi 1, 2, and 3
+* [aarch64](https://github.com/synesthesiam/voice2json/releases/download/v1.0-beta/voice2json_1.0_aarch64.deb) - Raspberry Pi 3+, 4
 
 If you're unsure about your architecture, run:
 

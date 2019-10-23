@@ -67,6 +67,9 @@ speech-to-text:
     # Path to tuned acoustic model matrix (pocketsphinx only)
     mllr-matrix: !env "${profile_dir}/mllr_matrix"
 
+  # Text file with word examples for each phoneme in the pronunciation dictionary
+  phoneme-examples-file: !env "${profile_dir}/phoneme_examples.txt"
+
   # Kaldi-specific settings
   kaldi:
     # Type of Kaldi model (either nnet3 or gmm)
@@ -103,6 +106,9 @@ training:
   # Type of acoustic model.
   # One of: pocketsphinx, kaldi, julius.
   acoustic-model-type: "pocketsphinx"
+
+  # Path to pre-built acoustic model directory
+  acoustic-model: !env "${profile_dir}/acoustic_model"
 
   # Path to file with custom intents and sentences
   sentences-file: !env "${profile_dir}/sentences.ini"
@@ -147,6 +153,10 @@ training:
   # Force word case during dictionary lookup/g2p.
   # One of ignore, upper, lower.
   word-casing: "ignore"
+
+  # Force word case during dictionary g2p.
+  # One of default (use word-casing), upper, lower.
+  g2p-word-casing: "default"
 
   # Kaldi-specific settings
   kaldi:

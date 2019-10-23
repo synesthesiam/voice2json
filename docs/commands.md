@@ -545,7 +545,9 @@ outputs something like:
     "correct_entities": 0,
     "transcription_accuracy": 0.123,
     "intent_accuracy": 0,
-    "entity_accuracy": 0
+    "entity_accuracy": 0,
+    "intent_entity_accuracy": 0,
+    "average_transcription_speedup": 1.0
   },
   "actual": {
     "example-1.wav": {
@@ -580,8 +582,10 @@ The `statistics` section of the report contains:
 * `correct_intent_names` - number of WAV files whose actual  intent **exactly** matched expectations (number)
 * `correct_entities` - number of entity/value pairs that **exactly** matched expectations **if and only if** the actual intent matched too (number)
 * `transcription_accuracy` - correct words / num words (number, 1 = perfect)
+* `intent_entity_accuracy` - correct intents + entities / num wavs (number, 1 = perfect)
 * `intent_accuracy` - correct intents / num wavs (number, 1 = perfect)
 * `entity_accuracy` - correct entities / num entities (number, 1 = perfect)
+* `average_transcription_speedup` - average WAV duration / transcription time (number, higher is faster than real-time)
 
 The `actual` section of the report contains the [recognized intent](formats.md#intents) of each WAV file as well as a `word_error` section with:
 
