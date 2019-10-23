@@ -355,6 +355,7 @@ if [[ ! -z "${no_kaldi}" || ! -f "${kaldi_dir}/src/online2bin/online2-wav-nnet3-
     fi
 
     tar -C "${build_dir}" -xf "${kaldi_file}" && \
+        cp "${this_dir}/etc/linux_atlas_aarch64.mk" "${kaldi_dir}/src/makefiles/" && \
         patch "${kaldi_dir}/src/configure" "${this_dir}/etc/kaldi-src-configure.patch" && \
         cd "${kaldi_dir}/tools" && \
         make -j "${make_threads}" && \
