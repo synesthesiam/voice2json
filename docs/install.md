@@ -81,7 +81,7 @@ docker run -i \
        -w "$(pwd)" \
        -e "HOME=${HOME}" \
        --user "$(id -u):$(id -g)" \
-       voice2json/voice2json "$@"
+       synesthesiam/voice2json "$@"
 ```
 
 Mark it as executable with `chmod +x /path/to/voice2json` and try it out:

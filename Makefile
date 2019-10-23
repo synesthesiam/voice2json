@@ -33,7 +33,7 @@ docker-multiarch: docker-multiarch-install
 	docker build . \
         --build-arg BUILD_ARCH=arm32v7 \
         --build-arg DEBIAN_ARCH=armhf \
-        -t voice2json/voice2json:armhf
+        -t synesthesiam/voice2json:armhf
 	docker run -it \
       -v "$$(pwd):$$(pwd)" -w "$$(pwd)" \
       -e DEBIAN_ARCH=aarch64 \
@@ -42,7 +42,7 @@ docker-multiarch: docker-multiarch-install
 	docker build . \
         --build-arg BUILD_ARCH=arm64v8 \
         --build-arg DEBIAN_ARCH=aarch64 \
-        -t voice2json/voice2json:aarch64
+        -t synesthesiam/voice2json:aarch64
 
 # Installs/builds voice2json in armhf/aarch64 virtual environments
 docker-multiarch-install: docker-multiarch-build
@@ -89,3 +89,14 @@ docker-multiarch-debian: docker-multiarch-install
 multiarch-debian:
 	bash build.sh voice2json.spec
 	bash debianize.sh --architecture $(DEBIAN_ARCH)
+
+# Amend existing docker manifest
+manifest:
+	docker manifest push --purge synesthesiam/voice2json:latest
+	docker manifest create --amend synesthesiam/voice2json:latest \
+        synesthesiam/voice2json:amd64 \
+        synesthesiam/voice2json:armhf \
+        synesthesiam/voice2json:aarch64
+	docker manifest annotate synesthesiam/voice2json:latest synesthesiam/voice2json:armhf --os linux --arch arm
+	docker manifest annotate synesthesiam/voice2json:latest synesthesiam/voice2json:aarch64 --os linux --arch arm64
+	docker manifest push synesthesiam/voice2json:latest
