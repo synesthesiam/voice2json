@@ -120,27 +120,33 @@ def read_dict(
 
         try:
             # Use explicit whitespace (avoid 0xA0)
-            word, pronounce = re.split(r"[ \t]+", line, maxsplit=1)
+            parts = re.split(r"[ \t]+", line)
+            word = parts[0]
+
+            # Skip Julius extras
+            parts = [p for p in parts[1:] if p[0] not in ["[", "@"]]
 
             idx = word.find("(")
             if idx > 0:
                 word = word[:idx]
 
-            # Don't transform silence words
-            if transform and ((silence_words is None) or (word not in silence_words)):
-                word = transform(word)
-
-            pronounce = pronounce.strip()
-
-            if pronounce.startswith("["):
-                # Julius format
-                # word [word] P1 P2 P3
-                pronounce = re.split(r"\s+", pronounce, maxsplit=1)[1]
-
-            if word in word_dict:
-                word_dict[word].append(pronounce)
+            if "+" in word:
+                # Julius format word1+word2
+                words = word.split("+")
             else:
-                word_dict[word] = [pronounce]
+                words = [word]
+
+            for word in words:
+                # Don't transform silence words
+                if transform and ((silence_words is None) or (word not in silence_words)):
+                    word = transform(word)
+
+                pronounce = " ".join(parts)
+
+                if word in word_dict:
+                    word_dict[word].append(pronounce)
+                else:
+                    word_dict[word] = [pronounce]
         except Exception as e:
             logger.warning(f"read_dict: {e} (line {i+1})")
 
