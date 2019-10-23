@@ -24,7 +24,9 @@ docker: installer
 # -----------------------------------------------------------------------------
 
 # Builds voice2json Docker images for armhf/aarch64
-docker-multiarch: docker-multiarch-install
+docker-multiarch: docker-multiarch-armhf docker-multiarch-aarch64
+
+docker-multiarch-armhf: docker-multiarch-install-armhf
 	docker run -it \
       -v "$$(pwd):$$(pwd)" -w "$$(pwd)" \
       -e DEBIAN_ARCH=armhf \
@@ -34,6 +36,8 @@ docker-multiarch: docker-multiarch-install
         --build-arg BUILD_ARCH=arm32v7 \
         --build-arg DEBIAN_ARCH=armhf \
         -t synesthesiam/voice2json:armhf
+
+docker-multiarch-aarch64: docker-multiarch-install-aarch64
 	docker run -it \
       -v "$$(pwd):$$(pwd)" -w "$$(pwd)" \
       -e DEBIAN_ARCH=aarch64 \
@@ -45,12 +49,16 @@ docker-multiarch: docker-multiarch-install
         -t synesthesiam/voice2json:aarch64
 
 # Installs/builds voice2json in armhf/aarch64 virtual environments
-docker-multiarch-install: docker-multiarch-build
+docker-multiarch-install: docker-multiarch-install-armhf docker-multiarch-install-aarch64
+
+docker-multiarch-install-armhf: docker-multiarch-build-armhf
 	docker run -it \
       -v "$$(pwd):$$(pwd)" -w "$$(pwd)" \
       -e DEBIAN_ARCH=armhf \
       voice2json/multi-arch-build:armhf \
       install.sh --noruntime --nocreate
+
+docker-multiarch-install-aarch64: docker-multiarch-build-aarch64
 	docker run -it \
       -v "$$(pwd):$$(pwd)" -w "$$(pwd)" \
       -e DEBIAN_ARCH=aarch64 \
@@ -75,13 +83,17 @@ docker-multiarch-build-aarch64:
         -t voice2json/multi-arch-build:aarch64
 
 # Create Debian packages for armhf/aarch64
-docker-multiarch-debian: docker-multiarch-install
+docker-multiarch-debian: docker-multiarch-debian-armhf docker-multiarch-debian-aarch64
+
+docker-multiarch-debian-armhf: docker-multiarch-install-armhf
 	docker run -it \
       -v "$$(pwd):$$(pwd)" -w "$$(pwd)" \
       -e DEBIAN_ARCH=armhf \
       --entrypoint make \
       voice2json/multi-arch-build:armhf \
       multiarch-debian
+
+docker-multiarch-debian-aarch64: docker-multiarch-install-aarch64
 	docker run -it \
       -v "$$(pwd):$$(pwd)" -w "$$(pwd)" \
       -e DEBIAN_ARCH=aarch64 \
