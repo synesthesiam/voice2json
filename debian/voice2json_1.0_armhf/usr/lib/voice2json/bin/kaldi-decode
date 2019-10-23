@@ -75,10 +75,11 @@ openfst_dir="${kaldi_dir}/tools/openfst"
 utils_dir="${kaldi_dir}/egs/wsj/s5/utils"
 steps_dir="${kaldi_dir}/egs/wsj/s5/steps"
 
-# Force create a symbolic link to the "utils" directory.
+# Create a symbolic link to the "utils" directory.
 # Some Kaldi scripts will crash without this.
-rm -rf "${model_dir}/utils"
-ln -fs "${utils_dir}" "${model_dir}/utils"
+if [[ ! -e "${model_dir}/utils" ]]; then
+    ln -fs "${utils_dir}" "${model_dir}/utils"
+fi
 
 # Set up paths for Kaldi programs
 export PATH="${kaldi_dir}/src/featbin:${kaldi_dir}/src/latbin:${kaldi_dir}/src/gmmbin:${kaldi_dir}/src/online2bin:$PATH"
@@ -133,44 +134,59 @@ done
 function gmm_decode {
     # make_mfcc
     compute-mfcc-feats \
+        --print-args=false \
         --config="${model_dir}/conf/mfcc.conf" \
         "scp:${temp_dir}/wav.scp" \
-        "ark,scp:${temp_dir}/feats.ark,${temp_dir}/feats.scp"
+        "ark,scp:${temp_dir}/feats.ark,${temp_dir}/feats.scp" \
+        2>/dev/null \
+        >/dev/null
 
     # cmvn
     compute-cmvn-stats \
+        --print-args=false \
         "scp:${temp_dir}/feats.scp" \
-        "ark,scp:${temp_dir}/cmvn.ark,${temp_dir}/cmvn.scp"
+        "ark,scp:${temp_dir}/cmvn.ark,${temp_dir}/cmvn.scp" \
+        2>/dev/null \
+        >/dev/null
 
     # norm
     apply-cmvn \
+        --print-args=false \
         "scp:${temp_dir}/cmvn.scp" \
         "scp:${temp_dir}/feats.scp" \
-        "ark,scp:${temp_dir}/feats_cmvn.ark,${temp_dir}/feats_cmvn.scp"
+        "ark,scp:${temp_dir}/feats_cmvn.ark,${temp_dir}/feats_cmvn.scp" \
+        2>/dev/null \
+        >/dev/null
 
     # add_deltas
     add-deltas \
+        --print-args=false \
         "scp:${temp_dir}/feats_cmvn.scp" \
-        "ark,scp:${temp_dir}/deltas.ark,${temp_dir}/deltas.scp"
+        "ark,scp:${temp_dir}/deltas.ark,${temp_dir}/deltas.scp" \
+        2>/dev/null \
+        >/dev/null
 
     # decode
     gmm-latgen-faster \
+        --print-args=false \
         --word-symbol-table="${model_dir}/graph/words.txt" \
         "${model_dir}/model/final.mdl" \
         "${graph_dir}/HCLG.fst" \
         "scp:${temp_dir}/deltas.scp" \
-        "ark,scp:${temp_dir}/lattices.ark,${temp_dir}/lattices.scp"
+        "ark,scp:${temp_dir}/lattices.ark,${temp_dir}/lattices.scp" \
+        2>/dev/null \
+        >/dev/null
 
     # best path
     lattice-best-path \
         --print-args=false \
         --word-symbol-table="${model_dir}/graph/words.txt" \
         "ark:${temp_dir}/lattices.ark" \
+        2>/dev/null \
         "ark,t:-" | \
         "${utils_dir}"/int2sym.pl \
                       -f 2- \
-                      "${graph_dir}/words.txt" - \
-                      2>&1 | \
+                      "${graph_dir}/words.txt" - | \
         grep '^utt_' | \
         sed -e 's/^utt_//'
 }
