@@ -20,7 +20,7 @@ RUN apt-get update && \
         zlib1g-dev libbz2-dev libncurses5-dev \
         libreadline-dev liblzma-dev libsqlite3-dev \
         curl subversion rsync \
-        libatlas-base-dev libatlas3-base \
+        libatlas-base-dev libatlas3-base gfortran \
         sox git unzip python2.7
 
 # -----------------------------------------------------------------------------

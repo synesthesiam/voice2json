@@ -1,0 +1,4 @@
+1188c1188
+<       arm*)    cat makefiles/linux_atlas_arm.mk ;;
+---
+>       arm*|aarch64)    cat makefiles/linux_atlas_arm.mk ;;

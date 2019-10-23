@@ -355,6 +355,7 @@ if [[ ! -z "${no_kaldi}" || ! -f "${kaldi_dir}/src/online2bin/online2-wav-nnet3-
     fi
 
     tar -C "${build_dir}" -xf "${kaldi_file}" && \
+        patch "${kaldi_dir}/src/configure" "${this_dir}/etc/kaldi-src-configure.patch" && \
         cd "${kaldi_dir}/tools" && \
         make -j "${make_threads}" && \
         cd "${kaldi_dir}/src" &&
@@ -388,7 +389,9 @@ if [[ -z "${no_python}" ]]; then
 
     # Other requirements
     python3 -m pip install \
-            --global-option=build_ext --global-option="-L${venv}/lib" \
+            --global-option=build_ext \
+            --global-option="-I${venv}/include" \
+            --global-option="-L${venv}/lib" \
             -r "${this_dir}/requirements.txt"
 fi
 
