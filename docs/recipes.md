@@ -10,6 +10,7 @@ Below are small demonstrations of how to use `voice2json` for a specific problem
 * [Rasa NLU Bot](#train-a-rasa-nlu-bot)
 * [Microphone Over Network](#stream-microphone-audio-over-a-network)
 * [Use DeepSpeech](#use-mozillas-deepspeech)
+* [Fluent AI Dataset](#fluent-ai-dataset)
 
 ---
 
@@ -477,3 +478,13 @@ outputs (for me):
 ```
 
 With a supported GPU, you should be able to get better transcription times.
+
+---
+
+## Fluent AI Dataset
+
+The good folks at [Fluent AI](http://www.fluent.ai) have a [speech command dataset](http://www.fluent.ai/research/fluent-speech-commands/) available for community use. The training set includes over 23,000 spoken examples, and the test set has about 3,800 commands. Each command has at most three attributes: action, object, and location; for example: "turn on (*action*) the lights (*object*) in the kitchen (*location*)". The object and location may be omitted in certain commands, but the action (intent) is always present.
+
+Using ~100 lines in [sentences.ini](https://github.com/synesthesiam/voice2json/blob/master/recipes/fluent_dataset/sentences.ini) (excluding comments), I'm able to get **98.7% accuracy** on the test set, which is as accurate as the end-to-end system trained in [Fluent.ai's published paper](https://arxiv.org/pdf/1904.03670.pdf)! While the sentences `voice2json` was trained with had to be hand-tuned to fit the test set, it also did not require any audio training data.
+
+If you'd like to reproduce my results, follow the [installation instructions](https://github.com/synesthesiam/voice2json/tree/master/recipes/fluent_dataset) and double-check my work :)

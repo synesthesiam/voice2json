@@ -1,5 +1,7 @@
 site_name: voice2json
-theme: material
+theme:
+  name: material
+
 nav:
   - Home: index.md
   - Installation Guide: install.md
