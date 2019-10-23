@@ -58,12 +58,16 @@ docker-multiarch-install: docker-multiarch-build
       install.sh --noruntime --nocreate
 
 # Creates armhf/aarch64 build images with PyInstaller
-docker-multiarch-build:
+docker-multiarch-build: docker-multiarch-build-armhf docker-multiarch-build-aarch64
+
+docker-multiarch-build-armhf:
 	docker build . -f docker/multiarch_build/Dockerfile \
         --build-arg DEBIAN_ARCH=armhf \
         --build-arg CPU_ARCH=armv7l \
         --build-arg BUILD_FROM=arm32v7/ubuntu:bionic \
         -t voice2json/multi-arch-build:armhf
+
+docker-multiarch-build-aarch64:
 	docker build . -f docker/multiarch_build/Dockerfile \
         --build-arg DEBIAN_ARCH=aarch64 \
         --build-arg CPU_ARCH=arm64v8 \
