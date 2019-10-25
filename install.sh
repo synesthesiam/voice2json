@@ -183,6 +183,12 @@ if [[ -z "${no_runtime}" ]]; then
         echo "Installing espeak-ng"
         install espeak-ng
     fi
+
+    # java
+    if [[ -z "$(which java)" ]]; then
+        echo "Install java"
+        install default-jre-headless
+    fi
 fi
 
 # -----------------------------------------------------------------------------

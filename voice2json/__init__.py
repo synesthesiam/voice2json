@@ -190,13 +190,6 @@ def get_julius_transcriber(
         profile, profile_dir, "speech-to-text.acoustic-model", "acoustic_model"
     )
 
-    adinnet_port = pydash.get(profile, "speech-to-text.julius.adinnet-port", 5530)
-    module_port = pydash.get(profile, "speech-to-text.julius.module-port", 10500)
-
-    # TODO: Expose these as settings
-    connect_retries = 50
-    connect_seconds = 0.1
-
     if open_transcription:
         # Use base dictionary/language model
         dictionary = ppath(

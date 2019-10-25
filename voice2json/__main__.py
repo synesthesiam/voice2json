@@ -15,6 +15,7 @@ import shutil
 import shlex
 import platform
 import itertools
+import wave
 from pathlib import Path
 from collections import defaultdict
 from typing import Set, Dict, Optional, List, Any, BinaryIO
@@ -240,6 +241,14 @@ def main():
         help="Port to host web server on (default: 8000)",
     )
     show_documentation_parser.set_defaults(func=show_documentation)
+
+    # speak-sentence
+    speak_parser = sub_parsers.add_parser(
+        "speak-sentence", help="Speak a sentence using MaryTTS"
+    )
+    speak_parser.add_argument("sentence", nargs="*", help="Sentence(s) to speak")
+    speak_parser.add_argument("--wav-sink", "-w", help="File to write WAV data to")
+    speak_parser.set_defaults(func=speak)
 
     # -------------------------------------------------------------------------
 
@@ -1354,6 +1363,153 @@ def check_trained(profile: Dict[str, Any], profile_dir: Path) -> None:
 
 # -----------------------------------------------------------------------------
 
+
+def speak(args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]) -> None:
+    marytts_voice = pydash.get(profile, "text-to-speech.marytts.voice")
+    if marytts_voice is None:
+        speak_espeak(args, profile_dir, profile)
+    else:
+        speak_marytts(args, profile_dir, profile, marytts_voice)
+
+
+def speak_espeak(
+    args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]
+) -> None:
+    voice = pydash.get(profile, "text-to-speech.espeak.voice")
+    espeak_cmd_format = pydash.get(profile, "text-to-speech.espeak.speak-command")
+    play_command = shlex.split(pydash.get(profile, "audio.play-command"))
+
+    # Process sentence(s)
+    if len(args.sentence) > 0:
+        sentences = args.sentence
+    else:
+        sentences = sys.stdin
+
+    for sentence in sentences:
+        sentence = sentence.strip()
+        espeak_cmd = shlex.split(espeak_cmd_format.format(sentence=sentence))
+        espeak_cmd.append("--stdout")
+
+        if voice is not None:
+            espeak_cmd.extend(["-v", str(voice)])
+
+        logger.debug(espeak_cmd)
+        wav_data = subprocess.check_output(espeak_cmd)
+
+        if args.wav_sink is not None:
+            # Write WAV output somewhere
+            if args.wav_sink == "-":
+                # STDOUT
+                wav_sink = sys.stdout.buffer
+            else:
+                # File output
+                wav_sink = open(args.wav_sink, "wb")
+
+            wav_sink.write(wav_data)
+            wav_sink.flush()
+        else:
+            logger.debug(play_command)
+
+            # Speak sentence
+            print(sentence)
+            subprocess.run(play_command, input=wav_data, check=True)
+
+
+def speak_marytts(
+    args: argparse.Namespace,
+    profile_dir: Path,
+    profile: Dict[str, Any],
+    marytts_voice: str,
+) -> None:
+    import requests
+
+    max_retries = int(pydash.get(profile, "text-to-speech.marytts.max-retries", 15))
+    retry_seconds = float(
+        pydash.get(profile, "text-to-speech.marytts.retry-seconds", 0.5)
+    )
+    marytts_locale = pydash.get(
+        profile, "text-to-speech.marytts.locale", pydash.get(profile, "language.code")
+    )
+    server_command = shlex.split(
+        pydash.get(profile, "text-to-speech.marytts.server-command")
+    )
+    play_command = shlex.split(pydash.get(profile, "audio.play-command"))
+
+    logger.debug(server_command)
+
+    # Re-direct stderr output
+    kwargs = {}
+    if not args.debug:
+        kwargs["stderr"] = subprocess.DEVNULL
+
+    marytts_proc = subprocess.Popen(server_command, universal_newlines=True, **kwargs)
+
+    url = str(
+        pydash.get(
+            profile,
+            "text-to-speech.marytts.process-url",
+            "http://localhost:59125/process",
+        )
+    )
+
+    try:
+        # Check connection
+        for i in range(max_retries):
+            try:
+                requests.get(url)
+                break
+            except:
+                time.sleep(retry_seconds)
+
+        params = {
+            "INPUT_TEXT": "",
+            "INPUT_TYPE": "TEXT",
+            "AUDIO": "WAVE",
+            "OUTPUT_TYPE": "AUDIO",
+            "VOICE": marytts_voice,
+        }
+
+        if marytts_locale is not None:
+            params["LOCALE"] = marytts_locale
+
+        # Process sentence(s)
+        if len(args.sentence) > 0:
+            sentences = args.sentence
+        else:
+            sentences = sys.stdin
+
+        for sentence in sentences:
+            sentence = sentence.strip()
+            params["INPUT_TEXT"] = sentence
+            logger.debug(params)
+
+            # Do GET requests
+            result = requests.get(url, params=params)
+            if result.ok:
+                if args.wav_sink is not None:
+                    # Write WAV output somewhere
+                    if args.wav_sink == "-":
+                        # STDOUT
+                        wav_sink = sys.stdout.buffer
+                    else:
+                        # File output
+                        wav_sink = open(args.wav_sink, "wb")
+
+                    wav_sink.write(result.content)
+                    wav_sink.flush()
+                else:
+                    logger.debug(play_command)
+
+                    # Speak sentence
+                    print(sentence)
+                    subprocess.run(play_command, input=result.content, check=True)
+    finally:
+        # Stop MaryTTS server
+        marytts_proc.terminate()
+        marytts_proc.wait()
+
+
+# -----------------------------------------------------------------------------
 
 if __name__ == "__main__":
     main()

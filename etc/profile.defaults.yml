@@ -167,6 +167,22 @@ text-to-speech:
     # Command to execute to pronounce some espeak phonemes
     pronounce-command: "espeak-ng -s 80 [[{phonemes}]]"
 
+    # Command to speak sentence
+    speak-command: "espeak-ng \"{sentence}\""
+
+  marytts:
+    # Command to run MaryTTS server
+    server-command: !env "java -cp \"${voice2json_dir}/marytts/*:${profile_dir}/marytts/*\" marytts.server.Mary"
+
+    # URL to do GET requests
+    process-url: "http://localhost:59125/process"
+
+    # Number of times to retry server connection
+    max-retries: 15
+
+    # Seconds between retries
+    retry-seconds: 0.5
+
 # -----------------------------------------------------------------------------
 
 audio:
@@ -175,3 +191,6 @@ audio:
 
   # Command to convert WAV data to 16-bit 16Khz mono (stdin -> stdout)
   convert-command: "sox -t wav - -r 16000 -e signed-integer -b 16 -c 1 -t wav -"
+
+  # Command to play a WAV file (stdin)
+  play-command: "aplay -q -t wav"
