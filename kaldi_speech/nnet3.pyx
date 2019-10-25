@@ -75,8 +75,8 @@ cdef class KaldiNNet3OnlineModel:
         cdef str word_symbol_table     = "%s/words.txt"                             % self.graphdir
         cdef str model_in_filename     = "%s/model/final.mdl"                       % self.modeldir
         cdef str splice_conf_filename  = "%s/ivectors_test_hires/conf/splice.conf"  % self.modeldir
-        cdef str fst_in_str            = "%s/HCLG.fst"                           % self.graphdir
-        cdef str align_lex_filename    = "%s/phones/align_lexicon.int"           % self.graphdir
+        cdef str fst_in_str            = "%s/HCLG.fst"                              % self.graphdir
+        cdef str align_lex_filename    = "%s/phones/align_lexicon.int"              % self.graphdir
 
         #
         # make sure all model files required exist
