@@ -9,3 +9,5 @@ networkx
 pyinstaller
 mkdocs>=1.0.4
 mkdocs-material
+numpy
+cython
