@@ -17,6 +17,15 @@ if [[ -d '/usr/lib/sphinxtrain' ]]; then
     export PATH="/usr/lib/sphinxtrain:${PATH}"
 fi
 
+# Add Kaldi to library path
+if [[ -z "${kaldi_dir}" ]]; then
+    kaldi_dir="${this_dir}/build_${CPU_ARCH}/kaldi-master"
+fi
+
+if [[ -d "${kaldi_dir}" ]]; then
+    export LD_LIBRARY_PATH="${kaldi_dir}/src/lib:${kaldi_dir}/tools/openfst/lib:${LD_LIBRARY_PATH}"
+fi
+
 export PYTHONPATH="${this_dir}"
 export PATH="${this_dir}/bin:${PATH}"
 

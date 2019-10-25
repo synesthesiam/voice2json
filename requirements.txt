@@ -10,3 +10,5 @@ pyinstaller
 mkdocs>=1.0.4
 mkdocs-material
 requests
+numpy
+cython

@@ -10,6 +10,7 @@ import shutil
 import wave
 import time
 import socket
+import struct
 import xml.etree.ElementTree as ET
 from typing import Dict, Any
 from pathlib import Path
@@ -137,47 +138,109 @@ def get_kaldi_transcriber(
             profile, profile_dir, "speech-to-text.kaldi.graph-directory"
         ) or (acoustic_model / "graph")
 
-    class KaldiTranscriber(Transcriber):
-        def __init__(self, model_type, model_dir, graph_dir):
-            self.model_type = model_type
-            self.model_dir = model_dir
-            self.graph_dir = graph_dir
+    if model_type == "nnet3":
+        # Use Python extension
+        import numpy as np
+        from kaldi_speech.nnet3 import KaldiNNet3OnlineModel, KaldiNNet3OnlineDecoder
 
-        def transcribe_wav(self, wav_data: bytes) -> Dict[str, Any]:
-            kaldi_cmd = [
-                "kaldi-decode",
-                "--model-type",
-                str(self.model_type),
-                "--model-dir",
-                str(self.model_dir),
-                "--graph-dir",
-                str(self.graph_dir),
-            ]
+        class KaldiExtensionTranscriber(Transcriber):
+            def __init__(self, model_dir, graph_dir):
+                self.model_dir = model_dir
+                self.graph_dir = graph_dir
+                self.model = None
+                self.decoder = None
 
-            logger.debug(kaldi_cmd)
+            def maybe_load_decoder(self):
+                if self.decoder is None:
+                    self.model = KaldiNNet3OnlineModel(
+                        str(self.model_dir), str(self.graph_dir)
+                    )
+                    logger.debug(
+                        f"Kaldi model loaded at {self.model_dir} (graph={self.graph_dir})"
+                    )
 
-            with tempfile.NamedTemporaryFile(suffix=".wav", mode="wb") as temp_file:
-                # Convert WAV to 16-bit, 16Khz mono and save
+                    self.decoder = KaldiNNet3OnlineDecoder(self.model)
+                    logger.debug(f"Kaldi decoder loaded")
+
+            def transcribe_wav(self, wav_data: bytes) -> Dict[str, Any]:
+                self.maybe_load_decoder()
+
+                # Convert WAV to 16-bit, 16Khz mono
+                logger.debug(f"Decoding {len(wav_data)} byte(s)")
+                start_time = time.time()
                 converted_wav_data = maybe_convert_wav(profile, wav_data)
-                temp_file.write(converted_wav_data)
 
-                # Rewind
-                temp_file.seek(0)
+                with io.BytesIO(converted_wav_data) as wav_buffer:
+                    with wave.open(wav_buffer, "rb") as wav_file:
+                        sample_rate = wav_file.getframerate()
+                        num_frames = wav_file.getnframes()
+                        wav_duration = num_frames / float(sample_rate)
 
-                kaldi_proc = subprocess.Popen(
-                    kaldi_cmd,
-                    stdin=subprocess.PIPE,
-                    stdout=subprocess.PIPE,
-                    universal_newlines=True,
-                )
+                        frames = wav_file.readframes(num_frames)
+                        samples = struct.unpack_from("<%dh" % num_frames, frames)
 
-                # Write path to WAV file
-                print(temp_file.name, file=kaldi_proc.stdin)
-                result_json, _ = kaldi_proc.communicate()
+                        # Decode
+                        success = self.decoder.decode(
+                            sample_rate, np.array(samples, dtype=np.float32), True
+                        )
+                        if success:
+                            text, likelihood = self.decoder.get_decoded_string()
+                        else:
+                            text, likelihood = "", 0.0
 
-                return json.loads(result_json)
+                        decode_seconds = time.time() - start_time
 
-    return KaldiTranscriber(model_type, acoustic_model, graph_dir)
+                        return {
+                            "text": text,
+                            "transcribe_seconds": decode_seconds,
+                            "wav_seconds": wav_duration,
+                            "likelihood": likelihood,
+                        }
+
+        return KaldiExtensionTranscriber(acoustic_model, graph_dir)
+    else:
+        # Use kaldi-decode script
+        class KaldiCommandLineTranscriber(Transcriber):
+            def __init__(self, model_type, model_dir, graph_dir):
+                self.model_type = model_type
+                self.model_dir = model_dir
+                self.graph_dir = graph_dir
+
+            def transcribe_wav(self, wav_data: bytes) -> Dict[str, Any]:
+                kaldi_cmd = [
+                    "kaldi-decode",
+                    "--model-type",
+                    str(self.model_type),
+                    "--model-dir",
+                    str(self.model_dir),
+                    "--graph-dir",
+                    str(self.graph_dir),
+                ]
+
+                logger.debug(kaldi_cmd)
+
+                with tempfile.NamedTemporaryFile(suffix=".wav", mode="wb") as temp_file:
+                    # Convert WAV to 16-bit, 16Khz mono and save
+                    converted_wav_data = maybe_convert_wav(profile, wav_data)
+                    temp_file.write(converted_wav_data)
+
+                    # Rewind
+                    temp_file.seek(0)
+
+                    kaldi_proc = subprocess.Popen(
+                        kaldi_cmd,
+                        stdin=subprocess.PIPE,
+                        stdout=subprocess.PIPE,
+                        universal_newlines=True,
+                    )
+
+                    # Write path to WAV file
+                    print(temp_file.name, file=kaldi_proc.stdin)
+                    result_json, _ = kaldi_proc.communicate()
+
+                    return json.loads(result_json)
+
+        return KaldiCommandLineTranscriber(model_type, acoustic_model, graph_dir)
 
 
 def get_julius_transcriber(
