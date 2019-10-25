@@ -55,7 +55,7 @@ cdef class KaldiNNet3OnlineModel:
                         float  beam                     = 15.0,
                         int    max_active               = 7000,
                         int    min_active               = 200,
-                        float  lattice_beam             = 8.0,
+                        float  lattice_beam             = 6.0, # nnet3: 8.0
                         float  acoustic_scale           = 1.0, # nnet3: 0.1
                         int    frame_subsampling_factor = 3,   # neet3: 1
 
