@@ -25,3 +25,4 @@ recipes/fluent_dataset/results/transcriptions.jsonl
 kaldi_speech.egg-info/
 build/
 dist/
+log/
