@@ -164,28 +164,31 @@ def _get_symbols_and_costs(
                 if out_label.startswith("__label__"):
                     next_intent = out_label[9:]
 
-                if in_label in stop_words:
-                    # Only consume token if it matches (no penalty if not)
+                if in_label != eps:
                     if (len(next_in_tokens) > 0) and (in_label == next_in_tokens[0]):
-                        next_in_tokens.pop(0)
-
-                    if out_label != eps:
-                        next_out_tokens.append(out_label)
-                elif in_label != eps:
-                    # Consume non-matching tokens and increase cost
-                    while (len(next_in_tokens) > 0) and (in_label != next_in_tokens[0]):
-                        next_in_tokens.pop(0)
-                        next_cost += 1
-
-                    if len(next_in_tokens) > 0:
-                        # Consume matching token
+                        # Consume matching token immediately
                         next_in_tokens.pop(0)
 
                         if out_label != eps:
                             next_out_tokens.append(out_label)
                     else:
-                        # No matching token
-                        continue
+                        # Consume non-matching tokens and increase cost unless top word
+                        while (len(next_in_tokens) > 0) and (
+                            in_label != next_in_tokens[0]
+                        ):
+                            bad_token = next_in_tokens.pop(0)
+                            if bad_token not in stop_words:
+                                next_cost += 1
+
+                        if len(next_in_tokens) > 0:
+                            # Consume matching token
+                            next_in_tokens.pop(0)
+
+                            if out_label != eps:
+                                next_out_tokens.append(out_label)
+                        else:
+                            # No matching token
+                            continue
                 else:
                     # Consume epsilon
                     if out_label != eps:
