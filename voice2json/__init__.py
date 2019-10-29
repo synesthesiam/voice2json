@@ -18,6 +18,7 @@ from pathlib import Path
 logger = logging.getLogger("voice2json")
 
 import pydash
+import numpy as np
 
 from voice2json.utils import ppath
 
@@ -139,10 +140,9 @@ def get_kaldi_transcriber(
         ) or (acoustic_model / "graph")
 
     if model_type == "nnet3":
-        # Use Python extension
-        import numpy as np
-        from kaldi_speech.nnet3 import KaldiNNet3OnlineModel, KaldiNNet3OnlineDecoder
+        logger.debug("Loading Kaldi nnet3 Python extension")
 
+        # Use Python extension
         class KaldiExtensionTranscriber(Transcriber):
             def __init__(self, model_dir, graph_dir):
                 self.model_dir = model_dir
@@ -152,13 +152,15 @@ def get_kaldi_transcriber(
 
             def maybe_load_decoder(self):
                 if self.decoder is None:
+                    from kaldi_speech.nnet3 import KaldiNNet3OnlineModel, KaldiNNet3OnlineDecoder
+
+                    logger.debug(f"Loading nnet3 model at {self.model_dir} (graph={self.graph_dir})")
+
                     self.model = KaldiNNet3OnlineModel(
                         str(self.model_dir), str(self.graph_dir)
                     )
-                    logger.debug(
-                        f"Kaldi model loaded at {self.model_dir} (graph={self.graph_dir})"
-                    )
 
+                    logger.debug("Creating decoder")
                     self.decoder = KaldiNNet3OnlineDecoder(self.model)
                     logger.debug(f"Kaldi decoder loaded")
 
