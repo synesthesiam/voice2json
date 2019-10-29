@@ -1047,7 +1047,6 @@ def test_examples(
         examples_dir = (
             Path(args.directory) if args.directory is not None else Path.cwd()
         )
-        logger.debug(f"Looking for examples in {examples_dir}")
 
         # Load expected transcriptions/intents from examples directory
         logger.debug("Loading expected transcriptions/intents")
