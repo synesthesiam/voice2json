@@ -48,7 +48,7 @@ The following tools/libraries help to support voice2json:
 * [jq](https://stedolan.github.io/jq/) (JSON formatting)
 * [Julius](https://github.com/julius-speech/julius) (speech to text)
 * [Kaldi](https://kaldi-asr.org) (speech to text)
-* [MaryTTS](http://mary.dfki.de/) (tex to speech)
+* [MaryTTS](http://mary.dfki.de/) (text to speech)
 * [Montreal Forced Aligner](https://montreal-forced-aligner.readthedocs.io/en/latest/) (acoustic models)
 * [GNU Parallel](http://www.gnu.org/s/parallel) (parallel execution)
 * [Phonetisaurus](https://github.com/AdolfVonKleist/Phonetisaurus) (word pronunciations)

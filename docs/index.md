@@ -123,7 +123,7 @@ Once you've [installed voice2json](install.md) and [downloaded a profile](instal
 
 ## Supported Languages
 
-`voice2json` supports the following languages/locales. I don't speak or write any language besides U.S. English very well, so **please** let me know if any profile is broken or could be improved!
+`voice2json` supports the following languages/locales. I don't speak or write any language besides U.S. English very well, so **please** let me know if any profile is broken or could be improved! I'm mostly [Chinese Room-ing it](https://en.wikipedia.org/wiki/Chinese_room#Chinese_room_thought_experiment).
 
 Untested profiles (highlighted below) *may* work, but I don't have the necessary data or enough understanding of the language to test them.
 

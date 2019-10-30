@@ -373,7 +373,7 @@ See [audio sources](#audio-sources) for a description of how `record-command` ge
 
 ### Redirecting WAV Output
 
-The `--wav-sink` argument lets you change where `record-command` writes its output WAV data. When this is set to something other than "-" (standard out), `record-command` will output lines of JSON to standard out that describe events in the live speech.
+The `--wav-sink` argument lets you change where `record-command`, `pronounce-word`, and `speak-sentence` write their output WAV data. When this is set to something other than "-" (standard out), `record-command` will output lines of JSON to standard out that describe events in the live speech.
 
 ```bash
 $ voice2json record-command \
@@ -398,11 +398,11 @@ where `event` is either "speech", "started", "silence", "stopped", or "timeout".
 
 ## pronounce-word
 
-Uses [eSpeak](https://github.com/espeak-ng/espeak-ng) to pronounce words *the same way that the speech recognizer is expecting to hear them*. This depends on a manually created [phoneme map](formats.md#espeak-phoneme-maps) in each profile.
+Uses [eSpeak](https://github.com/espeak-ng/espeak-ng) or [MaryTTS](http://mary.dfki.de/) to pronounce words *the same way that the speech recognizer is expecting to hear them*. This depends on manually created [phoneme maps](formats.md#phoneme-maps) in each profile.
 
-Inputs can be provided either as arguments **or** lines via standard in.
+Words can be provided either as arguments **or** lines via standard in. You can also [save output to a WAV file](#redirecting-wav-output).
 
-Assuming you're using the `en-us_pocketsphinx-cmu` profile:
+Assuming you're using the [en-us_pocketsphinx-cmu](https://github.com/synesthesiam/en-us_pocketsphinx-cmu) profile:
 
 ```bash
 voice2json pronounce-word hello
@@ -450,7 +450,19 @@ You can save these pronunciations in the `custom_words.txt` file in your [profil
 
 ## speak-sentence
 
-Speaks a full sentence using either [eSpeak](https://github.com/espeak-ng/espeak-ng) or [MaryTTS](http://mary.dfki.de/).
+Speaks a full sentence using either [eSpeak](https://github.com/espeak-ng/espeak-ng) or [MaryTTS](http://mary.dfki.de/) if `text-to-speech.marytts.voice` is set in your [profile](profiles.md).
+
+Sentences can be provided either as arguments **or** lines via standard in. You can also [save output to a WAV file](#redirecting-wav-output).
+
+```bash
+voice2json speak-sentence 'hello world!'
+```
+
+Add an `--espeak` argument if you always want to use [eSpeak](https://github.com/espeak-ng/espeak-ng). Check out the [text to speech server recipe](recipes.md#run-a-text-to-speech-server) if you want to run a MaryTTS server.
+
+### MaryTTS User Dictionaries
+
+If you've added custom words to your profile (in `custom_words.txt`), `voice2json` will try and use your profile's MaryTTS [phoneme map](formats.md#phoneme-map) to generate a [user dictionary](https://github.com/marytts/marytts/tree/master/src/main/dist/user-dictionaries) so words will be pronounced as you've specified. If you don't want this, set `text-to-speech.marytts.dictionary-file` to the empty string (`""`) in your [profile](profiles.md).
 
 ---
 

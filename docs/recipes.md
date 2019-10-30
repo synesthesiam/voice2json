@@ -4,6 +4,7 @@ Below are small demonstrations of how to use `voice2json` for a specific problem
 
 * [Picard's Tea](#picards-tea)
 * [MQTT Transcription Service](#create-an-mqtt-transcription-service)
+* [Text to Speech Server](#run-a-text-to-speech-server)
 * [Launch Programs](#launch-a-program-via-voice)
 * [Set Timers](#set-and-run-timers)
 * [Parallel Recognition](#parallel-wav-recognition)
@@ -87,6 +88,26 @@ In the terminal subscribed to `transcription-response` messages, you should see 
 ```
 turn on the light
 ```
+
+---
+
+## Run a Text to Speech Server
+
+If your profile has a [MaryTTS](http://mary.dfki.de/) voice available (see `text-to-speech.marytts.voice` in your [profile](profiles.md)), you can easily run a local MaryTTS web server at [http://localhost:59125](http://localhost:59125) with the [speak-sentence](commands.md#speak-sentence) command:
+
+```bash
+$ voice2json --debug speak-sentence
+```
+
+It'll wait forever for input from stdin, so you can interact with the MaryTTS server via `curl`:
+
+```bash
+$ curl 'localhost:59125/process?INPUT_TEXT=hello%20world.&INPUT_TYPE=TEXT&AUDIO=WAVE&OUTPUT_TYPE=AUDIO&LOCALE=en-US&VOICE=cmu-slt-hsmm' | aplay
+```
+
+Note the period (`.`) at the end of the sentence. MaryTTS seems **very** sensitive to punctutation, so don't forget it!
+
+If you want more voices, copy the JAR(s) and other files into the `marytts` directory in your profile directory (`${profile_dir}/marytts` is set as `MARY_BASE`). See the `text-to-speech.marytts.server-command` property in your [profile](profiles.md) for exactly how `voice2json` starts MaryTTS.
 
 ---
 

@@ -25,6 +25,11 @@ A `voice2json` <strong>profile</strong> contains everything necessary to recogni
 * Grapheme to phoneme models
     * Used to guess how [unknown words](commands.md#unknown-words) *should* be pronounced
     * `g2p.fst` - a [finite state transducer](http://www.openfst.org) created using [phonetisaurus](https://github.com/AdolfVonKleist/Phonetisaurus)
+* Phoneme Maps
+    * Used to relate speech-to-text and text-to-speech [phonemes](whitepaper.md#pronunciation-dictionary)
+    * `espeak_phonemes.txt` - map to [eSpeak](https://github.com/espeak-ng/espeak-ng) phonemes
+    * `marytts_phonemes.txt` - map to [MaryTTS](http://mary.dfki.de/) phonemes
+    * `ipa_phonemes.txt` - map to [International Phonetic Alphabet](https://en.wikipedia.org/wiki/International_Phonetic_Alphabet)
 
 ---
 
@@ -215,7 +220,33 @@ text-to-speech:
     phoneme-map: !env "${profile_dir}/espeak_phonemes.txt"
 
     # Command to execute to pronounce some espeak phonemes
-    pronounce-command: "espeak-ng -s 80 [[{phonemes}]]"
+    pronounce-command: "espeak-ng -s 80 --stdout [[{phonemes}]]"
+
+    # Command to speak sentence
+    speak-command: "espeak-ng --stdout \"{sentence}\""
+
+  marytts:
+    # Command to run MaryTTS server
+    server-command: !env "java -cp \"${voice2json_dir}/marytts/*:${profile_dir}/marytts/*\" -Dmary.base=\"${profile_dir}/marytts\" marytts.server.Mary"
+
+    # URL to do GET requests
+    process-url: "http://localhost:59125/process"
+
+    # Number of times to retry server connection
+    max-retries: 15
+
+    # Seconds between retries
+    retry-seconds: 0.5
+
+    # Path to map between dictionary and MaryTTS phonemes
+    phoneme-map: !env "${profile_dir}/marytts_phonemes.txt"
+
+    # Token used to end a MaryTTS sentence during pronunciation.
+    # I get weird pronunciations when punctuation is missing.
+    sentence-end: "."
+
+    # prosody rate used for pronunciation
+    pronounce-rate: "5%"
 
 # -----------------------------------------------------------------------------
 
@@ -225,4 +256,7 @@ audio:
 
   # Command to convert WAV data to 16-bit 16Khz mono (stdin -> stdout)
   convert-command: "sox -t wav - -r 16000 -e signed-integer -b 16 -c 1 -t wav -"
+
+  # Command to play a WAV file (stdin)
+  play-command: "aplay -q -t wav"
 ```

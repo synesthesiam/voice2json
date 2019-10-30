@@ -8,7 +8,7 @@
 * [Pronunciation Dictionaries](#pronunciation-dictionaries)
 * [Language Models](#language-models)
 * [G2P Models](#grapheme-to-phoneme-models)
-* [Phoneme Maps](#espeak-phoneme-maps)
+* [Phoneme Maps](#phoneme-maps)
 
 ---
 
@@ -148,14 +148,14 @@ G2P prediction can also be done using [transformer models](https://github.com/cm
 
 ---
 
-## eSpeak Phoneme Maps
+## Phoneme Maps
 
-Each profile contains an `espeak_phonemes.txt` file that contains a mapping from the phonemes present in the profile's [pronunciation dictionaries](#pronunciations-dictionaries) and the phonemes that [eSpeak](https://github.com/espeak-ng/espeak-ng) itself uses to pronounce words. The format is simple:
+Each profile contains one or more text files that contains a mapping from the phonemes present in the profile's [pronunciation dictionaries](#pronunciations-dictionaries) to either [eSpeak](https://github.com/espeak-ng/espeak-ng) (`espeak_phonemes.txt`) or [MaryTTS](http://mary.dfki.de/) (`marytts_phonemes.txt`). The format is simple:
 
 ```
-P1 E1
-P2 E2
+S1 D1
+S2 D2
 ...
 ```
 
-where `P1` is a dictionary phoneme and `E1` is an eSpeak phoneme. These mappings are produced manually, and may not be perfect. The goal is to help users [hear how the speech recognizer is expecting a word to be pronounced](commands.md#pronounce-word).
+where `S1` is a source dictionary phoneme and `D1` is a destination eSpeak/MaryTTS phoneme. These mappings are produced manually, and may not be perfect. The goal is to help users [hear how the speech recognizer is expecting a word to be pronounced](commands.md#pronounce-word) and to control how [words are spoken](commands.md#speak-sentence).
