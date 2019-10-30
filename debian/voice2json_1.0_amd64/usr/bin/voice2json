@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 export voice2json_dir='/usr/lib/voice2json'
+CPU_ARCH="$(lscpu | awk '/^Architecture/{print $2}')"
 
 # Check to see if sphinxtrain is installed (pocketsphinx acoustic model tuning)
 if [[ -d '/usr/lib/sphinxtrain' ]]; then
@@ -8,5 +9,14 @@ fi
 
 export PATH="${voice2json_dir}/bin:${voice2json_dir}/voice2json:${PATH}"
 export LD_LIBRARY_PATH="${voice2json_dir}/voice2json"
+
+# Add Kaldi to library path
+if [[ -z "${kaldi_dir}" ]]; then
+    kaldi_dir="${voice2json_dir}/build_${CPU_ARCH}/kaldi-master"
+fi
+
+if [[ -d "${kaldi_dir}" ]]; then
+    export LD_LIBRARY_PATH="${kaldi_dir}/src/lib:${kaldi_dir}/tools/openfst/lib:${LD_LIBRARY_PATH}"
+fi
 
 "${voice2json_dir}/voice2json/voice2json" "$@"

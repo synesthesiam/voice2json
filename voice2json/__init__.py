@@ -186,7 +186,7 @@ def get_kaldi_transcriber(
                             sample_rate, np.array(samples, dtype=np.float32), True
                         )
                         if success:
-                            text, likelihood = self.decoder.get_decoded_string()
+                            text, likelihood = self.decoder.get_decoded_string().strip()
                         else:
                             text, likelihood = "", 0.0
 

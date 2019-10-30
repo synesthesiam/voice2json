@@ -2,7 +2,7 @@ Package: voice2json
 Version: 1.0
 Section: utils
 Priority: optional
-Depends: sox,alsa-utils,espeak,jq,libstdc++6,sphinxtrain,perl
+Depends: sox,alsa-utils,espeak,jq,libstdc++6,sphinxtrain,perl,default-jre-headless
 Architecture: aarch64
 Maintainer: Michael Hansen
 Description: Command-line tools for offline speech/intent recognition
