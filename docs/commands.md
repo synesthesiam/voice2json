@@ -15,6 +15,7 @@ The following commands are available:
 * [wait-wake](#wait-wake) - Listen to live audio stream for wake word
 * [record-command](#record-command) - Record voice command from live audio stream
 * [pronounce-word](#pronounce-word) - Look up or guess how a word is pronounced
+* [speak-sentence](#speak-sentence) - Speak a sentence using text-to-speech
 * [generate-examples](#generate-examples) - Generate random intents
 * [record-examples](#record-examples) - Generate and record speech examples
 * [test-examples](#test-examples) - Test recorded speech examples
@@ -397,7 +398,7 @@ where `event` is either "speech", "started", "silence", "stopped", or "timeout".
 
 ## pronounce-word
 
-Uses [eSpeak](http://espeak.sourceforge.net) to pronounce words *the same way that the speech recognizer is expecting to hear them*. This depends on a manually created [phoneme map](formats.md#espeak-phoneme-maps) in each profile.
+Uses [eSpeak](https://github.com/espeak-ng/espeak-ng) to pronounce words *the same way that the speech recognizer is expecting to hear them*. This depends on a manually created [phoneme map](formats.md#espeak-phoneme-maps) in each profile.
 
 Inputs can be provided either as arguments **or** lines via standard in.
 
@@ -444,6 +445,12 @@ voice2json pronounce-word 'moogle M UW G AH L'
 ```
 
 You can save these pronunciations in the `custom_words.txt` file in your [profile](profiles.md). Make sure to [re-train](#train-profile).
+
+---
+
+## speak-sentence
+
+Speaks a full sentence using either [eSpeak](https://github.com/espeak-ng/espeak-ng) or [MaryTTS](http://mary.dfki.de/).
 
 ---
 

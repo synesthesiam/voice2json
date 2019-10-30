@@ -150,7 +150,7 @@ G2P prediction can also be done using [transformer models](https://github.com/cm
 
 ## eSpeak Phoneme Maps
 
-Each profile contains an `espeak_phonemes.txt` file that contains a mapping from the phonemes present in the profile's [pronunciation dictionaries](#pronunciations-dictionaries) and the phonemes that [eSpeak](http://espeak.sourceforge.net) itself uses to pronounce words. The format is simple:
+Each profile contains an `espeak_phonemes.txt` file that contains a mapping from the phonemes present in the profile's [pronunciation dictionaries](#pronunciations-dictionaries) and the phonemes that [eSpeak](https://github.com/espeak-ng/espeak-ng) itself uses to pronounce words. The format is simple:
 
 ```
 P1 E1

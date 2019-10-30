@@ -84,6 +84,10 @@ do
           "${output_dir}/${artifact_dir}/"
 done
 
+# Copy MaryTTS runtime
+mkdir -p "${output_dir}/marytts"
+rsync -av --delete "${this_dir}/marytts/" "${output_dir}/marytts/"
+
 # -----------------------------------------------------------------------------
 
 if [[ "${FLAGS_package}" -eq "${FLAGS_TRUE}" ]]; then

@@ -30,7 +30,7 @@ A `voice2json` <strong>profile</strong> contains everything necessary to recogni
 
 ## profile.yml
 
-A [YAML file](https://yaml.org) with settings that override [the defaults](#default-settings). This file typically contains the profile language's name and locale code, as well as an [eSpeak](http://espeak.sourceforge.net) voice to use for word pronunciations.
+A [YAML file](https://yaml.org) with settings that override [the defaults](#default-settings). This file typically contains the profile language's name and locale code, as well as an [eSpeak](https://github.com/espeak-ng/espeak-ng) voice to use for word pronunciations.
 
 For Kaldi-based profiles, `kaldi.model-type` **must** be set to either `gmm` or `nnet3`.
 

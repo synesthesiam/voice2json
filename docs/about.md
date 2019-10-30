@@ -43,11 +43,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 The following tools/libraries help to support voice2json:
 
-* [eSpeak](http://espeak.sourceforge.net) (text to speech)
+* [eSpeak](https://github.com/espeak-ng/espeak-ng) (text to speech)
 * [doit](https://pydoit.org) (training)
 * [jq](https://stedolan.github.io/jq/) (JSON formatting)
 * [Julius](https://github.com/julius-speech/julius) (speech to text)
 * [Kaldi](https://kaldi-asr.org) (speech to text)
+* [MaryTTS](http://mary.dfki.de/) (tex to speech)
 * [Montreal Forced Aligner](https://montreal-forced-aligner.readthedocs.io/en/latest/) (acoustic models)
 * [GNU Parallel](http://www.gnu.org/s/parallel) (parallel execution)
 * [Phonetisaurus](https://github.com/AdolfVonKleist/Phonetisaurus) (word pronunciations)
