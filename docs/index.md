@@ -156,6 +156,14 @@ Untested profiles (highlighted below) *may* work, but I don't have the necessary
       <td>&#9785; (6x)</td>
     </tr>
     <tr>
+      <td><a href="https://github.com/synesthesiam/nl_kaldi-cgn/archive/v1.0.tar.gz">Download</a></td>
+      <td>Dutch  (Nederlands)</td>
+      <td>nl</td>
+      <td>kaldi</td>
+      <td>&#9733; &#9733; &#9733; &#9733; &#9733; (17x)</td>
+      <td>&#9785; &#9785;  &#9785;  &#9785; &#9785; (8x)</td>
+    </tr>
+    <tr>
       <td><a href="https://github.com/synesthesiam/en-us_kaldi-zamia/archive/v1.0.tar.gz">Download</a></td>
       <td>English</td>
       <td>en-us</td>
