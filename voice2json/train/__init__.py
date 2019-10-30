@@ -483,6 +483,53 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
             "actions": [(do_dict, [dictionary_paths])],
         }
 
+    def do_marytts_dict(map_path, targets):
+        # Load phoneme map
+        phoneme_map = dict(
+            re.split(r"\s+", line.strip(), maxsplit=1)
+            for line in map_path.read_text().splitlines()
+        )
+
+        # Create directory for dictionary
+        dict_path = Path(targets[0])
+        dict_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Read in custom speech dictionary
+        with open(custom_words, "r") as custom_words_file:
+            custom_dict = read_dict(custom_words_file)
+
+        # Write custom MaryTTS dictionary
+        with open(dict_path, "w") as dict_file:
+            for word, prons in custom_dict.items():
+                # Only use first pronunciation
+                dict_phonemes = re.split(r"\s+", prons[0])
+
+                # Map to MaryTTS phonemes
+                marytts_phonemes = [phoneme_map[p] for p in dict_phonemes]
+                phoneme_str = " ".join(marytts_phonemes)
+
+                print(word, "|", phoneme_str, file=dict_file)
+
+    @create_after(executed="vocab_dict")
+    def task_marytts_dict():
+        """Creates custom pronunciation dictionary for MaryTTS."""
+        marytts_map_path = ppath(
+            "text-to-speech.marytts.phoneme-map", "marytts_phonemes.txt"
+        )
+
+        marytts_dict_path = ppath("text-to-speech.marytts.dictionary-file")
+
+        if (
+            custom_words.exists()
+            and marytts_map_path.exists()
+            and (marytts_dict_path is not None)
+        ):
+            return {
+                "file_dep": [custom_words, marytts_map_path],
+                "targets": [marytts_dict_path],
+                "actions": [(do_marytts_dict, [marytts_map_path])],
+            }
+
     # -----------------------------------------------------------------------------
 
     @create_after(executed="vocab_dict")

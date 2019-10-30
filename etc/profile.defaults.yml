@@ -172,7 +172,7 @@ text-to-speech:
 
   marytts:
     # Command to run MaryTTS server
-    server-command: !env "java -cp \"${voice2json_dir}/marytts/*:${profile_dir}/marytts/*\" marytts.server.Mary"
+    server-command: !env "java -cp \"${voice2json_dir}/marytts/*:${profile_dir}/marytts/*\" -Dmary.base=\"${profile_dir}/marytts\" marytts.server.Mary"
 
     # URL to do GET requests
     process-url: "http://localhost:59125/process"

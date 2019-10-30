@@ -656,6 +656,9 @@ def pronounce(
     dictionary_path = ppath(
         profile, profile_dir, "training.dictionary", "dictionary.txt"
     )
+    custom_words_path = ppath(
+        profile, profile_dir, "training.custom-words-file", "custom_words.txt"
+    )
     g2p_path = ppath(profile, profile_dir, "training.g2p-model", "g2p.fst")
     g2p_exists = g2p_path.exists()
 
@@ -670,9 +673,14 @@ def pronounce(
     print_file = sys.stderr if wav_stdout else sys.stdout
 
     # Load dictionaries
+    dictionary_paths = [dictionary_path, base_dictionary_path]
+
+    if custom_words_path.exists():
+        dictionary_paths.insert(0, custom_words_path)
+
     pronunciations: Dict[str, List[str]] = defaultdict(list)
 
-    for dict_path in [dictionary_path, base_dictionary_path]:
+    for dict_path in dictionary_paths:
         if dict_path.exists():
             with open(dict_path, "r") as dict_file:
                 read_dict(dict_file, pronunciations)
@@ -885,6 +893,8 @@ def pronounce(
 
                     # Delay before next word
                     time.sleep(args.delay)
+    except KeyboardInterrupt:
+        pass
     finally:
         if marytts_proc is not None:
             # Stop MaryTTS server

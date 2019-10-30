@@ -172,7 +172,7 @@ def _get_symbols_and_costs(
                         if out_label != eps:
                             next_out_tokens.append(out_label)
                     else:
-                        # Consume non-matching tokens and increase cost unless top word
+                        # Consume non-matching tokens and increase cost unless stop word
                         while (len(next_in_tokens) > 0) and (
                             in_label != next_in_tokens[0]
                         ):
