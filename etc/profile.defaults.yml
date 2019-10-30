@@ -165,10 +165,10 @@ text-to-speech:
     phoneme-map: !env "${profile_dir}/espeak_phonemes.txt"
 
     # Command to execute to pronounce some espeak phonemes
-    pronounce-command: "espeak-ng -s 80 [[{phonemes}]]"
+    pronounce-command: "espeak-ng -s 80 --stdout [[{phonemes}]]"
 
     # Command to speak sentence
-    speak-command: "espeak-ng \"{sentence}\""
+    speak-command: "espeak-ng --stdout \"{sentence}\""
 
   marytts:
     # Command to run MaryTTS server
@@ -182,6 +182,16 @@ text-to-speech:
 
     # Seconds between retries
     retry-seconds: 0.5
+
+    # Path to map between dictionary and MaryTTS phonemes
+    phoneme-map: !env "${profile_dir}/marytts_phonemes.txt"
+
+    # Token used to end a MaryTTS sentence during pronunciation.
+    # I get weird pronunciations when punctuation is missing.
+    sentence-end: "."
+
+    # prosody rate used for pronunciation
+    pronounce-rate: "5%"
 
 # -----------------------------------------------------------------------------
 

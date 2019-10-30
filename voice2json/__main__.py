@@ -19,12 +19,14 @@ import wave
 from pathlib import Path
 from collections import defaultdict
 from typing import Set, Dict, Optional, List, Any, BinaryIO
+from xml.etree import ElementTree as etree
 
 logger = logging.getLogger("voice2json")
 
 import yaml
 import pydash
 import jsonlines
+import requests
 
 from voice2json.utils import ppath, recursive_update
 
@@ -156,6 +158,9 @@ def main():
         default=5,
         help="Number of pronunciations to generate for unknown words",
     )
+    pronounce_parser.add_argument(
+        "--espeak", action="store_true", help="Use eSpeak even if MaryTTS is available"
+    )
     pronounce_parser.add_argument("--wav-sink", "-w", help="File to write WAV data to")
     pronounce_parser.set_defaults(func=pronounce)
 
@@ -248,6 +253,9 @@ def main():
     )
     speak_parser.add_argument("sentence", nargs="*", help="Sentence(s) to speak")
     speak_parser.add_argument("--wav-sink", "-w", help="File to write WAV data to")
+    speak_parser.add_argument(
+        "--espeak", action="store_true", help="Use eSpeak even if MaryTTS is available"
+    )
     speak_parser.set_defaults(func=speak)
 
     # -------------------------------------------------------------------------
@@ -639,6 +647,9 @@ def pronounce(
 ) -> None:
     from voice2json.utils import read_dict
 
+    # Make sure profile has been trained
+    check_trained(profile, profile_dir)
+
     base_dictionary_path = ppath(
         profile, profile_dir, "training.base_dictionary", "base_dictionary.txt"
     )
@@ -648,18 +659,9 @@ def pronounce(
     g2p_path = ppath(profile, profile_dir, "training.g2p-model", "g2p.fst")
     g2p_exists = g2p_path.exists()
 
-    map_path = ppath(
-        profile, profile_dir, "text-to-speech.espeak.phoneme-map", "espeak_phonemes.txt"
-    )
-    map_exists = map_path.exists()
-    espeak_cmd_format = pydash.get(
-        profile,
-        "text-to-speech.espeak.pronounce-command",
-        "espeak-ng -s 80 [[{phonemes}]]",
-    )
+    play_command = shlex.split(pydash.get(profile, "audio.play-command"))
 
     word_casing = pydash.get(profile, "training.word-casing", "ignore").lower()
-    voice = pydash.get(profile, "text-to-speech.espeak.voice")
 
     # True if audio will go to stdout.
     # In this case, printing will go to stderr.
@@ -675,102 +677,219 @@ def pronounce(
             with open(dict_path, "r") as dict_file:
                 read_dict(dict_file, pronunciations)
 
+    # Load text to speech system
+    marytts_voice = pydash.get(profile, "text-to-speech.marytts.voice")
+    marytts_proc = None
+
+    if args.espeak or (marytts_voice is None):
+        # Use eSpeak
+        espeak_voice = pydash.get(profile, "text-to-speech.espeak.voice")
+        espeak_map_path = ppath(
+            profile,
+            profile_dir,
+            "text-to-speech.espeak.phoneme-map",
+            "espeak_phonemes.txt",
+        )
+
+        if not espeak_map_path.exists():
+            logger.fatal(f"Missing eSpeak phoneme map (expected at {espeak_map_path})")
+            sys.exit(1)
+
+        espeak_phoneme_map = dict(
+            re.split(r"\s+", line.strip(), maxsplit=1)
+            for line in espeak_map_path.read_text().splitlines()
+        )
+
+        espeak_cmd_format = pydash.get(
+            profile, "text-to-speech.espeak.pronounce-command"
+        )
+
+        def do_pronounce(word, dict_phonemes):
+            espeak_phonemes = [espeak_phoneme_map[p] for p in dict_phonemes]
+            espeak_str = "".join(espeak_phonemes)
+            espeak_cmd = shlex.split(espeak_cmd_format.format(phonemes=espeak_str))
+
+            if espeak_voice is not None:
+                espeak_cmd.extend(["-v", str(espeak_voice)])
+
+            logger.debug(espeak_cmd)
+            return subprocess.check_output(espeak_cmd)
+
+    else:
+        # Use MaryTTS
+        marytts_map_path = ppath(
+            profile,
+            profile_dir,
+            "text-to-speech.marytts.phoneme-map",
+            "marytts_phonemes.txt",
+        )
+
+        if not marytts_map_path.exists():
+            logger.fatal(
+                f"Missing MaryTTS phoneme map (expected at {marytts_map_path})"
+            )
+            sys.exit(1)
+
+        marytts_phoneme_map = dict(
+            re.split(r"\s+", line.strip(), maxsplit=1)
+            for line in marytts_map_path.read_text().splitlines()
+        )
+
+        # End of sentence token
+        sentence_end = pydash.get(profile, "text-to-speech.marytts.sentence-end", "")
+
+        # Rate of pronunciation
+        pronounce_rate = str(
+            pydash.get(profile, "text-to-speech.marytts.pronounce-rate", "5%")
+        )
+
+        # Start MaryTTS server
+        marytts_proc, url, params = start_marytts(
+            args, profile_dir, profile, marytts_voice
+        )
+
+        def do_pronounce(word, dict_phonemes):
+            marytts_phonemes = [marytts_phoneme_map[p] for p in dict_phonemes]
+            phoneme_str = " ".join(marytts_phonemes)
+            logger.debug(phoneme_str)
+
+            # Construct MaryXML input
+            params["INPUT_TYPE"] = "RAWMARYXML"
+            mary_xml = etree.fromstring(
+                """<?xml version="1.0" encoding="UTF-8"?>
+            <maryxml version="0.5" xml:lang="en-US">
+            <p><prosody rate="100%"><s><phrase></phrase></s></prosody></p>
+            </maryxml>"""
+            )
+
+            s = mary_xml.getchildren()[0]
+            p = s.getchildren()[0]
+            p.attrib["rate"] = pronounce_rate
+
+            phrase = p.getchildren()[0]
+            t = etree.SubElement(phrase, "t", attrib={"ph": phoneme_str})
+            t.text = word
+
+            if len(sentence_end) > 0:
+                # Add end of sentence token
+                eos = etree.SubElement(phrase, "t", attrib={"pos": "."})
+                eos.text = sentence_end
+
+            # Serialize XML
+            with io.BytesIO() as xml_file:
+                etree.ElementTree(mary_xml).write(
+                    xml_file, encoding="utf-8", xml_declaration=True
+                )
+
+                xml_data = xml_file.getvalue()
+                logger.debug(xml_data)
+                params["INPUT_TEXT"] = xml_data
+
+            result = requests.get(url, params=params)
+            logger.debug(result)
+
+            if result.ok:
+                return result.content
+            else:
+                # Not sure what to do here
+                return bytes()
+
+    # -------------------------------------------------------------------------
+
     if len(args.word) > 0:
         words = args.word
     else:
         words = sys.stdin
 
     # Process words
-    for word in words:
-        word_parts = re.split(r"\s+", word.strip())
-        word = word_parts[0]
-        dict_phonemes = []
+    try:
+        for word in words:
+            word_parts = re.split(r"\s+", word.strip())
+            word = word_parts[0]
+            dict_phonemes = []
 
-        if word_casing == "upper":
-            word = word.upper()
-        elif word_casing == "lower":
-            word = word.lower()
+            if word_casing == "upper":
+                word = word.upper()
+            elif word_casing == "lower":
+                word = word.lower()
 
-        if len(word_parts) > 1:
-            # Pronunciation provided
-            dict_phonemes.append(word_parts[1:])
+            if len(word_parts) > 1:
+                # Pronunciation provided
+                dict_phonemes.append(word_parts[1:])
 
-        if word in pronunciations:
-            # Use pronunciations from dictionary
-            dict_phonemes.extend(re.split(r"\s+", p) for p in pronunciations[word])
-        elif g2p_exists:
-            # Don't guess if a pronunciation was provided
-            if len(dict_phonemes) == 0:
-                # Guess pronunciation with phonetisaurus
-                logger.debug(f"Guessing pronunciation for {word}")
+            if word in pronunciations:
+                # Use pronunciations from dictionary
+                dict_phonemes.extend(re.split(r"\s+", p) for p in pronunciations[word])
+            elif g2p_exists:
+                # Don't guess if a pronunciation was provided
+                if len(dict_phonemes) == 0:
+                    # Guess pronunciation with phonetisaurus
+                    logger.debug(f"Guessing pronunciation for {word}")
 
-                with tempfile.NamedTemporaryFile(mode="w") as word_file:
-                    print(word, file=word_file)
-                    word_file.seek(0)
+                    with tempfile.NamedTemporaryFile(mode="w") as word_file:
+                        print(word, file=word_file)
+                        word_file.seek(0)
 
-                    phonetisaurus_cmd = [
-                        "phonetisaurus-apply",
-                        "--model",
-                        str(g2p_path),
-                        "--word_list",
-                        word_file.name,
-                        "--nbest",
-                        str(args.nbest),
-                    ]
+                        phonetisaurus_cmd = [
+                            "phonetisaurus-apply",
+                            "--model",
+                            str(g2p_path),
+                            "--word_list",
+                            word_file.name,
+                            "--nbest",
+                            str(args.nbest),
+                        ]
 
-                    logger.debug(phonetisaurus_cmd)
-                    output_lines = (
-                        subprocess.check_output(phonetisaurus_cmd).decode().splitlines()
-                    )
-                    dict_phonemes.extend(
-                        re.split(r"\s+", line.strip())[1:] for line in output_lines
-                    )
-        else:
-            logger.warn(f"No pronunciation for {word}")
+                        logger.debug(phonetisaurus_cmd)
+                        output_lines = (
+                            subprocess.check_output(phonetisaurus_cmd)
+                            .decode()
+                            .splitlines()
+                        )
+                        dict_phonemes.extend(
+                            re.split(r"\s+", line.strip())[1:] for line in output_lines
+                        )
+            else:
+                logger.warn(f"No pronunciation for {word}")
 
-        # Avoid duplicate pronunciations
-        used_pronunciations: Set[str] = set()
+            # Avoid duplicate pronunciations
+            used_pronunciations: Set[str] = set()
 
-        for phonemes in dict_phonemes:
-            phoneme_str = " ".join(phonemes)
-            if phoneme_str in used_pronunciations:
-                continue
+            for phonemes in dict_phonemes:
+                phoneme_str = " ".join(phonemes)
+                if phoneme_str in used_pronunciations:
+                    continue
 
-            print(word, phoneme_str, file=print_file)
-            used_pronunciations.add(phoneme_str)
+                print(word, phoneme_str, file=print_file)
+                used_pronunciations.add(phoneme_str)
 
-            if not args.quiet:
-                if map_exists:
-                    # Map to eSpeak
-                    phoneme_map = dict(
-                        re.split(r"\s+", line.strip(), maxsplit=1)
-                        for line in map_path.read_text().splitlines()
-                    )
+                if not args.quiet:
+                    # Speak with espeak or MaryTTS
+                    wav_data = do_pronounce(word, phonemes)
 
-                    espeak_phonemes = [phoneme_map[p] for p in phonemes]
-                else:
-                    espeak_phonemes = phonemes
+                    if args.wav_sink is not None:
+                        # Write WAV output somewhere
+                        if args.wav_sink == "-":
+                            # STDOUT
+                            wav_sink = sys.stdout.buffer
+                        else:
+                            # File output
+                            wav_sink = open(args.wav_sink, "wb")
 
-                # Speak with espeak
-                espeak_str = "".join(espeak_phonemes)
-                espeak_cmd = shlex.split(espeak_cmd_format.format(phonemes=espeak_str))
-
-                if voice is not None:
-                    espeak_cmd.extend(["-v", str(voice)])
-
-                # Determine where to output WAV data
-                if args.wav_sink is not None:
-                    if args.wav_sink == "-":
-                        # stdout
-                        espeak_cmd.append("--stdout")
+                        wav_sink.write(wav_data)
+                        wav_sink.flush()
                     else:
-                        # File output
-                        espeak_cmd.extend(["-w", args.wav_sink])
+                        # Play audio directly
+                        logger.debug(play_command)
+                        subprocess.run(play_command, input=wav_data, check=True)
 
-                logger.debug(espeak_cmd)
-                subprocess.check_call(espeak_cmd)
-
-                time.sleep(args.delay)
+                    # Delay before next word
+                    time.sleep(args.delay)
+    finally:
+        if marytts_proc is not None:
+            # Stop MaryTTS server
+            marytts_proc.terminate()
+            marytts_proc.wait()
 
 
 # -----------------------------------------------------------------------------
@@ -1365,7 +1484,7 @@ def check_trained(profile: Dict[str, Any], profile_dir: Path) -> None:
 
 def speak(args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]) -> None:
     marytts_voice = pydash.get(profile, "text-to-speech.marytts.voice")
-    if marytts_voice is None:
+    if args.espeak or (marytts_voice is None):
         speak_espeak(args, profile_dir, profile)
     else:
         speak_marytts(args, profile_dir, profile, marytts_voice)
@@ -1414,14 +1533,12 @@ def speak_espeak(
             subprocess.run(play_command, input=wav_data, check=True)
 
 
-def speak_marytts(
+def start_marytts(
     args: argparse.Namespace,
     profile_dir: Path,
     profile: Dict[str, Any],
     marytts_voice: str,
-) -> None:
-    import requests
-
+):
     max_retries = int(pydash.get(profile, "text-to-speech.marytts.max-retries", 15))
     retry_seconds = float(
         pydash.get(profile, "text-to-speech.marytts.retry-seconds", 0.5)
@@ -1432,7 +1549,6 @@ def speak_marytts(
     server_command = shlex.split(
         pydash.get(profile, "text-to-speech.marytts.server-command")
     )
-    play_command = shlex.split(pydash.get(profile, "audio.play-command"))
 
     logger.debug(server_command)
 
@@ -1453,13 +1569,20 @@ def speak_marytts(
 
     try:
         # Check connection
+        connected = False
         for i in range(max_retries):
             try:
                 requests.get(url)
+                connected = True
                 break
             except:
                 time.sleep(retry_seconds)
 
+        if not connected:
+            logger.fatal(f"Failed to connect to MaryTTS server at {url}")
+            sys.exit(1)
+
+        # Set up default params
         params = {
             "INPUT_TEXT": "",
             "INPUT_TYPE": "TEXT",
@@ -1471,6 +1594,29 @@ def speak_marytts(
         if marytts_locale is not None:
             params["LOCALE"] = marytts_locale
 
+    except Exception as e:
+        logger.exception("start_marytts")
+
+        # Stop MaryTTS server
+        marytts_proc.terminate()
+        marytts_proc.wait()
+
+        sys.exit(1)
+
+    return marytts_proc, url, params
+
+
+def speak_marytts(
+    args: argparse.Namespace,
+    profile_dir: Path,
+    profile: Dict[str, Any],
+    marytts_voice: str,
+) -> None:
+    play_command = shlex.split(pydash.get(profile, "audio.play-command"))
+
+    marytts_proc, url, params = start_marytts(args, profile_dir, profile, marytts_voice)
+
+    try:
         # Process sentence(s)
         if len(args.sentence) > 0:
             sentences = args.sentence
