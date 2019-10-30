@@ -52,6 +52,10 @@ def maybe_convert_wav(profile: Dict[str, Any], wav_data: bytes) -> bytes:
             )
             if (rate != 16000) or (width != 2) or (channels != 1):
                 # Do conversion
+                if rate < 16000:
+                    # Probably being given 8Khz audio
+                    logger.warning(f"Upsampling audio from {rate} Hz. Expect poor performance!")
+
                 return convert_wav(profile, wav_data)
             else:
                 # Return original data
