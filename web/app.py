@@ -17,15 +17,15 @@ from pathlib import Path
 from typing import Optional, Dict, Any, Tuple, BinaryIO, List
 
 import pydash
-from flask import Flask, request, render_template, send_from_directory, flash, send_file
+from quart import Quart, request, render_template, send_from_directory, flash, send_file
 
 # -----------------------------------------------------------------------------
 
 profile_path: Optional[Path] = None
 profile: Dict[str, Any] = {}
 
-# Flask application
-app = Flask("voice2json")
+# Quart application
+app = Quart("voice2json")
 app.secret_key = str(uuid4())
 
 logger = logging.getLogger("app")
@@ -38,7 +38,7 @@ recording: bool = False
 
 
 @app.route("/", methods=["GET", "POST"])
-def index():
+async def index():
     """Handles recording, transcription, and intent recognition."""
     global record_proc, record_file, recording
 
@@ -56,7 +56,8 @@ def index():
         wav_data: Optional[bytes] = None
 
         # Check if start/stopping recording
-        if "record" in request.form:
+        form = await request.form
+        if "record" in form:
             if record_proc is None:
                 # Start recording
                 record_file = tempfile.NamedTemporaryFile(mode="wb+")
@@ -91,18 +92,23 @@ def index():
                 # Clean up
                 del record_file
                 record_file = None
-        elif "upload" in request.form:
-            if "wavfile" in request.files:
+        elif "upload" in form:
+            files = await request.files
+            if "wavfile" in files:
                 # Get WAV data from file upload
-                wav_file = request.files["wavfile"]
+                wav_file = files["wavfile"]
                 wav_data = wav_file.read()
             else:
-                flash("No WAV file given", "danger")
-        elif "recognize" in request.form:
+                await flash("No WAV file given", "danger")
+        elif "recognize" in form:
             # Get sentence to recognize from form
-            sentence = request.form["sentence"]
+            sentence = form["sentence"]
             if len(sentence) == 0:
-                flash("No sentence to recognize", "danger")
+                await flash("No sentence to recognize", "danger")
+
+            transcribe_result = {
+                "text": sentence.strip()
+            }
 
         # ---------------------------------------------------------------------
 
@@ -163,7 +169,7 @@ def index():
     # JSON for display to user
     intent_str = json.dumps(intent, indent=4) if intent is not None else ""
 
-    return render_template(
+    return await render_template(
         "index.html",
         profile=profile,
         pydash=pydash,
@@ -179,20 +185,21 @@ def index():
 
 
 @app.route("/sentences", methods=["GET", "POST"])
-def sentences():
+async def sentences():
     """Reads/writes sentences.ini. Re-trains when sentences are saved."""
     sentences_path = Path(pydash.get(profile, "training.sentences-file"))
 
     if request.method == "POST":
         # Save sentences
-        sentences_text = request.form["sentences"]
+        form = await request.form
+        sentences_text = form["sentences"]
         sentences_path.write_text(sentences_text)
         do_retrain()
     else:
         # Load sentences
         sentences_text = sentences_path.read_text()
 
-    return render_template(
+    return await render_template(
         "sentences.html", profile=profile, pydash=pydash, sentences=sentences_text
     )
 
@@ -201,7 +208,7 @@ def sentences():
 
 
 @app.route("/words", methods=["GET", "POST"])
-def words():
+async def words():
     """Speaks words, guesses pronunciations, and reads/writes custom_words.txt.
     Re-trains when custom words are saved."""
 
@@ -209,17 +216,18 @@ def words():
     word = ""
 
     if request.method == "POST":
-        action = request.form["action"]
+        form = await request.form
+        action = form["action"]
 
         if action == "custom words":
             # Save custom words
-            custom_words_text = request.form["custom_words"]
+            custom_words_text = form["custom_words"]
             custom_words_path.write_text(custom_words_text)
             do_retrain()
         elif action == "pronounce":
             # Speak or guess pronunciation
-            word = request.form["word"]
-            is_speak = "speak" in request.form
+            word = form["word"]
+            is_speak = "speak" in form
             if len(word) > 0:
                 if is_speak:
                     # Speak pronunciation
@@ -232,14 +240,14 @@ def words():
 
                 # Display guess(s)
                 for line in result:
-                    flash(line.strip(), "info")
+                    await flash(line.strip(), "info")
             else:
-                flash("No word given", "danger")
+                await flash("No word given", "danger")
 
     # Load custom words
     custom_words_text = custom_words_path.read_text()
 
-    return render_template(
+    return await render_template(
         "words.html",
         profile=profile,
         pydash=pydash,
@@ -258,12 +266,13 @@ atexit.register(lambda: espeak_cache_dir.cleanup())
 
 
 @app.route("/phonemes", methods=["GET", "POST"])
-def phonemes():
+async def phonemes():
     phoneme_map_path = Path(pydash.get(profile, "text-to-speech.espeak.phoneme-map"))
     phoneme_map = {}
 
     if request.method == "POST":
-        for var_name, var_value in request.form.items():
+        form = await request.form
+        for var_name, var_value in form.items():
             if var_name.startswith("espeak_"):
                 phoneme = var_name[7:]
                 phoneme_map[phoneme] = var_value.strip()
@@ -272,7 +281,7 @@ def phonemes():
             for phoneme in sorted(phoneme_map):
                 print(phoneme, phoneme_map[phoneme], file=phoneme_map_file)
 
-        flash(f"Wrote {phoneme_map_path}", "success")
+        await flash(f"Wrote {phoneme_map_path}", "success")
 
         # Clear phoneme cache
         for key in list(wav_cache.keys()):
@@ -353,7 +362,7 @@ def phonemes():
 
     # logger.debug(phoneme_examples)
 
-    return render_template(
+    return await render_template(
         "phonemes.html",
         sorted=sorted,
         profile=profile,
@@ -364,7 +373,7 @@ def phonemes():
 
 
 @app.route("/pronounce/<name>", methods=["GET"])
-def pronounce(name):
+async def pronounce(name):
     wav_path = wav_cache[name]
     return send_file(open(wav_path, "rb"), mimetype="audio/wav")
 
@@ -424,13 +433,13 @@ def voice2json(*args, text=True, input=None, stderr=None):
         return io.BytesIO(subprocess.check_output(command, input=input, stderr=stderr))
 
 
-def do_retrain():
+async def do_retrain():
     """Re-trains voice2json profile and flashes warnings for unknown words."""
     # Re-train
     start_time = time.time()
     result = voice2json("train-profile", stderr=subprocess.STDOUT).read()
     train_seconds = time.time() - start_time
-    flash(f"Re-trained in {train_seconds:0.2f} second(s)", "success")
+    await flash(f"Re-trained in {train_seconds:0.2f} second(s)", "success")
 
     logger.debug(result)
 
@@ -448,7 +457,7 @@ def do_retrain():
             warn_lines.append(line)
 
     if warn_lines is not None:
-        flash("\n".join(warn_lines), "warning")
+        await flash("\n".join(warn_lines), "warning")
 
 
 # -----------------------------------------------------------------------------

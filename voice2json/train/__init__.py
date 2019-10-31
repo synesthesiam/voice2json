@@ -517,12 +517,12 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
             "text-to-speech.marytts.phoneme-map", "marytts_phonemes.txt"
         )
 
-        marytts_dict_path = ppath("text-to-speech.marytts.dictionary-file", "")
+        marytts_dict_path = ppath("text-to-speech.marytts.dictionary-file") or ""
 
         if (
             custom_words.exists()
             and marytts_map_path.exists()
-            and (len(marytts_dict_path) > 0)
+            and (len(str(marytts_dict_path)) > 0)
         ):
             return {
                 "file_dep": [custom_words, marytts_map_path],
