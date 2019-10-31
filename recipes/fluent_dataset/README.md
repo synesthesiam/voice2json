@@ -4,7 +4,7 @@ Demonstration of `voice2json`'s performance on a [public dataset from Fluent.ai]
 
 ## Results
 
-Using ~100 lines in [sentences.ini](sentences.ini) (excluding comments), I'm able to get 98.7% accuracy, which is as accurate as the end-to-end system trained in [Fluent.ai's published paper](https://arxiv.org/pdf/1904.03670.pdf)! While the sentences `voice2json` was trained with had to be hand-tuned to fit the test sets, it also did not require any audio data for training.
+Using ~100 lines in [sentences.ini](sentences.ini) (excluding comments), I'm able to get 98.8% accuracy, which is as accurate as the end-to-end system trained in [Fluent.ai's published paper](https://arxiv.org/pdf/1904.03670.pdf)! While the sentences `voice2json` was trained with had to be hand-tuned to fit the test sets, it also did not require any audio data for training.
 
 ## Running
 
@@ -35,15 +35,15 @@ By default, this will run 10 parallel transcription/intent recognition processes
     "num_wavs": 3793,
     "num_words": 16523,
     "num_entities": 8140,
-    "correct_transcriptions": 3157,
-    "correct_intent_names": 3781,
-    "correct_words": 15731,
-    "correct_entities": 8079,
-    "transcription_accuracy": 0.9520668159535194,
-    "intent_accuracy": 0.9968362773530187,
-    "entity_accuracy": 0.9925061425061426,
-    "intent_entity_accuracy": 0.9870814658581598,
-    "average_transcription_speedup": 1.8713219495029716
+    "correct_transcriptions": 958,
+    "correct_intent_names": 3780,
+    "correct_words": 12231,
+    "correct_entities": 8082,
+    "transcription_accuracy": 0.740240876354173,
+    "intent_accuracy": 0.9965726337991037,
+    "entity_accuracy": 0.9928746928746929,
+    "intent_entity_accuracy": 0.9883996836277353,
+    "average_transcription_speedup": 3.392895180720205
   },
   ...
 }
