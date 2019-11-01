@@ -1,4 +1,4 @@
-.PHONY: test installer debian docker docker-multiarch-build
+.PHONY: test installer debian docker tar-gz docker-multiarch-build
 
 BUILD_ARCH ?= amd64
 DEBIAN_ARCH ?= $(BUILD_ARCH)
@@ -18,6 +18,10 @@ docker: installer
         --build-arg BUILD_ARCH=$(BUILD_ARCH) \
         --build-arg DEBIAN_ARCH=$(DEBIAN_ARCH) \
         -t synesthesiam/voice2json:$(DEBIAN_ARCH)
+
+tar-gz: installer
+	bash debianize.sh --nopackage --architecture $(DEBIAN_ARCH)
+	tar -C debian/voice2json_1.0_$(DEBIAN_ARCH) -czf dist/voice2json_$(DEBIAN_ARCH).tar.gz usr
 
 # -----------------------------------------------------------------------------
 # Multi-Arch Builds

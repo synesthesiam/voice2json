@@ -76,6 +76,9 @@ do
           "${kaldi_output_dir}/${kaldi_sync_dir}/"
 done
 
+# Strip Kaldi libs
+strip --strip-all "${kaldi_output_dir}/src/lib"/*.so* || true
+
 # Copy bin/etc artifacts
 for artifact_dir in 'bin' 'etc';
 do

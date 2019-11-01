@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-export voice2json_dir='/usr/lib/voice2json'
+if [[ -z "${voice2json_dir}" ]]; then
+    export voice2json_dir='/usr/lib/voice2json'
+fi
+
 CPU_ARCH="$(lscpu | awk '/^Architecture/{print $2}')"
 
 # Check to see if sphinxtrain is installed (pocketsphinx acoustic model tuning)
