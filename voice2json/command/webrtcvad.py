@@ -149,6 +149,9 @@ def wait_for_command(
         try:
             while True:
                 chunk = audio_file.read(chunk_size)
+                if chunk is None:
+                    break
+
                 if len(chunk) == chunk_size:
                     if report_audio:
                         logger.debug("Receiving audio")
@@ -161,12 +164,17 @@ def wait_for_command(
         except Exception as e:
             logger.exception("read_audio")
 
-    threading.Thread(target=read_audio, daemon=True).start()
+    threading.Thread(target=read_audio).start()
 
     # -------------------------------------------------------------------------
 
     # Process a voice command immediately
     process_audio()
+
+    try:
+        audio_file.close()
+    except Exception as e:
+        logger.exception("close audio")
 
     # Merge before/during command audio data
     before_buffer = bytes()

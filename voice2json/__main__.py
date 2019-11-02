@@ -541,7 +541,21 @@ def record_command(
         audio_source = get_audio_source(profile)
         logger.debug(f"Recording raw 16-bit 16Khz mono audio")
     elif args.audio_source == "-":
-        audio_source = sys.stdin.buffer
+        # Avoid crash when stdin is closed/read in daemon thread
+        class FakeStdin:
+            def __init__(self):
+                self.done = False
+
+            def read(self, n):
+                if self.done:
+                    return None
+
+                return sys.stdin.buffer.read(n)
+
+            def close(self):
+                self.done = True
+
+        audio_source = FakeStdin()
         logger.debug(f"Recording raw 16-bit 16Khz mono audio from stdin")
     else:
         audio_source: BinaryIO = open(args.audio_source, "rb")

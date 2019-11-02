@@ -21,7 +21,7 @@ docker: installer
 
 tar-gz: installer
 	bash debianize.sh --nopackage --architecture $(DEBIAN_ARCH)
-	tar -C debian/voice2json_1.0_$(DEBIAN_ARCH) -czf dist/voice2json_$(DEBIAN_ARCH).tar.gz usr
+	tar -C debian/voice2json_1.0_$(DEBIAN_ARCH)/usr -czf dist/voice2json_$(DEBIAN_ARCH).tar.gz bin lib
 
 # -----------------------------------------------------------------------------
 # Multi-Arch Builds
