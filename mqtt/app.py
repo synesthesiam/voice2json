@@ -40,7 +40,7 @@ client = None
 chunk_size = 960
 
 # Quart application
-app = Quart("voice2json")
+app = Quart("voice2json", template_folder=Path("templates").absolute())
 app.secret_key = str(uuid4())
 
 logger = logging.getLogger("app")
@@ -105,6 +105,8 @@ async def index():
                 # Clean up
                 del record_file
                 record_file = None
+
+                logger.info(f"Recorded {len(raw_audio_data)} byte(s)")
         elif "upload" in form:
             files = await request.files
             if "wavfile" in files:
@@ -430,7 +432,9 @@ if __name__ == "__main__":
                 loop.call_soon_threadsafe(mqtt_intent_queue.put_nowait, mqtt_intent)
             elif msg.topic == TOPIC_TRAINED:
                 # Received trained intent
-                loop.call_soon_threadsafe(mqtt_train_queue.put_nowait, msg.payload.decode())
+                loop.call_soon_threadsafe(
+                    mqtt_train_queue.put_nowait, msg.payload.decode()
+                )
         except Exception as e:
             logger.exception("on_message")
 
