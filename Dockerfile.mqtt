@@ -14,6 +14,9 @@ RUN apt-get update && \
         bc \
         mosquitto supervisor
 
+COPY mqtt/requirements.txt /usr/lib/voice2json/mqtt/
+RUN python3 -m pip install -r /usr/lib/voice2json/mqtt/requirements.txt
+
 COPY debian/voice2json_1.0_${DEBIAN_ARCH}/usr/lib/voice2json/ /usr/lib/voice2json/
 COPY debian/voice2json_1.0_${DEBIAN_ARCH}/usr/bin/voice2json /usr/bin/
 

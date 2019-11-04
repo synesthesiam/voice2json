@@ -24,7 +24,7 @@ docker-mqtt: installer
 	docker build . -f Dockerfile.mqtt \
         --build-arg BUILD_ARCH=$(BUILD_ARCH) \
         --build-arg DEBIAN_ARCH=$(DEBIAN_ARCH) \
-        -t synesthesiam/voice2json:$(DEBIAN_ARCH)
+        -t synesthesiam/voice2json-mqtt:$(DEBIAN_ARCH)
 
 tar-gz: installer
 	bash debianize.sh --nopackage --architecture $(DEBIAN_ARCH)
