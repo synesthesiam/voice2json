@@ -6,3 +6,4 @@
 !install.sh
 !voice2json.spec
 !debian/
+!mqtt

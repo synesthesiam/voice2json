@@ -19,6 +19,13 @@ docker: installer
         --build-arg DEBIAN_ARCH=$(DEBIAN_ARCH) \
         -t synesthesiam/voice2json:$(DEBIAN_ARCH)
 
+docker-mqtt: installer
+	bash debianize.sh --nopackage --architecture $(DEBIAN_ARCH)
+	docker build . -f Dockerfile.mqtt \
+        --build-arg BUILD_ARCH=$(BUILD_ARCH) \
+        --build-arg DEBIAN_ARCH=$(DEBIAN_ARCH) \
+        -t synesthesiam/voice2json:$(DEBIAN_ARCH)
+
 tar-gz: installer
 	bash debianize.sh --nopackage --architecture $(DEBIAN_ARCH)
 	tar -C debian/voice2json_1.0_$(DEBIAN_ARCH)/usr -czf dist/voice2json_$(DEBIAN_ARCH).tar.gz bin lib
