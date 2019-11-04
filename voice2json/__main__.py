@@ -88,6 +88,11 @@ def main():
     transcribe_parser.add_argument(
         "wav_file", nargs="*", default=[], help="Path(s) to WAV file(s)"
     )
+    transcribe_parser.add_argument(
+        "--input-size",
+        action="store_true",
+        help="WAV file byte size is sent on a separate line for each input WAV on stdin",
+    )
 
     # recognize-intent
     recognize_parser = sub_parsers.add_parser(
@@ -119,6 +124,11 @@ def main():
     )
     command_parser.add_argument(
         "--wav-sink", "-w", help="File to write WAV data to instead of stdout"
+    )
+    command_parser.add_argument(
+        "--output-size",
+        action="store_true",
+        help="Write line with output byte count before output",
     )
     command_parser.set_defaults(func=record_command)
 
@@ -162,6 +172,11 @@ def main():
         "--espeak", action="store_true", help="Use eSpeak even if MaryTTS is available"
     )
     pronounce_parser.add_argument("--wav-sink", "-w", help="File to write WAV data to")
+    pronounce_parser.add_argument(
+        "--newline",
+        action="store_true",
+        help="Print a blank line after the end of each word's pronunciations",
+    )
     pronounce_parser.set_defaults(func=pronounce)
 
     # generate-examples
@@ -408,12 +423,38 @@ def transcribe(
             # Read WAV data from stdin
             logger.debug("Reading WAV data from stdin")
 
-            # Load and convert
-            wav_data = sys.stdin.buffer.read()
+            if args.input_size:
+                # Number of bytes is on separate line
+                line = sys.stdin.buffer.readline().strip()
+                if len(line) == 0:
+                    return
 
-            # Transcribe
-            result = transcriber.transcribe_wav(wav_data)
-            print_json(result)
+                num_bytes = int(line)
+                while num_bytes > 0:
+                    # Read in WAV
+                    wav_data = sys.stdin.buffer.read(num_bytes)
+                    while len(wav_data) < num_bytes:
+                        wav_data = sys.stdin.buffer.read(num_bytes - len(wav_data))
+
+                    # Transcribe
+                    result = transcriber.transcribe_wav(wav_data)
+                    print_json(result)
+
+                    # Next WAV
+                    line = sys.stdin.buffer.readline().strip()
+                    if len(line) == 0:
+                        break
+
+                    num_bytes = int(line)
+            else:
+                # Load and convert entire input
+                wav_data = sys.stdin.buffer.read()
+
+                # Transcribe
+                result = transcriber.transcribe_wav(wav_data)
+                print_json(result)
+    except KeyboardInterrupt:
+        pass
     finally:
         transcriber.stop()
 
@@ -446,74 +487,77 @@ def recognize(
         sentences = sys.stdin
 
     # Process sentences
-    for sentence in sentences:
-        if args.text_input:
-            # Input is plain text
-            text = sentence
-            sentence_object = {"text": text}
-        else:
-            # Input is JSON
-            sentence_object = json.loads(sentence)
-            text = sentence_object.get("text", "")
+    try:
+        for sentence in sentences:
+            if args.text_input:
+                # Input is plain text
+                text = sentence
+                sentence_object = {"text": text}
+            else:
+                # Input is JSON
+                sentence_object = json.loads(sentence)
+                text = sentence_object.get("text", "")
 
-        text = text.strip()
+            text = text.strip()
 
-        if word_casing == "upper":
-            text = text.upper()
-        elif word_casing == "lower":
-            text = text.lower()
+            if word_casing == "upper":
+                text = text.upper()
+            elif word_casing == "lower":
+                text = text.lower()
 
-        intent = recognizer.recognize(text)
+            intent = recognizer.recognize(text)
 
-        if args.perplexity:
-            try:
-                # Compute sentence perplexity with ngramperplexity
-                with tempfile.TemporaryDirectory() as temp_dir_name:
-                    temp_path = Path(temp_dir_name)
-                    text_path = temp_path / "sentence.txt"
-                    text_path.write_text(text)
+            if args.perplexity:
+                try:
+                    # Compute sentence perplexity with ngramperplexity
+                    with tempfile.TemporaryDirectory() as temp_dir_name:
+                        temp_path = Path(temp_dir_name)
+                        text_path = temp_path / "sentence.txt"
+                        text_path.write_text(text)
 
-                    symbols_path = temp_path / "sentence.syms"
-                    subprocess.check_call(
-                        ["ngramsymbols", str(text_path), str(symbols_path)]
-                    )
+                        symbols_path = temp_path / "sentence.syms"
+                        subprocess.check_call(
+                            ["ngramsymbols", str(text_path), str(symbols_path)]
+                        )
 
-                    far_path = temp_path / "sentence.far"
-                    subprocess.check_call(
-                        [
-                            "farcompilestrings",
-                            f"-symbols={symbols_path}",
-                            "-keep_symbols=1",
-                            str(text_path),
-                            str(far_path),
-                        ]
-                    )
+                        far_path = temp_path / "sentence.far"
+                        subprocess.check_call(
+                            [
+                                "farcompilestrings",
+                                f"-symbols={symbols_path}",
+                                "-keep_symbols=1",
+                                str(text_path),
+                                str(far_path),
+                            ]
+                        )
 
-                    verbosity = 1 if args.debug else 0
-                    output = subprocess.check_output(
-                        [
-                            "ngramperplexity",
-                            f"--v={verbosity}",
-                            str(profile_dir / "intent.fst.model"),
-                            str(far_path),
-                        ]
-                    ).decode()
+                        verbosity = 1 if args.debug else 0
+                        output = subprocess.check_output(
+                            [
+                                "ngramperplexity",
+                                f"--v={verbosity}",
+                                str(profile_dir / "intent.fst.model"),
+                                str(far_path),
+                            ]
+                        ).decode()
 
-                    logger.debug(output)
+                        logger.debug(output)
 
-                    last_line = output.strip().splitlines()[-1]
-                    perplexity = float(
-                        re.match(r"^.*perplexity\s*=\s*(.+)$", last_line).group(1)
-                    )
-                    intent["perplexity"] = perplexity
-            except Exception as e:
-                logger.exception("perplexity")
+                        last_line = output.strip().splitlines()[-1]
+                        perplexity = float(
+                            re.match(r"^.*perplexity\s*=\s*(.+)$", last_line).group(1)
+                        )
+                        intent["perplexity"] = perplexity
+                except Exception as e:
+                    logger.exception("perplexity")
 
-        # Merge with input object
-        for key, value in intent.items():
-            sentence_object[key] = value
+            # Merge with input object
+            for key, value in intent.items():
+                sentence_object[key] = value
 
-        print_json(sentence_object)
+            print_json(sentence_object)
+    except KeyboardInterrupt:
+        pass
 
 
 # -----------------------------------------------------------------------------
@@ -585,6 +629,11 @@ def record_command(
 
     # Output WAV data
     wav_bytes = buffer_to_wav(audio_buffer)
+
+    if args.output_size:
+        size_str = str(len(wav_bytes)) + "\n"
+        wav_sink.write(size_str.encode())
+
     wav_sink.write(wav_bytes)
 
 
@@ -703,118 +752,128 @@ def pronounce(
     marytts_voice = pydash.get(profile, "text-to-speech.marytts.voice")
     marytts_proc = None
 
-    if args.espeak or (marytts_voice is None):
-        # Use eSpeak
-        espeak_voice = pydash.get(profile, "text-to-speech.espeak.voice")
-        espeak_map_path = ppath(
-            profile,
-            profile_dir,
-            "text-to-speech.espeak.phoneme-map",
-            "espeak_phonemes.txt",
-        )
-
-        if not espeak_map_path.exists():
-            logger.fatal(f"Missing eSpeak phoneme map (expected at {espeak_map_path})")
-            sys.exit(1)
-
-        espeak_phoneme_map = dict(
-            re.split(r"\s+", line.strip(), maxsplit=1)
-            for line in espeak_map_path.read_text().splitlines()
-        )
-
-        espeak_cmd_format = pydash.get(
-            profile, "text-to-speech.espeak.pronounce-command"
-        )
-
-        def do_pronounce(word, dict_phonemes):
-            espeak_phonemes = [espeak_phoneme_map[p] for p in dict_phonemes]
-            espeak_str = "".join(espeak_phonemes)
-            espeak_cmd = shlex.split(espeak_cmd_format.format(phonemes=espeak_str))
-
-            if espeak_voice is not None:
-                espeak_cmd.extend(["-v", str(espeak_voice)])
-
-            logger.debug(espeak_cmd)
-            return subprocess.check_output(espeak_cmd)
-
-    else:
-        # Use MaryTTS
-        marytts_map_path = ppath(
-            profile,
-            profile_dir,
-            "text-to-speech.marytts.phoneme-map",
-            "marytts_phonemes.txt",
-        )
-
-        if not marytts_map_path.exists():
-            logger.fatal(
-                f"Missing MaryTTS phoneme map (expected at {marytts_map_path})"
-            )
-            sys.exit(1)
-
-        marytts_phoneme_map = dict(
-            re.split(r"\s+", line.strip(), maxsplit=1)
-            for line in marytts_map_path.read_text().splitlines()
-        )
-
-        # End of sentence token
-        sentence_end = pydash.get(profile, "text-to-speech.marytts.sentence-end", "")
-
-        # Rate of pronunciation
-        pronounce_rate = str(
-            pydash.get(profile, "text-to-speech.marytts.pronounce-rate", "5%")
-        )
-
-        # Start MaryTTS server
-        marytts_proc, url, params = start_marytts(
-            args, profile_dir, profile, marytts_voice
-        )
-
-        def do_pronounce(word, dict_phonemes):
-            marytts_phonemes = [marytts_phoneme_map[p] for p in dict_phonemes]
-            phoneme_str = " ".join(marytts_phonemes)
-            logger.debug(phoneme_str)
-
-            # Construct MaryXML input
-            params["INPUT_TYPE"] = "RAWMARYXML"
-            mary_xml = etree.fromstring(
-                """<?xml version="1.0" encoding="UTF-8"?>
-            <maryxml version="0.5" xml:lang="en-US">
-            <p><prosody rate="100%"><s><phrase></phrase></s></prosody></p>
-            </maryxml>"""
+    if not args.quiet:
+        if args.espeak or (marytts_voice is None):
+            # Use eSpeak
+            espeak_voice = pydash.get(profile, "text-to-speech.espeak.voice")
+            espeak_map_path = ppath(
+                profile,
+                profile_dir,
+                "text-to-speech.espeak.phoneme-map",
+                "espeak_phonemes.txt",
             )
 
-            s = mary_xml.getchildren()[0]
-            p = s.getchildren()[0]
-            p.attrib["rate"] = pronounce_rate
+            if not espeak_map_path.exists():
+                logger.fatal(
+                    f"Missing eSpeak phoneme map (expected at {espeak_map_path})"
+                )
+                sys.exit(1)
 
-            phrase = p.getchildren()[0]
-            t = etree.SubElement(phrase, "t", attrib={"ph": phoneme_str})
-            t.text = word
+            espeak_phoneme_map = dict(
+                re.split(r"\s+", line.strip(), maxsplit=1)
+                for line in espeak_map_path.read_text().splitlines()
+            )
 
-            if len(sentence_end) > 0:
-                # Add end of sentence token
-                eos = etree.SubElement(phrase, "t", attrib={"pos": "."})
-                eos.text = sentence_end
+            espeak_cmd_format = pydash.get(
+                profile, "text-to-speech.espeak.pronounce-command"
+            )
 
-            # Serialize XML
-            with io.BytesIO() as xml_file:
-                etree.ElementTree(mary_xml).write(
-                    xml_file, encoding="utf-8", xml_declaration=True
+            def do_pronounce(word, dict_phonemes):
+                espeak_phonemes = [espeak_phoneme_map[p] for p in dict_phonemes]
+                espeak_str = "".join(espeak_phonemes)
+                espeak_cmd = shlex.split(espeak_cmd_format.format(phonemes=espeak_str))
+
+                if espeak_voice is not None:
+                    espeak_cmd.extend(["-v", str(espeak_voice)])
+
+                logger.debug(espeak_cmd)
+                return subprocess.check_output(espeak_cmd)
+
+        else:
+            # Use MaryTTS
+            marytts_map_path = ppath(
+                profile,
+                profile_dir,
+                "text-to-speech.marytts.phoneme-map",
+                "marytts_phonemes.txt",
+            )
+
+            if not marytts_map_path.exists():
+                logger.fatal(
+                    f"Missing MaryTTS phoneme map (expected at {marytts_map_path})"
+                )
+                sys.exit(1)
+
+            marytts_phoneme_map = dict(
+                re.split(r"\s+", line.strip(), maxsplit=1)
+                for line in marytts_map_path.read_text().splitlines()
+            )
+
+            # End of sentence token
+            sentence_end = pydash.get(
+                profile, "text-to-speech.marytts.sentence-end", ""
+            )
+
+            # Rate of pronunciation
+            pronounce_rate = str(
+                pydash.get(profile, "text-to-speech.marytts.pronounce-rate", "5%")
+            )
+
+            # Start MaryTTS server
+            marytts_proc, url, params = start_marytts(
+                args, profile_dir, profile, marytts_voice
+            )
+
+            def do_pronounce(word, dict_phonemes):
+                marytts_phonemes = [marytts_phoneme_map[p] for p in dict_phonemes]
+                phoneme_str = " ".join(marytts_phonemes)
+                logger.debug(phoneme_str)
+
+                # Construct MaryXML input
+                params["INPUT_TYPE"] = "RAWMARYXML"
+                mary_xml = etree.fromstring(
+                    """<?xml version="1.0" encoding="UTF-8"?>
+                <maryxml version="0.5" xml:lang="en-US">
+                <p><prosody rate="100%"><s><phrase></phrase></s></prosody></p>
+                </maryxml>"""
                 )
 
-                xml_data = xml_file.getvalue()
-                logger.debug(xml_data)
-                params["INPUT_TEXT"] = xml_data
+                s = mary_xml.getchildren()[0]
+                p = s.getchildren()[0]
+                p.attrib["rate"] = pronounce_rate
 
-            result = requests.get(url, params=params)
-            logger.debug(result)
+                phrase = p.getchildren()[0]
+                t = etree.SubElement(phrase, "t", attrib={"ph": phoneme_str})
+                t.text = word
 
-            if result.ok:
-                return result.content
-            else:
-                # Not sure what to do here
-                return bytes()
+                if len(sentence_end) > 0:
+                    # Add end of sentence token
+                    eos = etree.SubElement(phrase, "t", attrib={"pos": "."})
+                    eos.text = sentence_end
+
+                # Serialize XML
+                with io.BytesIO() as xml_file:
+                    etree.ElementTree(mary_xml).write(
+                        xml_file, encoding="utf-8", xml_declaration=True
+                    )
+
+                    xml_data = xml_file.getvalue()
+                    logger.debug(xml_data)
+                    params["INPUT_TEXT"] = xml_data
+
+                result = requests.get(url, params=params)
+                logger.debug(result)
+
+                if result.ok:
+                    return result.content
+                else:
+                    # Not sure what to do here
+                    return bytes()
+
+    else:
+        # Quiet
+        def do_pronounce(word, dict_phonemes):
+            pass
 
     # -------------------------------------------------------------------------
 
@@ -883,6 +942,8 @@ def pronounce(
                     continue
 
                 print(word, phoneme_str, file=print_file)
+                print_file.flush()
+
                 used_pronunciations.add(phoneme_str)
 
                 if not args.quiet:
@@ -907,6 +968,11 @@ def pronounce(
 
                     # Delay before next word
                     time.sleep(args.delay)
+
+            if args.newline:
+                print("", file=print_file)
+                print_file.flush()
+
     except KeyboardInterrupt:
         pass
     finally:

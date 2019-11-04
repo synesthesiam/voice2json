@@ -169,16 +169,19 @@ def wait_for_command(
     # -------------------------------------------------------------------------
 
     # Process a voice command immediately
-    process_audio()
-
     try:
-        audio_file.close()
-    except Exception as e:
-        logger.exception("close audio")
+        process_audio()
 
-    # Merge before/during command audio data
-    before_buffer = bytes()
-    for chunk in before_phrase_chunks:
-        before_buffer += chunk
+        try:
+            audio_file.close()
+        except Exception as e:
+            logger.exception("close audio")
 
-    return before_buffer + phrase_buffer
+        # Merge before/during command audio data
+        before_buffer = bytes()
+        for chunk in before_phrase_chunks:
+            before_buffer += chunk
+
+        return before_buffer + phrase_buffer
+    except KeyboardInterrupt:
+        return bytes()
