@@ -12,6 +12,7 @@ DEFINE_string 'venv' "${this_dir}/.venv_${CPU_ARCH}" 'Path to create virtual env
 DEFINE_string 'download-dir' "${this_dir}/download" 'Directory to cache downloaded files'
 DEFINE_string 'build-dir' "${this_dir}/build_${CPU_ARCH}" 'Directory to build dependencies in'
 DEFINE_boolean 'create' true 'Create a virtual environment'
+DEFINE_boolean 'overwrite' true 'Overwrite existing virtual environment'
 DEFINE_boolean 'kaldi' true 'Install Kaldi speech recognizer'
 DEFINE_boolean 'julius' true 'Install Julius speech recognizer'
 DEFINE_boolean 'runtime' true 'Install packages needed for building and running'
@@ -33,6 +34,10 @@ build_dir="${FLAGS_build_dir}"
 
 if [[ "${FLAGS_create}" -eq "${FLAGS_FALSE}" ]]; then
     no_create='true'
+fi
+
+if [[ "${FLAGS_overwrite}" -eq "${FLAGS_FALSE}" ]]; then
+    no_overwrite='true'
 fi
 
 if [[ "${FLAGS_kaldi}" -eq "${FLAGS_FALSE}" ]]; then
@@ -196,11 +201,16 @@ fi
 # -----------------------------------------------------------------------------
 
 if [[ -z "${no_create}" ]]; then
-    # Set up fresh virtual environment
-    echo "Re-creating virtual environment at ${venv}"
-    rm -rf "${venv}"
+    if [[ -d "${venv}" && -z "${no_overwrite}" ]]; then
+        # Set up fresh virtual environment
+        echo "Re-creating virtual environment at ${venv}"
+        rm -rf "${venv}"
 
-    python3 -m venv "${venv}"
+        python3 -m venv "${venv}"
+    else
+        echo "Using virtual environment at ${venv}"
+    fi
+
     source "${venv}/bin/activate"
     python3 -m pip install wheel
 elif [[ -d "${venv}" ]]; then

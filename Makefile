@@ -67,14 +67,14 @@ docker-multiarch-install-armhf: docker-multiarch-build-armhf
       -v "$$(pwd):$$(pwd)" -w "$$(pwd)" \
       -e DEBIAN_ARCH=armhf \
       voice2json/multi-arch-build:armhf \
-      install.sh --noruntime --nocreate
+      install.sh --noruntime --nooverwrite
 
 docker-multiarch-install-aarch64: docker-multiarch-build-aarch64
 	docker run -it \
       -v "$$(pwd):$$(pwd)" -w "$$(pwd)" \
       -e DEBIAN_ARCH=aarch64 \
       voice2json/multi-arch-build:aarch64 \
-      install.sh --noruntime --nocreate
+      install.sh --noruntime --nooverwrite
 
 # Creates armhf/aarch64 build images with PyInstaller
 docker-multiarch-build: docker-multiarch-build-armhf docker-multiarch-build-aarch64
