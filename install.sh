@@ -379,7 +379,7 @@ if [[ ! -z "${no_julius}" || ! -f "${julius_dir}/julius/julius" ]]; then
     echo "Installing julius"
     tar -C "${build_dir}" -xf "${julius_file}"
 
-    for d in jcontrol support adintool; 
+    for d in jcontrol support adintool;
     do
 	    cp "${this_dir}/etc/config.guess" "${this_dir}/etc/config.sub" "${julius_dir}/${d}/"
     done

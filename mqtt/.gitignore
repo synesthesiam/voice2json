@@ -1,1 +1,2 @@
 supervisord.log
+supervisord.pid

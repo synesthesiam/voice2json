@@ -19,7 +19,15 @@ from typing import Optional, Dict, Any, Tuple, BinaryIO, List
 
 import pydash
 import paho.mqtt.client as mqtt
-from quart import Quart, request, render_template, send_from_directory, flash, send_file
+from quart import (
+    Quart,
+    request,
+    render_template,
+    send_from_directory,
+    flash,
+    send_file,
+    jsonify,
+)
 
 from utils import voice2json, buffer_to_wav, maybe_convert_wav, wav_to_buffer
 
@@ -284,6 +292,25 @@ async def phonemes():
         phoneme_examples=phoneme_examples,
     )
 
+# -----------------------------------------------------------------------------
+
+@app.route("/speech-to-text", methods=["POST"])
+async def speech_to_text():
+    """WAV -> JSON with text"""
+    wav_data = maybe_convert_wav(profile, await request.data)
+    logger.debug(f"Transcribing {len(wav_data)} byte(s)")
+    stream_wav(TOPIC_TRANSCRIBE_AUDIO_IN, wav_data)
+    return jsonify(await mqtt_transcription_queue.get())
+
+
+@app.route("/text-to-intent", methods=["POST"])
+async def text_to_intent():
+    """Text -> JSON with intent"""
+    sentence = (await request.data).decode()
+    logger.debug(f"Recognizing '{sentence}'")
+    client.publish(TOPIC_RECOGNIZE, json.dumps({"text": sentence}))
+    return jsonify(await mqtt_intent_queue.get())
+
 
 # -----------------------------------------------------------------------------
 # Static Routes
@@ -347,7 +374,7 @@ async def do_retrain():
 def stream_wav(topic: str, wav_data: bytes, chunk_size: int = chunk_size):
     """Streams a WAV file over MQTT in chunks."""
     # Convert to 16-bit 16Khz mono
-    wav_data = maybe_convert_wav({}, wav_data)
+    wav_data = maybe_convert_wav(profile, wav_data)
     audio_data = wav_to_buffer(wav_data)
 
     # Split into chunks
