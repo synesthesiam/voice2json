@@ -140,6 +140,7 @@ If you have an existing `voice2json` profile, it is highly recommended you **reg
 * `sentences.ini` - your custom voice commands
 * `custom_words.txt` - your custom pronunciations
 * `profile.yml` - your custom settings
+* `slots` - directory with custom slot values
 
 
 Profiles for each of the supported languages/locales are available for [download on Github](https://github.com/synesthesiam/voice2json-profiles). You should download the appropriate `.tar.gz` and extract it to `$HOME/.config/voice2json` (any other directory will require a `--profile` argument to be passed to `voice2json`). If everything is in the right place, `$HOME/.config/voice2json/profile.yml` will exist.
