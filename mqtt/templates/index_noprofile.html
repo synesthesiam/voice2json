@@ -1,0 +1,70 @@
+{% extends "layout_noprofile.html" %}
+{% block body %}
+
+<h2>Download Profile</h2>
+
+<p>
+    voice2json did not find a profile at <tt>{{ profile_path }}</tt>
+</p>
+
+<p>
+    You can either manually <a href="https://voice2json.org/#supported-languages">download a profile</a> and extract it to that location (so <tt>{{ profile_path / "profile.yml" }}</tt> exists), or follow the instructions below.
+</p>
+
+<hr>
+
+<h3>Choose a Profile</h3>
+
+<form class="form" method="POST" enctype="multipart/form-data">
+<table class="table">
+    {% for language in sorted(profiles) %}
+    <tr class="bg-light text-dark">
+        <td>{{ language }}</td>
+        <td>Locale</td>
+        <td>Description</td>
+        <td>Closed</td>
+        <td>Open</td>
+    </tr>
+    {% for locale in sorted(profiles[language]) %}
+    {% for name, info in sorted(profiles[language][locale].items()) %}
+    <tr>
+        <td>
+            {% if info.download_path(name, download_dir).exists() %}
+            <input name="install-{{ name }}" type="submit" class="btn btn-success form-control" value="Install">
+            {% else %}
+            <input name="download-{{ name }}" type="submit" class="btn btn-primary form-control" value="Download">
+            {% endif %}
+        </td>
+        <td>{{ locale }}</td>
+        <td>{{ info.description }}</td>
+        <td>
+            {% if info.accuracy_closed > 0 %}
+            {% for i in range(info.accuracy_closed) %}
+            &#9733;
+            {% endfor %}
+            {% else %}
+            &#9785;
+            {% endif %}
+            &nbsp;
+            ({{ info.speed_closed }}x)
+        </td>
+        <td>
+            {% if info.accuracy_open > 0 %}
+            {% for i in range(info.accuracy_open) %}
+            &#9733;
+            {% endfor %}
+            {% else %}
+            &#9785;
+            {% endif %}
+            &nbsp;
+            ({{ info.speed_open }}x)
+        </td>
+    </tr>
+    {% endfor %}
+    {% endfor %}
+
+    {% endfor %}
+</table>
+</form>
+
+{% endblock %}
