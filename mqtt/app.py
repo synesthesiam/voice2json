@@ -394,7 +394,7 @@ async def api_slots():
 @app.route("/api/train", methods=["POST"])
 async def api_train():
     """Re-train profile"""
-    return await do_retrain(flash=False)
+    return await do_retrain(do_flash=False)
 
 
 # -----------------------------------------------------------------------------
@@ -479,14 +479,14 @@ def handle_error(err) -> Tuple[str, int]:
 # -----------------------------------------------------------------------------
 
 
-async def do_retrain(flash=True) -> str:
+async def do_retrain(do_flash=True) -> str:
     """Re-trains voice2json profile and flashes warnings for unknown words."""
     start_time = time.time()
     client.publish(TOPIC_TRAIN, "{}")
     result = await mqtt_train_queue.get()
     train_seconds = time.time() - start_time
 
-    if flash:
+    if do_flash:
         await flash(f"Re-trained in {train_seconds:0.2f} second(s)", "success")
 
     logger.debug(result)
@@ -505,7 +505,7 @@ async def do_retrain(flash=True) -> str:
             warn_lines.append(line)
 
     warn_text = "\n".join(warn_lines) if warn_lines is not None else ""
-    if flash and (warn_lines is not None):
+    if do_flash and (warn_lines is not None):
         await flash(warn_text, "warning")
 
     return warn_text
