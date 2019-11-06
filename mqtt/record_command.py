@@ -13,7 +13,8 @@ logger = logging.getLogger("record_command")
 import paho.mqtt.client as mqtt
 
 TOPIC_AUDIO_IN = "voice2json/record-command/audio-in"
-TOPIC_AUDIO_OUT = "voice2json/record-command/audio-out"
+TOPIC_RECORDED = "voice2json/record-command/recorded"
+TOPIC_AUDIO_OUT = "voice2json/transcribe-wav/audio-in"
 
 from .utils import voice2json, maybe_convert_wav, wav_to_buffer, buffer_to_wav
 
@@ -135,6 +136,9 @@ def main():
                         audio_buffer += record_command_proc.stdout.read(
                             num_bytes - len(audio_buffer)
                         )
+
+                    # Report recorded
+                    client.publish(TOPIC_RECORDED, json.dumps({"num_bytes": num_bytes}))
 
                     logger.debug(f"Sending audio ({len(audio_buffer)})")
 

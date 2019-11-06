@@ -84,9 +84,13 @@ def main():
         audio_data = bytes()
 
         # Set up read thread
+        read_ready_event = threading.Event()
         def read_proc(proc):
             try:
                 while True:
+                    read_ready_event.wait()
+                    read_ready_event.clear()
+
                     for line in proc.stdout:
                         line = line.decode().strip()
                         print(line)
@@ -110,6 +114,7 @@ def main():
                     transcribe_wav_proc = None
 
                 if read_thread is not None:
+                    read_ready_event.set()
                     read_thread.join()
                     read_thread = None
 
@@ -132,6 +137,7 @@ def main():
                 )
 
                 read_thread.start()
+                read_ready_event.set()
             except Exception as e:
                 logger.exception("restart")
 

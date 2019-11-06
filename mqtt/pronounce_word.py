@@ -81,9 +81,14 @@ def main():
                 logging.exception("on_disconnect")
 
         # Set up read thread
+        read_ready_event = threading.Event()
+
         def read_proc(proc):
             try:
                 while True:
+                    read_ready_event.wait()
+                    read_ready_event.clear()
+
                     word = ""
                     pronunciations = []
                     for line in pronounce_word_proc.stdout:
@@ -122,6 +127,7 @@ def main():
                     pronounce_word_proc = None
 
                 if read_thread is not None:
+                    read_ready_event.set()
                     read_thread.join()
                     read_thread = None
 
@@ -140,6 +146,7 @@ def main():
                 )
 
                 read_thread.start()
+                read_ready_event.set()
             except Exception as e:
                 logger.exception("restart")
 
