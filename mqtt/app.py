@@ -17,6 +17,7 @@ from uuid import uuid4
 from pathlib import Path
 from typing import Optional, Dict, Any, Tuple, BinaryIO, List
 
+import yaml
 import pydash
 import paho.mqtt.client as mqtt
 from quart import (
@@ -201,6 +202,7 @@ async def index():
 
     return await render_template(
         "index.html",
+        page="index",
         profile=profile,
         pydash=pydash,
         sentence=sentence,
@@ -232,7 +234,11 @@ async def sentences():
         sentences_text = sentences_path.read_text()
 
     return await render_template(
-        "sentences.html", profile=profile, pydash=pydash, sentences=sentences_text
+        "sentences.html",
+        page="sentences",
+        profile=profile,
+        pydash=pydash,
+        sentences=sentences_text,
     )
 
 
@@ -272,6 +278,7 @@ async def words():
 
     return await render_template(
         "words.html",
+        page="words",
         profile=profile,
         pydash=pydash,
         custom_words=custom_words_text,
@@ -300,10 +307,39 @@ async def phonemes():
 
     return await render_template(
         "phonemes.html",
+        page="phonemes",
         profile=profile,
         pydash=pydash,
         sorted=sorted,
         phoneme_examples=phoneme_examples,
+    )
+
+
+@app.route("/slots", methods=["GET", "POST"])
+async def slots():
+    """Reads/writes slots. Re-trains when slots are saved."""
+
+    slots_dir = Path(pydash.get(profile, "training.slots-directory"))
+
+    if request.method == "POST":
+        form = await request.form
+        slots_yaml = form["slots"]
+        slots_dict = yaml.safe_load(slots_yaml)
+        slots_dir.mkdir(parents=True, exist_ok=True)
+        for slot_name, slot_values in slots_dict.items():
+            with open(slots_dir / slot_name, "w") as slot_file:
+                for value in slot_values:
+                    print(value.strip(), file=slot_file)
+
+    else:
+        slots_dict = slots_to_dict(slots_dir)
+        if len(slots_dict) > 0:
+            slots_yaml = yaml.dump(slots_dict)
+        else:
+            slots_yaml = ""
+
+    return await render_template(
+        "slots.html", page="slots", profile=profile, pydash=pydash, slots=slots_yaml
     )
 
 
@@ -379,16 +415,7 @@ async def api_slots():
         # Return length of written text
         return str(total_length)
     else:
-        # Read slots into dictionary
-        slots_dict = {}
-        for slot_file_path in slots_dir.glob("*"):
-            if slot_file_path.is_file():
-                slot_name = slot_file_path.name
-                slots_dict[slot_name] = [
-                    line.strip() for line in slot_file_path.read_text().splitlines()
-                ]
-
-        return jsonify(slots_dict)
+        return jsonify(slots_to_dict(slots_dir))
 
 
 @app.route("/api/train", methods=["POST"])
@@ -530,6 +557,19 @@ def stream_wav(topic: str, wav_data: bytes, chunk_size: int = chunk_size):
 
     # Send termination message
     client.publish(topic, None)
+
+
+def slots_to_dict(slots_dir: Path) -> Dict[str, List[str]]:
+    # Read slots into dictionary
+    slots_dict = {}
+    for slot_file_path in slots_dir.glob("*"):
+        if slot_file_path.is_file():
+            slot_name = slot_file_path.name
+            slots_dict[slot_name] = [
+                line.strip() for line in slot_file_path.read_text().splitlines()
+            ]
+
+    return slots_dict
 
 
 # -----------------------------------------------------------------------------

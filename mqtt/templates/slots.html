@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+{% block body %}
+
+<h2>Slots</h2>
+
+<form class="form" method="POST">
+    <input type="hidden" name="action" value="custom words">
+    <div class="form-group">
+        <button class="btn btn-primary form-control" type="submit">Save + Train</button>
+    </div>
+
+    <div class="form-group">
+        <textarea id="slots" name="slots" class="form-control" type="text" rows="25" style="font-family: monospace;">{{ slots }}</textarea>
+    </div>
+
+    <div class="form-group">
+        <button class="btn btn-primary form-control" type="submit">Save + Train</button>
+    </div>
+</form>
+
+{% endblock %}

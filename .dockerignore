@@ -6,4 +6,12 @@
 !install.sh
 !voice2json.spec
 !debian/
-!mqtt
+!mqtt/css
+!mqtt/etc
+!mqtt/img
+!mqtt/js
+!mqtt/templates
+!mqtt/*.py
+!mqtt/*.sh
+!mqtt/requirements.txt
+!mqtt/supervisord.conf

@@ -13,7 +13,8 @@ DEFINE_string 'http-host' '127.0.0.1' 'HTTP server host'
 DEFINE_integer 'http-port' 5000 'MQTT HTTP server port'
 DEFINE_string 'mqtt-host' '127.0.0.1' 'MQTT server host'
 DEFINE_integer 'mqtt-port' 1883 'MQTT server port'
-DEFINE_boolean 'debug' false 'Print DEBUG message to console'
+DEFINE_boolean 'venv' true 'Use virtual environment if available'
+DEFINE_boolean 'mosquitto' false 'Run mosquitto daemon'
 
 FLAGS "$@" || exit $?
 eval set -- "${FLAGS_ARGV}"
@@ -24,7 +25,7 @@ eval set -- "${FLAGS_ARGV}"
 
 set -e
 
-args=()
+args=('--debug')
 
 profile="${FLAGS_profile}"
 
@@ -54,8 +55,12 @@ fi
 mqtt_host="${FLAGS_mqtt_host}"
 mqtt_port="${FLAGS_mqtt_port}"
 
-if [[ "${FLAGS_debug}" -eq "${FLAGS_TRUE}" ]]; then
-    args+=('--debug')
+if [[ "${FLAGS_venv}" -eq "${FLAGS_FALSE}" ]]; then
+    no_venv="true"
+fi
+
+if [[ "${FLAGS_mosquitto}" -eq "${FLAGS_TRUE}" ]]; then
+    mosquitto -d
 fi
 
 # -----------------------------------------------------------------------------
@@ -67,7 +72,7 @@ fi
 
 venv="${this_dir}/.venv"
 
-if [[ -d "${venv}" ]]; then
+if [[ -d "${venv}" && -z "${no_venv}" ]]; then
     echo "Using virtual environment at ${venv}"
     source "${venv}/bin/activate"
 fi
@@ -89,9 +94,15 @@ if [[ -e "${profile}" ]]; then
     voice2json --profile "${profile}" train-profile
 
     # Run web server and MQTT services
-    export server_args="--profile \"${profile}\" ${args[@]}"
-    export service_args="--profile \"${profile}\""
-    supervisord --config "${this_dir}/supervisord.conf"
+    export voice2json_profile="${profile}"
+    export service_args="${args[@]}"
+
+    current_dir="$(pwd)"
+    cd "${this_dir}" && \
+        supervisord \
+            --config "${this_dir}/supervisord.conf" \
+            --logfile "${current_dir}/supervisord.log" \
+            --pidfile "${current_dir}/supervisord.pid"
 else
     if [[ -z "${download_dir}" ]]; then
         cache_home="${XDG_CACHE_HOME}"
@@ -103,8 +114,9 @@ else
     fi
 
     # Run profile downloader
-    python3 -m mqtt.app_noprofile \
-            --profile "${profile}" \
-            --cache "${download_dir}" \
-            "${args[@]}"
+    cd "${voice2json_dir}" && \
+        python3 -m mqtt.app_noprofile \
+                --profile "${profile}" \
+                --cache "${download_dir}" \
+                "${args[@]}"
 fi
