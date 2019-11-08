@@ -110,7 +110,6 @@ def main():
     )
     recognize_parser.add_argument(
         "--perplexity",
-        "-p",
         action="store_true",
         help="Compute perplexity of input text relative to language model",
     )

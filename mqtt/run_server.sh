@@ -42,18 +42,10 @@ fi
 
 download_dir="${FLAGS_cache}"
 
-http_host="${FLAGS_http_host}"
-if [[ ! -z "${http_host}" ]]; then
-    args+=('--http-host' "${http_host}")
-fi
-
-http_port="${FLAGS_http_port}"
-if [[ ! -z "${http_port}" ]]; then
-    args+=('--http-port' "${http_port}")
-fi
-
-mqtt_host="${FLAGS_mqtt_host}"
-mqtt_port="${FLAGS_mqtt_port}"
+export http_host="${FLAGS_http_host}"
+export http_port="${FLAGS_http_port}"
+export mqtt_host="${FLAGS_mqtt_host}"
+export mqtt_port="${FLAGS_mqtt_port}"
 
 if [[ "${FLAGS_venv}" -eq "${FLAGS_FALSE}" ]]; then
     no_venv="true"
@@ -82,20 +74,11 @@ export PYTHONPATH="${voice2json_dir}:${PYTHONPATH}"
 # -----------------------------------------------------------------------------
 
 if [[ -e "${profile}" ]]; then
-    if [[ ! -z "${mqtt_host}" ]]; then
-        args+=('--mqtt-host' "${mqtt_host}")
-    fi
-
-    if [[ ! -z "${mqtt_port}" ]]; then
-        args+=('--mqtt-port' "${mqtt_port}")
-    fi
-
     # Do training
     voice2json --profile "${profile}" train-profile
 
     # Run web server and MQTT services
     export voice2json_profile="${profile}"
-    export service_args="${args[@]}"
 
     current_dir="$(pwd)"
     cd "${this_dir}" && \

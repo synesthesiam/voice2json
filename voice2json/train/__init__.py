@@ -437,7 +437,7 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
                 # Generate single pronunciation guesses
                 logger.debug("Guessing pronunciations for unknown word(s)")
 
-                g2p_proc = subprocess.check_output(
+                g2p_output = subprocess.check_output(
                     [
                         "phonetisaurus-apply",
                         "--model",
