@@ -262,6 +262,11 @@ class FSTListener(DependencyListener):
                     else:
                         output_symbol = self.output_symbols.find(arc.olabel).decode()
 
+                        # Special case:
+                        # Word has no input, will have no output (nothing).
+                        if output_symbol.startswith(":"):
+                            output_symbol = ""
+
                     arc.olabel = self.output_symbols.add_symbol(output_symbol + ":")
                     state_queue.append(arc.nextstate)
 
