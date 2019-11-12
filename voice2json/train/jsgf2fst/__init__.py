@@ -118,7 +118,7 @@ def grammar_to_fsts(
 
                 replacements[replace_index] = replace_fst
 
-            logger.debug(f"Replacing {list(replace_names.keys())} in {rule_name}")
+            logger.debug("Replacing %s in %s", list(replace_names.keys()), rule_name)
             listener.fsts[rule_name] = _replace_fsts(rule_fst, replacements, eps=eps)
 
     # Overwrite grammar_fst

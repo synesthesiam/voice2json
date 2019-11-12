@@ -55,7 +55,7 @@ def voice2json(
 
 
 def convert_wav(profile: Dict[str, Any], wav_data: bytes) -> bytes:
-    """Converts WAV data to 16-bit, 16Khz mono."""
+    """Converts WAV data to expected audio format."""
     convert_cmd_str = pydash.get(
         profile,
         "audio.convert-command",
@@ -69,7 +69,11 @@ def convert_wav(profile: Dict[str, Any], wav_data: bytes) -> bytes:
 
 
 def maybe_convert_wav(profile: Dict[str, Any], wav_data: bytes) -> bytes:
-    """Converts WAV data to 16-bit, 16Khz mono WAV if necessary."""
+    """Converts WAV data to expected audio format, if necessary."""
+    expected_rate = int(pydash.get(profile, "audio.format.sample-rate-hertz", 16000))
+    expected_width = int(pydash.get(profile, "audio.format.sample-width-bits", 16)) // 8
+    expected_channels = int(pydash.get(profile, "audio.format.channel-count", 1))
+
     with io.BytesIO(wav_data) as wav_io:
         with wave.open(wav_io, "rb") as wav_file:
             rate, width, channels = (
@@ -77,12 +81,28 @@ def maybe_convert_wav(profile: Dict[str, Any], wav_data: bytes) -> bytes:
                 wav_file.getsampwidth(),
                 wav_file.getnchannels(),
             )
-            if (rate != 16000) or (width != 2) or (channels != 1):
+            if (
+                (rate != expected_rate)
+                or (width != expected_width)
+                or (channels != expected_channels)
+            ):
+                logger.debug(
+                    "Got %s Hz, %s byte(s), %s channel(s). Needed %s Hz, %s byte(s), %s channel(s)",
+                    rate,
+                    width,
+                    channels,
+                    expected_rate,
+                    expected_width,
+                    expected_channels,
+                )
+
                 # Do conversion
-                if rate < 16000:
+                if rate < expected_rate:
                     # Probably being given 8Khz audio
                     logger.warning(
-                        f"Upsampling audio from {rate} Hz. Expect poor performance!"
+                        "Upsampling audio from %s to %s Hz. Expect poor performance!",
+                        rate,
+                        expected_rate,
                     )
 
                 return convert_wav(profile, wav_data)
@@ -91,13 +111,17 @@ def maybe_convert_wav(profile: Dict[str, Any], wav_data: bytes) -> bytes:
                 return wav_data
 
 
-def buffer_to_wav(buffer: bytes) -> bytes:
-    """Wraps a buffer of raw audio data (16-bit, 16Khz mono) in a WAV"""
+def buffer_to_wav(profile: Dict[str, Any], buffer: bytes) -> bytes:
+    """Wraps a buffer of raw audio data in a WAV"""
+    rate = int(pydash.get(profile, "audio.format.sample-rate-hertz", 16000))
+    width = int(pydash.get(profile, "audio.format.sample-width-bits", 16)) // 8
+    channels = int(pydash.get(profile, "audio.format.channel-count", 1))
+
     with io.BytesIO() as wav_buffer:
         with wave.open(wav_buffer, mode="wb") as wav_file:
-            wav_file.setframerate(16000)
-            wav_file.setsampwidth(2)
-            wav_file.setnchannels(1)
+            wav_file.setframerate(rate)
+            wav_file.setsampwidth(width)
+            wav_file.setnchannels(channels)
             wav_file.writeframesraw(buffer)
 
         return wav_buffer.getvalue()

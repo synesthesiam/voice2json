@@ -121,13 +121,13 @@ async def index():
                 # Read raw audio data from temp file
                 record_file.seek(0)
                 raw_audio_data = record_file.read()
-                wav_data = buffer_to_wav(raw_audio_data)
+                wav_data = buffer_to_wav(profile, raw_audio_data)
 
                 # Clean up
                 del record_file
                 record_file = None
 
-                logger.info(f"Recorded {len(raw_audio_data)} byte(s)")
+                logger.info("Recorded %s byte(s)", len(raw_audio_data))
         elif "upload" in form:
             files = await request.files
             if "wavfile" in files:
@@ -148,7 +148,7 @@ async def index():
 
         if wav_data is not None:
             # Transcribe WAV
-            logger.debug(f"Transcribing {len(wav_data)} byte(s)")
+            logger.debug("Transcribing %s byte(s)", len(wav_data))
             stream_wav(TOPIC_TRANSCRIBE_AUDIO_IN, wav_data)
             transcribe_result = await mqtt_transcription_queue.get()
             sentence = transcribe_result.get(
@@ -352,7 +352,7 @@ async def slots():
 async def api_speech_to_text():
     """WAV -> JSON with text"""
     wav_data = maybe_convert_wav(profile, await request.data)
-    logger.debug(f"Transcribing {len(wav_data)} byte(s)")
+    logger.debug("Transcribing %s byte(s)", len(wav_data))
     stream_wav(TOPIC_TRANSCRIBE_AUDIO_IN, wav_data)
     return jsonify(await mqtt_transcription_queue.get())
 
@@ -361,7 +361,7 @@ async def api_speech_to_text():
 async def api_text_to_intent():
     """Text -> JSON with intent"""
     sentence = (await request.data).decode()
-    logger.debug(f"Recognizing '{sentence}'")
+    logger.debug("Recognizing '%s'", sentence)
     client.publish(TOPIC_RECOGNIZE, json.dumps({"text": sentence}))
     return jsonify(await mqtt_intent_queue.get())
 
@@ -444,7 +444,7 @@ async def stream_wake_speech_to_text():
 
         state = STATE_BEFORE_WAKE
         async for audio_chunk in request.body:
-            wav_chunk = buffer_to_wav(audio_chunk)
+            wav_chunk = buffer_to_wav(profile, audio_chunk)
 
             if state == STATE_BEFORE_WAKE:
                 client.publish(TOPIC_WAKE_AUDIO_IN, wav_chunk)
@@ -549,7 +549,7 @@ def stream_wav(topic: str, wav_data: bytes, chunk_size: int = chunk_size):
         raw_chunk = audio_data[:chunk_size]
 
         # Re-wrap in WAV structure
-        wav_chunk = buffer_to_wav(raw_chunk)
+        wav_chunk = buffer_to_wav(profile, raw_chunk)
         client.publish(topic, wav_chunk)
 
         # Next chunk
@@ -612,7 +612,7 @@ if __name__ == "__main__":
             logger.info("Connected")
             for topic in sub_topics:
                 client.subscribe(topic)
-                logger.debug(f"Subcribed to {topic}")
+                logger.debug("Subcribed to %s", topic)
         except Exception as e:
             logging.exception("on_connect")
 

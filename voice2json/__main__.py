@@ -291,7 +291,7 @@ def main():
             config_home = Path("~/.config").expanduser()
 
         profile_dir = config_home / "voice2json"
-        logger.debug(f"Assuming profile is at {profile_dir}")
+        logger.debug("Assuming profile is at %s", profile_dir)
 
     else:
         # Use profile provided on command line
@@ -318,7 +318,7 @@ def main():
         / "profile.defaults.yml"
     )
     if defaults_yaml.exists():
-        logger.debug(f"Loading profile defaults from {defaults_yaml}")
+        logger.debug("Loading profile defaults from %s", defaults_yaml)
         with open(defaults_yaml, "r") as defaults_file:
             profile = yaml.safe_load(defaults_file)
     else:
@@ -329,18 +329,18 @@ def main():
     if profile_yaml is None:
         profile_yaml = profile_dir / "profile.yml"
 
-    logger.debug(f"Loading profile from {profile_yaml}")
+    logger.debug("Loading profile from %s", profile_yaml)
 
     if profile_yaml.exists():
         with open(profile_yaml, "r") as profile_file:
             recursive_update(profile, yaml.safe_load(profile_file) or {})
     else:
-        logger.warning(f"{profile_yaml} does not exist. Using default settings.")
+        logger.warning("%s does not exist. Using default settings.", profile_yaml)
 
     # Override settings
     for setting_path, setting_value in args.setting:
         setting_value = json.loads(setting_value)
-        logger.debug(f"Overring {setting_name} with {setting_value}")
+        logger.debug("Overring %s with %s", setting_path, setting_value)
         pydash.set_(profile, setting_path, setting_value)
 
     # Call sub-commmand
@@ -403,7 +403,7 @@ def transcribe(
 
                 # Load and convert
                 wav_path = Path(wav_path_str)
-                logger.debug(f"Transcribing {wav_path}")
+                logger.debug("Transcribing %s", wav_path)
 
                 wav_data = wav_path.read_bytes()
 
@@ -582,7 +582,7 @@ def record_command(
     # Expecting raw 16-bit, 16Khz mono audio
     if args.audio_source is None:
         audio_source = get_audio_source(profile)
-        logger.debug(f"Recording raw 16-bit 16Khz mono audio")
+        logger.debug("Recording raw 16-bit 16Khz mono audio")
     elif args.audio_source == "-":
         # Avoid crash when stdin is closed/read in daemon thread
         class FakeStdin:
@@ -599,10 +599,10 @@ def record_command(
                 self.done = True
 
         audio_source = FakeStdin()
-        logger.debug(f"Recording raw 16-bit 16Khz mono audio from stdin")
+        logger.debug("Recording raw 16-bit 16Khz mono audio from stdin")
     else:
         audio_source: BinaryIO = open(args.audio_source, "rb")
-        logger.debug(f"Recording raw 16-bit 16Khz mono audio from {args.audio_source}")
+        logger.debug("Recording raw 16-bit 16Khz mono audio from %s", args.audio_source)
 
     # JSON events are not printed by default
     json_file = None
@@ -627,7 +627,7 @@ def record_command(
     )
 
     # Output WAV data
-    wav_bytes = buffer_to_wav(audio_buffer)
+    wav_bytes = buffer_to_wav(profile, audio_buffer)
 
     if args.output_size:
         size_str = str(len(wav_bytes)) + "\n"
@@ -664,13 +664,13 @@ def wake(args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]) -
     # Expecting raw 16-bit, 16Khz mono audio
     if args.audio_source is None:
         audio_source = get_audio_source(profile)
-        logger.debug(f"Recording raw 16-bit 16Khz mono audio")
+        logger.debug("Recording raw 16-bit 16Khz mono audio")
     elif args.audio_source == "-":
         audio_source = sys.stdin.buffer
-        logger.debug(f"Recording raw 16-bit 16Khz mono audio from stdin")
+        logger.debug("Recording raw 16-bit 16Khz mono audio from stdin")
     else:
         audio_source: BinaryIO = open(args.audio_source, "rb")
-        logger.debug(f"Recording raw 16-bit 16Khz mono audio from {args.audio_source}")
+        logger.debug("Recording raw 16-bit 16Khz mono audio from %s", args.audio_source)
 
     # Read first audio chunk
     start_time = time.time()
@@ -904,7 +904,7 @@ def pronounce(
                 # Don't guess if a pronunciation was provided
                 if len(dict_phonemes) == 0:
                     # Guess pronunciation with phonetisaurus
-                    logger.debug(f"Guessing pronunciation for {word}")
+                    logger.debug("Guessing pronunciation for %s", word)
 
                     with tempfile.NamedTemporaryFile(mode="w") as word_file:
                         print(word, file=word_file)
@@ -1105,13 +1105,13 @@ def record_examples(
     # Expecting raw 16-bit, 16Khz mono audio
     if args.audio_source is None:
         audio_source = get_audio_source(profile)
-        logger.debug(f"Recording raw 16-bit 16Khz mono audio")
+        logger.debug("Recording raw 16-bit 16Khz mono audio")
     elif args.audio_source == "-":
         audio_source = sys.stdin.buffer
-        logger.debug(f"Recording raw 16-bit 16Khz mono audio from stdin")
+        logger.debug("Recording raw 16-bit 16Khz mono audio from stdin")
     else:
         audio_source: BinaryIO = open(args.audio_source, "rb")
-        logger.debug(f"Recording raw 16-bit 16Khz mono audio from {args.audio_source}")
+        logger.debug("Recording raw 16-bit 16Khz mono audio from %s", args.audio_source)
 
     # Recording thread
     audio_data = bytes()
@@ -1160,7 +1160,7 @@ def record_examples(
                 count += 1
                 wav_path = get_wav_path(text, count)
 
-            wav_bytes = buffer_to_wav(audio_data)
+            wav_bytes = buffer_to_wav(profile, audio_data)
             wav_path.write_bytes(wav_bytes)
 
             # Save transcription
@@ -1191,7 +1191,7 @@ def _get_actual_results(
     from voice2json import get_transcriber, get_recognizer
 
     examples_dir = Path(args.directory) if args.directory is not None else Path.cwd()
-    logger.debug(f"Looking for examples in {examples_dir}")
+    logger.debug("Looking for examples in %s", examples_dir)
 
     # Load WAV transcriber
     transcriber = get_transcriber(
@@ -1205,7 +1205,7 @@ def _get_actual_results(
     actual: Dict[str, Dict[str, Any]] = {}
     try:
         for wav_path in examples_dir.glob("*.wav"):
-            logger.debug(f"Processing {wav_path}")
+            logger.debug("Processing %s", wav_path)
 
             # Transcribe WAV
             wav_data = wav_path.read_bytes()
@@ -1435,7 +1435,7 @@ def test_examples(
                 if results_dir is not None:
                     align_output_path = results_dir / "word_align.txt"
                     align_output_path.write_text(align_output)
-                    logger.debug(f"Wrote {align_output_path}")
+                    logger.debug("Wrote %s", align_output_path)
 
                 # Convert to JSON
                 with io.StringIO(align_output) as align_file:
@@ -1492,7 +1492,7 @@ def tune_examples(
     from voice2json import get_tuner
 
     examples_dir = Path(args.directory) if args.directory is not None else Path.cwd()
-    logger.debug(f"Looking for examples in {examples_dir}")
+    logger.debug("Looking for examples in %s", examples_dir)
 
     start_time = time.time()
 

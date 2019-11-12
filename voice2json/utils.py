@@ -28,7 +28,7 @@ logger = logging.getLogger("voice2json")
 
 
 def convert_wav(profile: Dict[str, Any], wav_data: bytes) -> bytes:
-    """Converts WAV data to 16-bit, 16Khz mono."""
+    """Converts WAV data to expected audio format."""
     convert_cmd_str = pydash.get(
         profile,
         "audio.convert-command",
@@ -42,7 +42,11 @@ def convert_wav(profile: Dict[str, Any], wav_data: bytes) -> bytes:
 
 
 def maybe_convert_wav(profile: Dict[str, Any], wav_data: bytes) -> bytes:
-    """Converts WAV data to 16-bit, 16Khz mono WAV if necessary."""
+    """Converts WAV data to expected audio format, if necessary."""
+    expected_rate = int(pydash.get(profile, "audio.format.sample-rate-hertz", 16000))
+    expected_width = int(pydash.get(profile, "audio.format.sample-width-bits", 16)) // 8
+    expected_channels = int(pydash.get(profile, "audio.format.channel-count", 1))
+
     with io.BytesIO(wav_data) as wav_io:
         with wave.open(wav_io, "rb") as wav_file:
             rate, width, channels = (
@@ -50,11 +54,29 @@ def maybe_convert_wav(profile: Dict[str, Any], wav_data: bytes) -> bytes:
                 wav_file.getsampwidth(),
                 wav_file.getnchannels(),
             )
-            if (rate != 16000) or (width != 2) or (channels != 1):
+            if (
+                (rate != expected_rate)
+                or (width != expected_width)
+                or (channels != expected_channels)
+            ):
+                logger.debug(
+                    "Got %s Hz, %s byte(s), %s channel(s). Needed %s Hz, %s byte(s), %s channel(s)",
+                    rate,
+                    width,
+                    channels,
+                    expected_rate,
+                    expected_width,
+                    expected_channels,
+                )
+
                 # Do conversion
-                if rate < 16000:
+                if rate < expected_rate:
                     # Probably being given 8Khz audio
-                    logger.warning(f"Upsampling audio from {rate} Hz. Expect poor performance!")
+                    logger.warning(
+                        "Upsampling audio from %s to %s Hz. Expect poor performance!",
+                        rate,
+                        expected_rate,
+                    )
 
                 return convert_wav(profile, wav_data)
             else:
@@ -62,19 +84,27 @@ def maybe_convert_wav(profile: Dict[str, Any], wav_data: bytes) -> bytes:
                 return wav_data
 
 
-def buffer_to_wav(buffer: bytes) -> bytes:
-    """Wraps a buffer of raw audio data (16-bit, 16Khz mono) in a WAV"""
+def buffer_to_wav(profile: Dict[str, Any], buffer: bytes) -> bytes:
+    """Wraps a buffer of raw audio data in a WAV"""
+    rate = int(pydash.get(profile, "audio.format.sample-rate-hertz", 16000))
+    width = int(pydash.get(profile, "audio.format.sample-width-bits", 16)) // 8
+    channels = int(pydash.get(profile, "audio.format.channel-count", 1))
+
     with io.BytesIO() as wav_buffer:
         with wave.open(wav_buffer, mode="wb") as wav_file:
-            wav_file.setframerate(16000)
-            wav_file.setsampwidth(2)
-            wav_file.setnchannels(1)
+            wav_file.setframerate(rate)
+            wav_file.setsampwidth(width)
+            wav_file.setnchannels(channels)
             wav_file.writeframesraw(buffer)
 
         return wav_buffer.getvalue()
 
 
-def should_convert_wav(wav_io: BinaryIO) -> bool:
+def should_convert_wav(profile: Dict[str, Any], wav_io: BinaryIO) -> bool:
+    expected_rate = int(pydash.get(profile, "audio.format.sample-rate-hertz", 16000))
+    expected_width = int(pydash.get(profile, "audio.format.sample-width-bits", 16)) // 8
+    expected_channels = int(pydash.get(profile, "audio.format.channel-count", 1))
+
     with wave.open(wav_io, "rb") as wav_file:
         rate, width, channels = (
             wav_file.getframerate(),
@@ -82,7 +112,11 @@ def should_convert_wav(wav_io: BinaryIO) -> bool:
             wav_file.getnchannels(),
         )
 
-        return (rate != 16000) or (width != 2) or (channels != 1)
+        return (
+            (rate != expected_rate)
+            or (width != expected_width)
+            or (channels != expected_channels)
+        )
 
 
 # -----------------------------------------------------------------------------
@@ -142,7 +176,9 @@ def read_dict(
 
             for word in words:
                 # Don't transform silence words
-                if transform and ((silence_words is None) or (word not in silence_words)):
+                if transform and (
+                    (silence_words is None) or (word not in silence_words)
+                ):
                     word = transform(word)
 
                 pronounce = " ".join(parts)
@@ -152,7 +188,7 @@ def read_dict(
                 else:
                     word_dict[word] = [pronounce]
         except Exception as e:
-            logger.warning(f"read_dict: {e} (line {i+1})")
+            logger.warning("read_dict: %s (line %s)", e, i + 1)
 
     return word_dict
 

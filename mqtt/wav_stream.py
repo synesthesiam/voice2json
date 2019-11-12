@@ -78,7 +78,7 @@ def main():
                 raw_chunk = audio_data[: args.chunk_size]
 
                 # Re-wrap in WAV structure
-                wav_chunk = buffer_to_wav(raw_chunk)
+                wav_chunk = buffer_to_wav({}, raw_chunk)
                 for topic in args.topic:
                     client.publish(topic, wav_chunk)
 

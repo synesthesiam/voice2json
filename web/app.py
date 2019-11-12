@@ -114,7 +114,7 @@ async def index():
 
         if wav_data is not None:
             # Transcribe WAV
-            logger.debug(f"Transcribing {len(wav_data)} byte(s)")
+            logger.debug("Transcribing %s byte(s)", len(wav_data))
             transcribe_result = json.load(
                 voice2json("transcribe-wav", text=False, input=wav_data)
             )

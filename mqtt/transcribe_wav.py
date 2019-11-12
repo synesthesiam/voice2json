@@ -64,7 +64,7 @@ def main():
                 # Subscribe to topics
                 for topic in [TOPIC_AUDIO_IN, TOPIC_TRAINED]:
                     client.subscribe(topic)
-                    logger.debug(f"Subscribed to {topic}")
+                    logger.debug("Subscribed to %s", topic)
             except Exception as e:
                 logging.exception("on_connect")
 
@@ -156,7 +156,7 @@ def main():
 
                     if len(msg.payload) == 0:
                         # Do transcription
-                        wav_data = buffer_to_wav(audio_data)
+                        wav_data = buffer_to_wav(profile, audio_data)
                         size_str = str(len(wav_data)) + "\n"
 
                         # Send to transcribe-wav

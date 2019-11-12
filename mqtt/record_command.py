@@ -70,7 +70,7 @@ def main():
                 # Subscribe to topics
                 for topic in [TOPIC_AUDIO_IN]:
                     client.subscribe(topic)
-                    logger.debug(f"Subscribed to {topic}")
+                    logger.debug("Subscribed to %s", topic)
             except Exception as e:
                 logging.exception("on_connect")
 
@@ -140,12 +140,12 @@ def main():
                     # Report recorded
                     client.publish(TOPIC_RECORDED, json.dumps({"num_bytes": num_bytes}))
 
-                    logger.debug(f"Sending audio ({len(audio_buffer)})")
+                    logger.debug("Sending audio (%s)", len(audio_buffer))
 
                     # Split into chunks
                     while len(audio_buffer) > 0:
                         audio_chunk = audio_buffer[: args.chunk_size]
-                        wav_chunk = buffer_to_wav(audio_chunk)
+                        wav_chunk = buffer_to_wav(profile, audio_chunk)
 
                         # Forward downstream
                         for topic in args.topic_audio_out:
