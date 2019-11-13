@@ -34,7 +34,10 @@ profile_path: Optional[Path] = None
 download_dir: Optional[Path] = None
 
 # Quart application
-app = Quart("voice2json", template_folder=Path("templates").absolute())
+web_dir = Path(__file__).parent
+template_dir = web_dir / "templates"
+
+app = Quart("voice2json", template_folder=template_dir.absolute())
 app.secret_key = str(uuid4())
 
 logger = logging.getLogger("app_noprofile")
@@ -72,7 +75,10 @@ PROFILES = {
         }
     },
     "English": {
-        "en-us": {"en-us_pocketsphinx-cmu": Info("Pocketsphinx CMU", 1.0, 3, 36, 0, 6)}
+        "en-us": {
+            "en-us_pocketsphinx-cmu": Info("Pocketsphinx CMU", 1.0, 3, 36, 0, 6),
+            "en-us_kaldi-zamia": Info("Kaldi TDNN Zamia", 1.0, 5, 3, 5, 4),
+        }
     },
 }
 
@@ -91,7 +97,7 @@ async def index():
             elif key.startswith("install-"):
                 profile_name = key.split("-", maxsplit=1)[1]
                 await install_profile(profile_name)
-                await flash(f"Installed {profile_name}", "success")
+                await flash(f"Installed {profile_name}. Please restart.", "success")
                 break
 
     return await render_template(
@@ -122,17 +128,17 @@ async def index():
 
 @app.route("/css/<path:filename>", methods=["GET"])
 def css(filename):
-    return send_from_directory("css", filename)
+    return send_from_directory(web_dir / "css", filename)
 
 
 @app.route("/js/<path:filename>", methods=["GET"])
 def js(filename):
-    return send_from_directory("js", filename)
+    return send_from_directory(web_dir / "js", filename)
 
 
 @app.route("/img/<path:filename>", methods=["GET"])
 def img(filename):
-    return send_from_directory("img", filename)
+    return send_from_directory(web_dir / "img", filename)
 
 
 @app.errorhandler(Exception)
@@ -166,9 +172,7 @@ async def install_profile(name):
     logger.debug(command)
 
     profile_dir.mkdir(parents=True, exist_ok=True)
-    await asyncio.create_subprocess_exec(
-        *command
-    )
+    await asyncio.create_subprocess_exec(*command)
 
 
 # -----------------------------------------------------------------------------

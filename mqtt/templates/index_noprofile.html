@@ -29,10 +29,11 @@
     {% for name, info in sorted(profiles[language][locale].items()) %}
     <tr>
         <td>
-            {% if info.download_path(name, download_dir).exists() %}
-            <input name="install-{{ name }}" type="submit" class="btn btn-success form-control" value="Install">
+            {% set download_path = info.download_path(name, download_dir) %}
+            {% if download_path.exists() %}
+            <input name="install-{{ name }}" type="submit" class="btn btn-success form-control" value="Install" title="{{ download_path }}">
             {% else %}
-            <input name="download-{{ name }}" type="submit" class="btn btn-primary form-control" value="Download">
+            <input name="download-{{ name }}" type="submit" class="btn btn-primary form-control" value="Download" title="{{ download_path }}">
             {% endif %}
         </td>
         <td>{{ locale }}</td>

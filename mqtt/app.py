@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import io
+import os
 import re
 import json
 import argparse
@@ -59,7 +60,10 @@ client = None
 chunk_size = 960
 
 # Quart application
-app = Quart("voice2json", template_folder=Path("templates").absolute())
+web_dir = Path(__file__).parent
+template_dir = web_dir / "templates"
+
+app = Quart("voice2json", template_folder=template_dir.absolute())
 app.secret_key = str(uuid4())
 
 logger = logging.getLogger("app")
@@ -482,17 +486,17 @@ async def stream_wake_speech_to_text():
 
 @app.route("/css/<path:filename>", methods=["GET"])
 def css(filename):
-    return send_from_directory("css", filename)
+    return send_from_directory(web_dir / "css", filename)
 
 
 @app.route("/js/<path:filename>", methods=["GET"])
 def js(filename):
-    return send_from_directory("js", filename)
+    return send_from_directory(web_dir / "js", filename)
 
 
 @app.route("/img/<path:filename>", methods=["GET"])
 def img(filename):
-    return send_from_directory("img", filename)
+    return send_from_directory(web_dir / "img", filename)
 
 
 @app.errorhandler(Exception)

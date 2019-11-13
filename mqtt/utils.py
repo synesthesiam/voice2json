@@ -1,4 +1,5 @@
 import io
+import sys
 import wave
 import subprocess
 import shlex
@@ -12,7 +13,7 @@ logger = logging.getLogger("utils")
 
 
 def voice2json(
-    *args, stream=False, text=True, input=None, profile_path=None, stderr=None
+    *args, stream=False, text=True, input=None, profile_path=None, stderr=sys.stderr
 ) -> Union[subprocess.Popen, TextIO, BinaryIO]:
     """Calls voice2json with the given arguments and current profile."""
     command = ["voice2json"]

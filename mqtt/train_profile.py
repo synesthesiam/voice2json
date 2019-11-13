@@ -7,6 +7,7 @@ import subprocess
 import shlex
 import time
 import logging
+from pathlib import Path
 
 logger = logging.getLogger("train_profile")
 
@@ -44,6 +45,13 @@ def main():
         logging.basicConfig(level=logging.INFO)
 
     logger.debug(args)
+
+    profile_dir = Path(args.profile)
+    if not profile_dir.is_dir():
+        profile_dir = profile_dir.parent
+
+    # Store doit database inside profile directory to avoid permission issues
+    other_args.extend(['--db-file', f"{profile_dir}/.doit.db"])
 
     try:
         # Listen for messages
