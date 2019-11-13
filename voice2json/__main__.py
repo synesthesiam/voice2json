@@ -40,7 +40,7 @@ def main():
     parser.add_argument(
         "--setting",
         "-s",
-        nargs=1,
+        nargs=2,
         action="append",
         default=[],
         help="Override profile setting(s)",
@@ -340,7 +340,7 @@ def main():
     # Override settings
     for setting_path, setting_value in args.setting:
         setting_value = json.loads(setting_value)
-        logger.debug("Overring %s with %s", setting_path, setting_value)
+        logger.debug("Overriding %s with %s", setting_path, setting_value)
         pydash.set_(profile, setting_path, setting_value)
 
     # Call sub-commmand
