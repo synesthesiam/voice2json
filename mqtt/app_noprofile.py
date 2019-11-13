@@ -32,6 +32,7 @@ from quart import (
 
 profile_path: Optional[Path] = None
 download_dir: Optional[Path] = None
+download_format: str = ""
 
 # Quart application
 web_dir = Path(__file__).parent
@@ -80,25 +81,72 @@ PROFILES = {
             "en-us_kaldi-zamia": Info("Kaldi TDNN Zamia", 1.0, 5, 3, 5, 4),
         }
     },
+    "French": {
+        "fr-fr": {"fr_pocketsphinx-cmu": Info("Pocketsphinx CMU", 1.0, 3, 49, 1, 4)}
+    },
+    "Greek (Ελληνικά)": {
+        "el-gr": {"el_pocketsphinx-cmu": Info("Pocketsphinx CMU", 1.0, 2, 17, 1, 1)}
+    },
+    "Italian (Italiano)": {
+        "it-it": {"it_pocketsphinx-cmu": Info("Pocketsphinx CMU", 1.0, 5, 39, 5, 14)}
+    },
+    "Portuguese (Português)": {
+        "pt-br": {"pt-br_pocketsphinx-cmu": Info("Pocketsphinx CMU", 1.0, 2, 77, 1, 20)}
+    },
+    "Russian (Русский)": {
+        "ru-ru": {"ru_pocketsphinx-cmu": Info("Pocketsphinx CMU", 1.0, 5, 21, 1, 1)}
+    },
+    "Spanish (Español)": {
+        "es-es": {"es_pocketsphinx-cmu": Info("Pocketsphinx CMU", 1.0, 5, 35, 3, 22)}
+    },
+    "Swedish (svenska)": {
+        "sv-se": {"sv_kaldi-montreal": Info("GMM Kaldi Montreal", 1.0, 1, 13, 1, 1)}
+    },
+    "Vietnamese (Tiếng Việt)": {
+        "vi-vi": {"vi_kaldi-montreal": Info("GMM Kaldi Montreal", 1.0, 5, 10, 1, 0.15)}
+    },
 }
 
 # -----------------------------------------------------------------------------
 
+download_thread = None
+download_url = None
+download_file_path = None
+download_status = None
 
 @app.route("/", methods=["GET", "POST"])
 async def index():
+    global download_thread, download_url, download_file_path, download_status
+
     if request.method == "POST":
         form = await request.form
         for key in form:
             if key.startswith("download-"):
                 profile_name = key.split("-", maxsplit=1)[1]
-                await flash(f"Downloading {profile_name}", "info")
-                break
+                download_thread = threading.Thread(
+                    target=download_profile, args=(profile_name,), daemon=True
+                )
+                download_thread.start()
             elif key.startswith("install-"):
                 profile_name = key.split("-", maxsplit=1)[1]
                 await install_profile(profile_name)
                 await flash(f"Installed {profile_name}. Please restart.", "success")
                 break
+
+    if download_thread is not None:
+        return await render_template(
+            "download_noprofile.html",
+            url=download_url,
+            file=download_file_path,
+            profile_path=profile_path,
+            profiles=PROFILES,
+            sorted=sorted,
+            range=range,
+        )
+
+    if download_status is not None:
+        await flash(*download_status)
+        download_error = None
 
     return await render_template(
         "index_noprofile.html",
@@ -108,17 +156,6 @@ async def index():
         sorted=sorted,
         range=range,
     )
-
-
-# @app.route("/download")
-# async def download():
-#     return await render_template(
-#         "download_noprofile.html",
-#         profile_path=profile_path,
-#         profiles=PROFILES,
-#         sorted=sorted,
-#         range=range,
-#     )
 
 
 # -----------------------------------------------------------------------------
@@ -175,6 +212,38 @@ async def install_profile(name):
     await asyncio.create_subprocess_exec(*command)
 
 
+def download_profile(name):
+    global download_thread, download_url, download_file_path, download_status
+
+    info = None
+    for lang_profiles in PROFILES.values():
+        for locale_profiles in lang_profiles.values():
+            info = locale_profiles.get(name)
+            if info is not None:
+                break
+
+        if info is not None:
+            break
+
+    assert info is not None, f"No profile named {name}"
+
+    download_url = download_format.format(name=name, version=info.version)
+    download_file_path = info.download_path(name, download_dir)
+    command = ["curl", "-sSfL", "-o", str(download_file_path), str(download_url)]
+    logger.debug(command)
+
+    download_dir.mkdir(parents=True, exist_ok=True)
+
+    try:
+        subprocess.check_call(command)
+        download_status = (f"Ready to install {name}. Click Install button.", "success")
+    except Exception as e:
+        download_status = (str(e), "danger")
+        logger.exception("download_dir")
+    finally:
+        download_thread = None
+
+
 # -----------------------------------------------------------------------------
 
 if __name__ == "__main__":
@@ -188,6 +257,11 @@ if __name__ == "__main__":
     )
     parser.add_argument("--profile", required=True, help="Path to voice2json profile")
     parser.add_argument("--cache", required=True, help="Path to download cache")
+    parser.add_argument(
+        "--download-format",
+        default="https://github.com/synesthesiam/{name}/archive/{version}.tar.gz",
+        help="Format string for profile download URLs",
+    )
     args = parser.parse_args()
 
     if args.debug:
@@ -199,6 +273,7 @@ if __name__ == "__main__":
 
     profile_path = Path(args.profile)
     download_dir = Path(args.cache)
+    download_format = args.download_format
 
     # Start web server
     try:
