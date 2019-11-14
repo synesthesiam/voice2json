@@ -205,6 +205,10 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
         elif word_casing == "lower":
             kwargs["lower"] = True
 
+        if replace_numbers:
+            kwargs["replace_numbers"] = True
+            kwargs["language"] = language_code
+
         slot_fsts = slots_to_fsts(slots_dir, slot_names=slot_names, **kwargs)
         for slot_name, slot_fst in slot_fsts.items():
             # Slot name will already have "$"

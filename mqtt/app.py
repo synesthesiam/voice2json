@@ -268,7 +268,6 @@ async def words():
             # Save custom words
             custom_words_text = form["custom_words"]
             custom_words_path.write_text(custom_words_text)
-            await do_retrain()
         elif action == "pronounce":
             # Speak or guess pronunciation
             word = form["word"]
@@ -536,11 +535,9 @@ async def do_retrain(do_flash=True) -> str:
             continue
 
         if "unknown" in line:
-            warn_lines = []
+            warn_lines = [line]
             line = line + ":"
-
-        if warn_lines is not None:
-            warn_lines.append(line)
+            break
 
     warn_text = "\n".join(warn_lines) if warn_lines is not None else ""
     if do_flash and (warn_lines is not None):
