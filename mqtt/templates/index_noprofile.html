@@ -1,0 +1,119 @@
+{% extends "layout_noprofile.html" %}
+{% block body %}
+
+<h2>Download Profile</h2>
+
+<p>
+    voice2json did not find a profile at <tt>{{ profile_path }}</tt>
+</p>
+
+<p>
+    You can either manually <a href="https://voice2json.org/#supported-languages">download a profile</a> and extract it to that location (so <tt>{{ profile_path / "profile.yml" }}</tt> exists), or follow the instructions below.
+</p>
+
+<hr>
+
+<h3>Choose a Profile</h3>
+<p>
+    Profiles are listed by language and model type with performance characteristics. More &#9733; means more accurate, higher (Nx) means faster. See <a href="#conditions">testing conditions</a> and the <a href="#legend">legend</a> for more details.
+</p>
+
+<form class="form" method="POST" enctype="multipart/form-data">
+<table class="table">
+    {% for language in sorted(profiles) %}
+    <tr class="bg-light text-dark">
+        <td>{{ language }}</td>
+        <td>Locale</td>
+        <td>Description</td>
+        <td>Closed</td>
+        <td>Open</td>
+    </tr>
+    {% for locale in sorted(profiles[language]) %}
+    {% for name, info in sorted(profiles[language][locale].items()) %}
+    <tr>
+        <td>
+            {% set download_path = info.download_path(name, download_dir) %}
+            {% if download_path.exists() %}
+            <input name="install-{{ name }}" type="submit" class="btn btn-success form-control" value="Install" title="{{ download_path }}">
+            {% else %}
+            <input name="download-{{ name }}" type="submit" class="btn btn-primary form-control" value="Download" title="{{ download_path }}">
+            {% endif %}
+        </td>
+        <td>{{ locale }}</td>
+        <td>{{ info.description }}</td>
+        <td>
+            {% if info.accuracy_closed > 0 %}
+            {% for i in range(info.accuracy_closed) %}
+            &#9733;
+            {% endfor %}
+            {% else %}
+            &#9785;
+            {% endif %}
+            &nbsp;
+            ({{ info.speed_closed }}x)
+        </td>
+        <td>
+            {% if info.accuracy_open > 0 %}
+            {% for i in range(info.accuracy_open) %}
+            &#9733;
+            {% endfor %}
+            {% else %}
+            &#9785;
+            {% endif %}
+            &nbsp;
+            ({{ info.speed_open }}x)
+        </td>
+    </tr>
+    {% endfor %}
+    {% endfor %}
+
+    {% endfor %}
+</table>
+</form>
+
+<hr>
+
+<h4 id="conditions">Testing Conditions</h4>
+<p>
+    Each profile is given a &#9733; rating, indicating <a href="#legend">how accurate</a> it was at transcribing a set of test WAV files. Anything below 75% accuracy is considered unusable (&#9785;).
+</p>
+<p>
+    The <strong>closed</strong> condition tested the profile on sentences known ahead of time, whereas <strong>open</strong> used a general language model. The average transcription time relative to the real-time duration of the test WAV files is given as (Nx).
+</p>
+
+<h4 id="legend">Legend</h4>
+<table class="table">
+    <thead class="thead-light">
+        <th>Transcription Accuracy</th>
+        <th>&nbsp;</th>
+    </thead>
+    <tbody>
+        <tr>
+            <td>&#9733; &#9733; &#9733; &#9733; &#9733;</td>
+            <td>[95%, 100%]</td>
+        </tr>
+        <tr>
+            <td>&#9733; &#9733; &#9733; &#9733;</td>
+            <td>[90%, 95%)</td>
+        </tr>
+        <tr>
+            <td>&#9733; &#9733; &#9733;</td>
+            <td>[85%, 90%)</td>
+        </tr>
+        <tr>
+            <td>&#9733; &#9733;</td>
+            <td>[80%, 85%)</td>
+        </tr>
+        <tr>
+            <td>&#9733;</td>
+            <td>[75%, 80%)</td>
+        </tr>
+        <tr>
+            <td>&#9785;</td>
+            <td>[0%, 75%)</td>
+        </tr>
+    </tbody>
+</table>
+
+
+{% endblock %}

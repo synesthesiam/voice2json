@@ -38,7 +38,7 @@
 
 {% if intent %}
 <h3>Intent:</h3>
-<span class="badge badge-primary">{{ pydash.get(intent, "intent.name", "NONE") }}</span>
+<span class="badge badge-danger">{{ pydash.get(intent, "intent.name", "NONE") }}</span>
 <ul>
     {% for word, entity in words_entities %}
         {% if entity %}

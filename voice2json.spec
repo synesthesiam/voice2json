@@ -11,9 +11,17 @@ block_cipher = None
 venv = Path.cwd() / f".venv_{platform.machine()}"
 bin_dir = Path(os.environ.get("spec_bin_dir", venv / "bin"))
 lib_dir = Path(os.environ.get("spec_lib_dir", venv / "lib"))
-site_dir = Path(
-    os.environ.get("spec_site_dir", venv / "lib" / "python3.6" / "site-packages")
-)
+
+site_dir = os.environ.get("spec_site_dir", None)
+if site_dir is None:
+    venv_lib = venv / "lib"
+    for dir_path in venv_lib.glob("python*"):
+        if dir_path.is_dir() and (dir_path / "site-packages").exists():
+            site_dir = dir_path / "site-packages"
+            break
+
+assert site_dir is not None, "Missing site-packages directory"
+site_dir = Path(site_dir)
 
 # Need to specially handle these snowflakes
 pywrapfst_path = list(site_dir.glob("pywrapfst.*.so"))[0]
@@ -39,6 +47,7 @@ a = Analysis(
         (bin_dir / "ngramperplexity", "."),
         (bin_dir / "farcompilestrings", "."),
         (bin_dir / "phonetisaurus-apply", "."),
+        (bin_dir / "phonetisaurus-g2pfst", "."),
         (bin_dir / "julius", "."),
     ],
     datas=copy_metadata("webrtcvad"),

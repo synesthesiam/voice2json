@@ -3,7 +3,7 @@
 
 <h2>Phonemes</h2>
 
-<table class="table table-dark table-striped table-hover">
+<table class="table table-dark table-hover">
     <thead class="thead-light">
         <th>Phoneme</th>
         <th>Example Word</th>
@@ -11,7 +11,7 @@
     </thead>
     <tbody style="font-family: monospace;">
 {% for phoneme in sorted(phoneme_examples) %}
-        <tr>
+        <tr style="border-bottom: 1px solid white;">
             <td>{{ phoneme }}</td>
             <td>{{ phoneme_examples[phoneme][0] }} </td>
             <td> {{ phoneme_examples[phoneme][1] }} </td>

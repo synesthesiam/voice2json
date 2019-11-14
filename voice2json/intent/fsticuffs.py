@@ -31,7 +31,7 @@ def recognize(
     else:
         intents = []
 
-    logger.debug(f"Recognized {len(intents)} intent(s)")
+    logger.debug("Recognized %s intent(s)", len(intents))
 
     # Use first intent
     if len(intents) > 0:
@@ -86,7 +86,7 @@ def recognize_fuzzy(
 
         intents = sorted(intents, key=lambda i: i["intent"]["confidence"], reverse=True)
 
-    logger.debug(f"Recognized {len(intents)} intent(s)")
+    logger.debug("Recognized %s intent(s)", len(intents))
 
     # Use first intent
     if len(intents) > 0:
@@ -179,6 +179,11 @@ def _get_symbols_and_costs(
                             bad_token = next_in_tokens.pop(0)
                             if bad_token not in stop_words:
                                 next_cost += 1
+                            else:
+                                # Need a non-zero cost for stop words to
+                                # avoid case where two FST paths are
+                                # identical, save for stop words.
+                                next_cost += 0.1
 
                         if len(next_in_tokens) > 0:
                             # Consume matching token

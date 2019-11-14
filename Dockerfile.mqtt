@@ -12,7 +12,12 @@ RUN apt-get update && \
         python3 python3-pip \
         libatlas-base-dev libatlas3-base \
         bc \
-        mosquitto supervisor
+        mosquitto supervisor \
+        curl
+
+# DEBUG
+COPY download/multidict-4.5.2-cp36-cp36m-manylinux1_x86_64.whl /
+RUN python3 -m pip install /multidict-4.5.2-cp36-cp36m-manylinux1_x86_64.whl
 
 COPY mqtt/requirements.txt /usr/lib/voice2json/mqtt/
 RUN python3 -m pip install -r /usr/lib/voice2json/mqtt/requirements.txt
@@ -20,7 +25,7 @@ RUN python3 -m pip install -r /usr/lib/voice2json/mqtt/requirements.txt
 COPY debian/voice2json_1.0_${DEBIAN_ARCH}/usr/lib/voice2json/ /usr/lib/voice2json/
 COPY debian/voice2json_1.0_${DEBIAN_ARCH}/usr/bin/voice2json /usr/bin/
 
-COPY mqtt/* /usr/lib/voice2json/mqtt/
+COPY mqtt/ /usr/lib/voice2json/mqtt/
 
-WORKDIR /usr/lib/voice2json/mqtt
-ENTRYPOINT ["supervisord", "--config", "supervisord.conf"]
+ENTRYPOINT ["bash", "/usr/lib/voice2json/mqtt/run_server.sh", \
+            "--novenv", "--http-host", "0.0.0.0", "--mosquitto"]

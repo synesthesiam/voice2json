@@ -150,7 +150,7 @@ For each language, the profile with the highest transcription accuracy (lowest w
     <tr bgcolor="#DDFFDD">
       <td><a href="https://github.com/synesthesiam/nl_kaldi-cgn/archive/v1.0.tar.gz">Download</a></td>
       <td>Dutch  (Nederlands)</td>
-      <td>nl</td>
+      <td>nl-nl</td>
       <td>kaldi</td>
       <td>&#9733; &#9733; &#9733; &#9733; &#9733; (17x)</td>
       <td>&#9733; &#9733;  &#9733;  &#9733; &#9733; (8x)</td>
@@ -158,7 +158,7 @@ For each language, the profile with the highest transcription accuracy (lowest w
     <tr>
       <td><a href="https://github.com/synesthesiam/nl_pocketsphinx-cmu/archive/v1.0.tar.gz">Download</a></td>
       <td>Dutch  (Nederlands)</td>
-      <td>nl</td>
+      <td>nl-nl</td>
       <td>pocketsphinx</td>
       <td>&#9733; &#9733; &#9733; (36x)</td>
       <td>&#9785; (6x)</td>
@@ -198,23 +198,23 @@ For each language, the profile with the highest transcription accuracy (lowest w
     <tr bgcolor="#DDFFDD">
       <td><a href="https://github.com/synesthesiam/fr_pocketsphinx-cmu/archive/v1.0.tar.gz">Download</a></td>
       <td>French (Français)</td>
-      <td>fr</td>
+      <td>fr-fr</td>
       <td>pocketsphinx</td>
       <td>&#9733; &#9733; &#9733; (49x)</td>
       <td>&#9785; (4x)</td>
     </tr>
     <tr bgcolor="#DDFFDD">
       <td><a href="https://github.com/synesthesiam/de_kaldi-zamia/archive/v1.0.tar.gz">Download</a></td>
-      <td>German</td>
-      <td>de</td>
+      <td>German (Deutsch)</td>
+      <td>de-de</td>
       <td>kaldi</td>
       <td>&#9733; &#9733; &#9733; &#9733; &#9733; (3x)</td>
       <td>&#9733; &#9733; &#9733; &#9733; &#9733; (3x)</td>
     </tr>
     <tr>
       <td><a href="https://github.com/synesthesiam/de_pocketsphinx-cmu/archive/v1.0.tar.gz">Download</a></td>
-      <td>German</td>
-      <td>de</td>
+      <td>German (Deutsch)</td>
+      <td>de-de</td>
       <td>pocketsphinx</td>
       <td>&#9733; &#9733; &#9733; &#9733; &#9733; (29x)</td>
       <td>&#9733; &#9733; &#9733; &#9733; &#9733; (5x)</td>
@@ -238,7 +238,7 @@ For each language, the profile with the highest transcription accuracy (lowest w
     <tr bgcolor="#DDFFDD">
       <td><a href="https://github.com/synesthesiam/it_pocketsphinx-cmu/archive/v1.0.tar.gz">Download</a></td>
       <td>Italian (Italiano)</td>
-      <td>it</td>
+      <td>it-it</td>
       <td>pocketsphinx</td>
       <td>&#9733; &#9733; &#9733; &#9733; &#9733; (39x)</td>
       <td>&#9733; &#9733; &#9733; &#9733; &#9733; (14x)</td>
@@ -246,7 +246,7 @@ For each language, the profile with the highest transcription accuracy (lowest w
     <tr bgcolor="#FFFFDD">
       <td><a href="https://github.com/synesthesiam/kz_pocketsphinx-cmu/archive/v1.0.tar.gz">Download</a></td>
       <td>Kazakh (қазақша)</td>
-      <td>kz</td>
+      <td>kz-kk</td>
       <td>pocketsphinx</td>
       <td><strong>UNTESTED</strong></td>
       <td><strong>UNTESTED</strong></td>
@@ -278,7 +278,7 @@ For each language, the profile with the highest transcription accuracy (lowest w
     <tr bgcolor="#DDFFDD">
       <td><a href="https://github.com/synesthesiam/ru_pocketsphinx-cmu/archive/v1.0.tar.gz">Download</a></td>
       <td>Russian (Русский)</td>
-      <td>ru</td>
+      <td>ru-RU</td>
       <td>pocketsphinx</td>
       <td>&#9733; &#9733; &#9733; &#9733; &#9733; (21x)</td>
       <td>&#9785; (1x)</td>
@@ -286,7 +286,7 @@ For each language, the profile with the highest transcription accuracy (lowest w
     <tr bgcolor="#DDFFDD">
       <td><a href="https://github.com/synesthesiam/es_pocketsphinx-cmu/archive/v1.0.tar.gz">Download</a></td>
       <td>Spanish (Español)</td>
-      <td>es</td>
+      <td>es-es</td>
       <td>pocketsphinx</td>
       <td>&#9733; &#9733; &#9733; &#9733; (35x)</td>
       <td>&#9733; &#9733; &#9733; (22x)</td>
@@ -294,7 +294,7 @@ For each language, the profile with the highest transcription accuracy (lowest w
     <tr bgcolor="#FFFFDD">
       <td><a href="https://github.com/synesthesiam/es-mexican_pocketsphinx-cmu/archive/v1.0.tar.gz">Download</a></td>
       <td>Mexican Spanish</td>
-      <td>es-mexican</td>
+      <td>es-mx</td>
       <td>pocketsphinx</td>
       <td><strong>UNTESTED</strong></td>
       <td><strong>UNTESTED</strong></td>
@@ -302,7 +302,7 @@ For each language, the profile with the highest transcription accuracy (lowest w
     <tr bgcolor="#DDFFDD">
       <td><a href="https://github.com/synesthesiam/sv_kaldi-montreal/archive/v1.0.tar.gz">Download</a></td>
       <td>Swedish (svenska)</td>
-      <td>sv</td>
+      <td>sv-se</td>
       <td>kaldi</td>
       <td>&#9733; (13x)</td>
       <td>&#9785; (1x)</td>

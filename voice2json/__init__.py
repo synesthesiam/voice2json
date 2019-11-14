@@ -154,7 +154,7 @@ def get_kaldi_transcriber(
                 if self.decoder is None:
                     from kaldi_speech.nnet3 import KaldiNNet3OnlineModel, KaldiNNet3OnlineDecoder
 
-                    logger.debug(f"Loading nnet3 model at {self.model_dir} (graph={self.graph_dir})")
+                    logger.debug("Loading nnet3 model at %s (graph=%s)", self.model_dir, self.graph_dir)
 
                     self.model = KaldiNNet3OnlineModel(
                         str(self.model_dir), str(self.graph_dir)
@@ -162,13 +162,13 @@ def get_kaldi_transcriber(
 
                     logger.debug("Creating decoder")
                     self.decoder = KaldiNNet3OnlineDecoder(self.model)
-                    logger.debug(f"Kaldi decoder loaded")
+                    logger.debug("Kaldi decoder loaded")
 
             def transcribe_wav(self, wav_data: bytes) -> Dict[str, Any]:
                 self.maybe_load_decoder()
 
                 # Convert WAV to 16-bit, 16Khz mono
-                logger.debug(f"Decoding {len(wav_data)} byte(s)")
+                logger.debug("Decoding %s byte(s)", len(wav_data))
                 start_time = time.time()
                 converted_wav_data = maybe_convert_wav(profile, wav_data)
 
@@ -385,7 +385,7 @@ def get_julius_transcriber(
             converted_wav_data = maybe_convert_wav(profile, wav_data)
 
             # Write path to WAV file
-            logger.debug(f"Sending {len(converted_wav_data)} byte(s) to Julius")
+            logger.debug("Sending %s byte(s) to Julius", len(converted_wav_data))
             start_time = time.time()
 
             with tempfile.NamedTemporaryFile(suffix=".wav", mode="wb+") as temp_file:
@@ -397,7 +397,7 @@ def get_julius_transcriber(
 
                 sentence_line = ""
                 line = self.julius_in.readline().strip()
-                logger.debug(f"Julius> {line}")
+                logger.debug("Julius> %s", line)
 
                 while True:
                     if line.startswith("sentence1:"):
@@ -410,7 +410,7 @@ def get_julius_transcriber(
                         break
 
                     line = self.julius_in.readline().strip()
-                    logger.debug(f"Julius> {line}")
+                    logger.debug("Julius> %s", line)
 
                 # Exclude <s> and </s>
                 logger.debug(sentence_line)
@@ -590,7 +590,7 @@ def get_tuner(profile_dir: Path, profile: Dict[str, Any]) -> Tuner:
 
                             with open(wav_path, "rb") as wav_file:
                                 if should_convert_wav(profile, wav_file):
-                                    logger.debug(f"Converting {wav_path}")
+                                    logger.debug("Converting %s", wav_path)
 
                                     # Convert/copy WAV file
                                     wav_file.seek(0)

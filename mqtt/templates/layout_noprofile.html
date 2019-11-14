@@ -25,20 +25,6 @@
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <div class="navbar-container ml-auto">
-                    <span title="Language" class="language badge badge-success">{{ pydash.get(profile, "language.code") }}</span>
-                    <a href="/" title="Record test commands" class="{% if page == 'index' %}selected{% endif %}">Test</a>
-                    |
-                    <a href="/sentences" title="Edit voice commands" class="{% if page == 'sentences' %}selected{% endif %}">Sentences</a>
-                    |
-                    <a href="/slots" title="Edit slot values" class="{% if page == 'slots' %}selected{% endif %}">Slots</a>
-                    |
-                    <a href="/words" title="Edit word pronunciations" class="{% if page == 'words' %}selected{% endif %}">Words</a>
-                    |
-                    <a href="/phonemes" title="Edit eSpeak phoneme map" class="{% if page == 'phonemes' %}selected{% endif %}">Phonemes</a>
-                </div>
-            </div>
         </nav>
         <div class="main-container">
 

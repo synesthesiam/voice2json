@@ -68,7 +68,7 @@ def main():
             chunk = sys.stdin.buffer.read(args.chunk_size)
 
             # Assume 16-bit 16Khz mono
-            wav_data = buffer_to_wav(chunk)
+            wav_data = buffer_to_wav({}, chunk)
 
             for topic in args.topic:
                 client.publish(topic, wav_data)
