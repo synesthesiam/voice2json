@@ -308,6 +308,26 @@ will generate JSON events like:
 
 If you update the `movies` file, make sure to [re-train voice2json](commands.md#train-profile) in order to pick up the new movie names. Only intent grammars that reference `$movies` will be re-built.
 
+## Number Replacement
+
+For most of the supported languages, `voice2json` can automaticaly replace numbers (e.g., "75") with words ("seventy five"). If you have `training.replace-numbers` set to `true` in [your profile](profiles.md), you can freely include numbers in your sentences. Through [substitution](#wordtag-substitutions), the original numbers will show up in your recognized intent.
+
+For example:
+
+```
+[SetTemperature]
+set the temperature to 75
+```
+
+will be translated to:
+
+```
+[SetTemperature]
+set the temperature to seventy: five:75
+```
+
+During [intent recognition](commands.md#recognize-intent), "seventy five" will be replaced with "75".
+
 ## Escaping
 
 If one of your sentences happens to start with an optional word (e.g., `[the]`), this can lead to a problem:

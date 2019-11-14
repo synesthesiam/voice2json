@@ -326,6 +326,16 @@ Output:
 {"text": "turn off the living room lamp", "intent": {"name": "LightState", "confidence": 1.0}, "entities": [{"entity": "state", "value": "off"}], "slots": {"state": "off"}, "recognize_seconds": 0.001}
 ```
 
+### Number Replacement
+
+For most profile languages, `voice2json` supports replacing numbers (e.g., "75") with words ("seventy five"). You can enable this sentences given to `recognize-intent` by adding the `--replace-numbers` argument:
+
+```bash
+voice2json recognize-intent --replace-numbers --text-input 'set the temperature to 75'
+```
+
+For English, this will perform intent recognition on the sentence "set the temperature to seventy five". See the [number replacement](sentences.md#number-replacement) section in the template language documentation for how to do this automatically in your `sentences.ini`.
+
 ---
 
 ## wait-wake
