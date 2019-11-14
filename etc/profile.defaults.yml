@@ -108,6 +108,10 @@ training:
   # One of default (use word-casing), upper, lower.
   g2p-word-casing: "default"
 
+  # When true, numbers (e.g. 100) are replaced with words (one hundred).
+  # This is supported for most, but not all voice2json languages.
+  replace-numbers: true
+
   # Kaldi-specific settings
   kaldi:
     # Type of Kaldi model (either nnet3 or gmm)

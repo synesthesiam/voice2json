@@ -12,3 +12,4 @@ mkdocs-material
 requests
 numpy
 cython
+num2words

@@ -15,6 +15,7 @@ import paho.mqtt.client as mqtt
 
 TOPIC_TRAIN = "voice2json/train-profile/train"
 TOPIC_TRAINED = "voice2json/train-profile/trained"
+TOPIC_FAILED = "voice2json/train-profile/failed"
 
 from .utils import voice2json
 
@@ -51,7 +52,7 @@ def main():
         profile_dir = profile_dir.parent
 
     # Store doit database inside profile directory to avoid permission issues
-    other_args.extend(['--db-file', f"{profile_dir}/.doit.db"])
+    other_args.extend(["--db-file", f"{profile_dir}/.doit.db"])
 
     try:
         # Listen for messages
@@ -91,6 +92,7 @@ def main():
 
             except Exception as e:
                 logger.exception("on_message")
+                client.publish(TOPIC_FAILED, str(e))
 
         # Connect
         client.on_connect = on_connect
