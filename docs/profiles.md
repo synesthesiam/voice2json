@@ -163,6 +163,10 @@ training:
   # One of default (use word-casing), upper, lower.
   g2p-word-casing: "default"
 
+  # When true, numbers (e.g. 100) are replaced with words (one hundred).
+  # This is supported for most, but not all voice2json languages.
+  replace-numbers: true
+
   # Kaldi-specific settings
   kaldi:
     # Type of Kaldi model (either nnet3 or gmm)
@@ -259,4 +263,11 @@ audio:
 
   # Command to play a WAV file (stdin)
   play-command: "aplay -q -t wav"
+
+  # Expected audio format.
+  # Convert command is run if a different format is given.
+  format:
+    sample-rate-hertz: 16000
+    sample-width-bits: 16
+    channel-count: 1
 ```
