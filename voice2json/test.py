@@ -117,7 +117,7 @@ class ProfileTestCase(unittest.TestCase):
                     str(profile_dir),
                     "test-examples",
                     "--directory",
-                    str(profile_dir / "test"),
+                    str(profile_dir / "test" / "perfect"),
                 ]
             )
         )
@@ -130,9 +130,7 @@ class ProfileTestCase(unittest.TestCase):
                 stats = report["statistics"]
 
                 # Should be perfect
-                self.assertEqual(1, stats["transcription_accuracy"])
-                self.assertEqual(1, stats["intent_accuracy"])
-                self.assertEqual(1, stats["entity_accuracy"])
+                self.assertEqual(1, stats["intent_entity_accuracy"])
 
     # -------------------------------------------------------------------------
 

@@ -204,3 +204,10 @@ audio:
 
   # Command to play a WAV file (stdin)
   play-command: "aplay -q -t wav"
+
+  # Expected audio format.
+  # Convert command is run if a different format is given.
+  format:
+    sample-rate-hertz: 16000
+    sample-width-bits: 16
+    channel-count: 1

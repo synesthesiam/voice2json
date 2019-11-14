@@ -35,7 +35,7 @@ def make_grammars(
 
     for sec_name in config.sections():
         if (whitelist is not None) and (sec_name not in whitelist):
-            logger.debug(f"Skipping {sec_name} (not in whitelist)")
+            logger.debug("Skipping %s (not in whitelist)", sec_name)
             continue
 
         sentences: List[str] = []
@@ -65,7 +65,7 @@ def make_grammars(
         grammar_paths[name] = grammar_path
 
         if grammar_path.exists() and no_overwrite:
-            logger.debug(f"Skipping {grammar_path}")
+            logger.debug("Skipping %s", grammar_path)
             continue
 
         # Only overwrite grammar file if it contains rules or doesn't yet exist
@@ -85,8 +85,8 @@ def make_grammars(
                     rule = re.sub(r"\\\[", "[", rule)
                     print(rule, file=grammar_file)
 
-            logger.debug(f"Wrote {grammar_path} ({len(rules)} rule(s))")
+            logger.debug("Wrote %s (%s rule(s))", grammar_path, len(rules))
         else:
-            logger.debug(f"No rules for {grammar_path}")
+            logger.debug("No rules for %s", grammar_path)
 
     return grammar_paths

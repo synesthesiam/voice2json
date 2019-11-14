@@ -31,7 +31,7 @@ def recognize(
     else:
         intents = []
 
-    logger.debug(f"Recognized {len(intents)} intent(s)")
+    logger.debug("Recognized %s intent(s)", len(intents))
 
     # Use first intent
     if len(intents) > 0:
@@ -86,7 +86,7 @@ def recognize_fuzzy(
 
         intents = sorted(intents, key=lambda i: i["intent"]["confidence"], reverse=True)
 
-    logger.debug(f"Recognized {len(intents)} intent(s)")
+    logger.debug("Recognized %s intent(s)", len(intents))
 
     # Use first intent
     if len(intents) > 0:

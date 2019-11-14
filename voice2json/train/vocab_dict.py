@@ -40,7 +40,7 @@ def make_dict(
     word_dict: Dict[str, List[str]] = {}
     for dict_path in dictionary_paths:
         if os.path.exists(dict_path):
-            logger.debug(f"Loading dictionary from {dict_path}")
+            logger.debug("Loading dictionary from %s", dict_path)
             with open(dict_path, "r") as dict_file:
                 read_dict(
                     dict_file,
@@ -60,7 +60,7 @@ def make_dict(
             word = transform(word)
             words_needed.add(word)
 
-    logger.debug(f"Loaded {len(words_needed)} word(s) from {vocab_path}")
+    logger.debug("Loaded %s word(s) from %s", len(words_needed), vocab_path)
 
     # Add silence words
     words_needed.update(silence_words)
@@ -98,7 +98,7 @@ def make_dict(
     # -------------------------------------------------------------------------
 
     if len(unknown_words) > 0:
-        logger.warning(f"{len(unknown_words)} word(s) are unknown")
+        logger.warning("%s word(s) are unknown", len(unknown_words))
         logger.warning(",".join(unknown_words))
 
         # Write unknown words
@@ -108,6 +108,6 @@ def make_dict(
                 for word in unknown_words:
                     print(word, file=unknown_file)
 
-            logger.debug(f"Wrote unknown words to {unknown_path}")
+            logger.debug("Wrote unknown words to %s", unknown_path)
 
     return unknown_words

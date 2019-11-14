@@ -84,7 +84,7 @@ def main():
         # Process WAV files from arguments
         for wav_path_str in args.wav_file:
             wav_path = Path(wav_path_str)
-            logger.debug(f"Transcribing {wav_path}")
+            logger.debug("Transcribing %s", wav_path)
             wav_data = wav_path.read_bytes()
             audio_data, wav_seconds = maybe_convert_wav(wav_data)
 

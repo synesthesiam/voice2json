@@ -43,7 +43,7 @@ def get_decoder(
     decoder = pocketsphinx.Decoder(decoder_config)
     end_time = time.time()
 
-    logger.debug(f"Successfully loaded decoder in {end_time - start_time} second(s)")
+    logger.debug("Successfully loaded decoder in %s second(s)", end_time - start_time)
 
     return decoder
 
@@ -74,7 +74,7 @@ def transcribe(
     decoder.end_utt()
     end_time = time.time()
 
-    logger.debug(f"Decoded audio in {end_time - start_time} second(s)")
+    logger.debug("Decoded audio in %s second(s)", end_time - start_time)
 
     transcription = ""
     decode_seconds = end_time - start_time

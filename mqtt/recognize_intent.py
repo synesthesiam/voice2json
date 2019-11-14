@@ -60,7 +60,7 @@ def main():
                 # Subscribe to topics
                 for topic in [TOPIC_RECOGNIZE, TOPIC_TRAINED]:
                     client.subscribe(topic)
-                    logger.debug(f"Subscribed to {topic}")
+                    logger.debug("Subscribed to %s", topic)
             except Exception as e:
                 logging.exception("on_connect")
 
