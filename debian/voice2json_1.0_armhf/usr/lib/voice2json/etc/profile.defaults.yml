@@ -108,6 +108,10 @@ training:
   # One of default (use word-casing), upper, lower.
   g2p-word-casing: "default"
 
+  # When true, numbers (e.g. 100) are replaced with words (one hundred).
+  # This is supported for most, but not all voice2json languages.
+  replace-numbers: true
+
   # Kaldi-specific settings
   kaldi:
     # Type of Kaldi model (either nnet3 or gmm)
@@ -165,14 +169,14 @@ text-to-speech:
     phoneme-map: !env "${profile_dir}/espeak_phonemes.txt"
 
     # Command to execute to pronounce some espeak phonemes
-    pronounce-command: "espeak-ng -s 80 [[{phonemes}]]"
+    pronounce-command: "espeak-ng -s 80 --stdout [[{phonemes}]]"
 
     # Command to speak sentence
-    speak-command: "espeak-ng \"{sentence}\""
+    speak-command: "espeak-ng --stdout \"{sentence}\""
 
   marytts:
     # Command to run MaryTTS server
-    server-command: !env "java -cp \"${voice2json_dir}/marytts/*:${profile_dir}/marytts/*\" marytts.server.Mary"
+    server-command: !env "java -cp \"${voice2json_dir}/marytts/*:${profile_dir}/marytts/*\" -Dmary.base=\"${profile_dir}/marytts\" marytts.server.Mary"
 
     # URL to do GET requests
     process-url: "http://localhost:59125/process"
@@ -182,6 +186,16 @@ text-to-speech:
 
     # Seconds between retries
     retry-seconds: 0.5
+
+    # Path to map between dictionary and MaryTTS phonemes
+    phoneme-map: !env "${profile_dir}/marytts_phonemes.txt"
+
+    # Token used to end a MaryTTS sentence during pronunciation.
+    # I get weird pronunciations when punctuation is missing.
+    sentence-end: "."
+
+    # prosody rate used for pronunciation
+    pronounce-rate: "5%"
 
 # -----------------------------------------------------------------------------
 
@@ -194,3 +208,10 @@ audio:
 
   # Command to play a WAV file (stdin)
   play-command: "aplay -q -t wav"
+
+  # Expected audio format.
+  # Convert command is run if a different format is given.
+  format:
+    sample-rate-hertz: 16000
+    sample-width-bits: 16
+    channel-count: 1

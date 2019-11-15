@@ -201,7 +201,7 @@ fi
 # -----------------------------------------------------------------------------
 
 if [[ -z "${no_create}" ]]; then
-    if [[ -d "${venv}" && -z "${no_overwrite}" ]]; then
+    if [[ ! -d "${venv}" || -z "${no_overwrite}" ]]; then
         # Set up fresh virtual environment
         echo "Re-creating virtual environment at ${venv}"
         rm -rf "${venv}"

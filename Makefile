@@ -96,18 +96,22 @@ docker-multiarch-build-aarch64:
 # Create Debian packages for armhf/aarch64
 docker-multiarch-debian: docker-multiarch-debian-armhf docker-multiarch-debian-aarch64
 
-docker-multiarch-debian-armhf: docker-multiarch-install-armhf
+docker-multiarch-debian-armhf:
 	docker run -it \
+      -u "$$(id -u):$$(id -g)" \
       -v "$$(pwd):$$(pwd)" -w "$$(pwd)" \
+      -e "HOME=$(HOME)" \
       -e DEBIAN_ARCH=armhf \
       --entrypoint make \
       voice2json/multi-arch-build:armhf \
       multiarch-debian
 
-docker-multiarch-debian-aarch64: docker-multiarch-install-aarch64
+docker-multiarch-debian-aarch64:
 	docker run -it \
+      -u "$$(id -u):$$(id -g)" \
       -v "$$(pwd):$$(pwd)" -w "$$(pwd)" \
       -e DEBIAN_ARCH=aarch64 \
+      -e "HOME=$(HOME)" \
       --entrypoint make \
       voice2json/multi-arch-build:aarch64 \
       multiarch-debian
