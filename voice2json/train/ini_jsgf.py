@@ -10,12 +10,16 @@ import configparser
 from typing import TextIO, List, Iterable, Optional, Dict
 from pathlib import Path
 
+from voice2json.utils import numbers_to_words
+
 
 def make_grammars(
     ini_file: TextIO,
     grammar_dir: Path,
     whitelist: Optional[Iterable[str]] = None,
     no_overwrite: bool = False,
+    language: Optional[str] = None,
+    replace_numbers: bool = False,
 ) -> Dict[str, Path]:
     # Create output directory
     grammar_dir.mkdir(parents=True, exist_ok=True)
@@ -43,7 +47,13 @@ def make_grammars(
         for k, v in config[sec_name].items():
             if v is None:
                 # Collect non-valued keys as sentences
-                sentences.append("({0})".format(k.strip()))
+                sentence = k.strip()
+                if replace_numbers:
+                    sentence = numbers_to_words(
+                        sentence, language=language, add_substitution=True
+                    )
+
+                sentences.append("({0})".format(sentence))
             else:
                 # Collect key/value pairs as JSGF rules
                 rule = "<{0}> = ({1});".format(k, v)

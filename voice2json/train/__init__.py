@@ -16,7 +16,6 @@ import pydash
 import pywrapfst as fst
 import networkx as nx
 import doit
-
 from doit import create_after
 
 from voice2json.train.jsgf2fst import (
@@ -42,6 +41,7 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
         return utils_ppath(profile, profile_dir, query, default)
 
     # Inputs
+    language_code = pydash.get(profile, "language.code", "en-US")
     intent_whitelist = ppath("training.intent-whitelist", "intent_whitelist")
     sentences_ini = ppath("training.sentences-file", "sentences.ini")
     base_dictionary = ppath("training.base-dictionary", "base_dictionary.txt")
@@ -82,6 +82,9 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
 
     # Large paths
     large_paths = [Path(p) for p in pydash.get(profile, "training.large-files", [])]
+
+    # Replace numbers with words
+    replace_numbers = bool(pydash.get(profile, "training.replace-numbers", True))
 
     # Outputs
     dictionary = ppath("training.dictionary", "dictionary.txt")
@@ -178,7 +181,13 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
 
         def ini_to_grammars(targets):
             with open(sentences_ini, "r") as sentences_file:
-                make_grammars(sentences_file, grammar_dir, whitelist=whitelist)
+                make_grammars(
+                    sentences_file,
+                    grammar_dir,
+                    whitelist=whitelist,
+                    language=language_code,
+                    replace_numbers=replace_numbers,
+                )
 
         return {
             "file_dep": [sentences_ini] + maybe_deps,
@@ -195,6 +204,10 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
             kwargs["upper"] = True
         elif word_casing == "lower":
             kwargs["lower"] = True
+
+        if replace_numbers:
+            kwargs["replace_numbers"] = True
+            kwargs["language"] = language_code
 
         slot_fsts = slots_to_fsts(slots_dir, slot_names=slot_names, **kwargs)
         for slot_name, slot_fst in slot_fsts.items():

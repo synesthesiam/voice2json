@@ -42,6 +42,7 @@ TOPIC_RECOGNIZE = "voice2json/recognize-intent/recognize"
 TOPIC_INTENT = "voice2json/recognize-intent/intent"
 TOPIC_TRAIN = "voice2json/train-profile/train"
 TOPIC_TRAINED = "voice2json/train-profile/trained"
+TOPIC_TRAINING_FAILED = "voice2json/train-profile/failed"
 TOPIC_WAKE_AUDIO_IN = "voice2json/wait-wake/audio-in"
 TOPIC_DETECTED = "voice2json/wait-wake/detected"
 TOPIC_COMMAND_AUDIO_IN = "voice2json/record-command/audio-in"
@@ -50,6 +51,7 @@ sub_topics = [
     TOPIC_INTENT,
     TOPIC_TRANSCRIPTION,
     TOPIC_TRAINED,
+    TOPIC_TRAINING_FAILED,
     TOPIC_DETECTED,
     TOPIC_RECORDED,
 ]
@@ -266,7 +268,6 @@ async def words():
             # Save custom words
             custom_words_text = form["custom_words"]
             custom_words_path.write_text(custom_words_text)
-            await do_retrain()
         elif action == "pronounce":
             # Speak or guess pronunciation
             word = form["word"]
@@ -514,11 +515,16 @@ async def do_retrain(do_flash=True) -> str:
     """Re-trains voice2json profile and flashes warnings for unknown words."""
     start_time = time.time()
     client.publish(TOPIC_TRAIN, "{}")
-    result = await mqtt_train_queue.get()
+
+    # Wait for result
+    success, result = await mqtt_train_queue.get()
     train_seconds = time.time() - start_time
 
     if do_flash:
-        await flash(f"Re-trained in {train_seconds:0.2f} second(s)", "success")
+        if success:
+            await flash(f"Re-trained in {train_seconds:0.2f} second(s)", "success")
+        else:
+            await flash(f"Training failed: {result}", "danger")
 
     logger.debug(result)
 
@@ -529,11 +535,9 @@ async def do_retrain(do_flash=True) -> str:
             continue
 
         if "unknown" in line:
-            warn_lines = []
+            warn_lines = [line]
             line = line + ":"
-
-        if warn_lines is not None:
-            warn_lines.append(line)
+            break
 
     warn_text = "\n".join(warn_lines) if warn_lines is not None else ""
     if do_flash and (warn_lines is not None):
@@ -642,9 +646,14 @@ if __name__ == "__main__":
                 mqtt_intent = json.loads(msg.payload)
                 loop.call_soon_threadsafe(mqtt_intent_queue.put_nowait, mqtt_intent)
             elif msg.topic == TOPIC_TRAINED:
-                # Received training result
+                # Received training success
                 loop.call_soon_threadsafe(
-                    mqtt_train_queue.put_nowait, msg.payload.decode()
+                    mqtt_train_queue.put_nowait, (True, msg.payload.decode())
+                )
+            elif msg.topic == TOPIC_TRAINING_FAILED:
+                # Received training failure
+                loop.call_soon_threadsafe(
+                    mqtt_train_queue.put_nowait, (False, msg.payload.decode())
                 )
             elif msg.topic == TOPIC_DETECTED:
                 # Received wake word detection

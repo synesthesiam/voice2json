@@ -30,6 +30,8 @@ from .fstaccept import (
     apply_fst,
 )
 
+from voice2json.utils import numbers_to_words
+
 logger = logging.getLogger("jsgf2fst")
 
 # -----------------------------------------------------------------------------
@@ -134,6 +136,8 @@ def slots_to_fsts(
     eps: str = "<eps>",
     upper: bool = False,
     lower: bool = False,
+    replace_numbers: bool = False,
+    language: Optional[str] = None,
 ) -> Dict[str, fst.Fst]:
     """Transform slot values into FSTs."""
     slot_fsts: Dict[str, fst.Fst] = {}
@@ -146,6 +150,13 @@ def slots_to_fsts(
     elif lower:
         transform = lambda w: w.lower()
         logger.debug("Forcing lower-case")
+
+    if replace_numbers:
+        # Replace numbers with words
+        old_transform = transform
+        transform = lambda w: numbers_to_words(
+            old_transform(w), language=language, add_substitution=True
+        )
 
     # Process slots
     for slot_path in slots_dir.glob("*"):
@@ -182,7 +193,7 @@ def slots_to_fsts(
                 if len(line) == 0:
                     continue
 
-                # Handle casing
+                # Handle casing/numbers
                 line = transform(line)
 
                 replace_symbol = f"__replace__{len(replacements)}"

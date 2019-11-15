@@ -28,7 +28,7 @@ import pydash
 import jsonlines
 import requests
 
-from voice2json.utils import ppath, recursive_update
+from voice2json.utils import ppath, recursive_update, numbers_to_words
 
 # -----------------------------------------------------------------------------
 
@@ -107,6 +107,12 @@ def main():
         "-t",
         action="store_true",
         help="Input is plain text instead of JSON",
+    )
+    recognize_parser.add_argument(
+        "--replace-numbers",
+        "-n",
+        action="store_true",
+        help="Replace numbers with words in input sentence",
     )
     recognize_parser.add_argument(
         "--perplexity",
@@ -470,6 +476,7 @@ def recognize(
     check_trained(profile, profile_dir)
 
     # Load settings
+    language_code = pydash.get(profile, "language.code", "en-US")
     intent_fst_path = ppath(
         profile, profile_dir, "intent-recognition.intent-fst", "intent.fst"
     )
@@ -478,6 +485,20 @@ def recognize(
 
     # Load intent recognizer
     recognizer = get_recognizer(profile_dir, profile)
+
+    # Build up sentence transformer
+    sentence_transform = lambda s: s
+
+    if word_casing == "upper":
+        sentence_transform = str.upper
+    elif word_casing == "lower":
+        sentence_transform = str.lower
+
+    if args.replace_numbers:
+        old_transform = sentence_transform
+        sentence_transform = lambda s: numbers_to_words(
+            old_transform(s), language=language_code
+        )
 
     if len(args.sentence) > 0:
         sentences = args.sentence
@@ -497,13 +518,9 @@ def recognize(
                 sentence_object = json.loads(sentence)
                 text = sentence_object.get("text", "")
 
-            text = text.strip()
+            text = sentence_transform(text.strip())
 
-            if word_casing == "upper":
-                text = text.upper()
-            elif word_casing == "lower":
-                text = text.lower()
-
+            # Recognize intent
             intent = recognizer.recognize(text)
 
             if args.perplexity:
