@@ -1,3 +1,7 @@
+&#8226; [Home](index.md) &#8226; Whitepaper
+
+# How voice2json Works
+
 At a high level, `voice2json` transforms audio data (voice commands) into JSON events.
 
 ![voice2json overview](img/overview-1.svg)

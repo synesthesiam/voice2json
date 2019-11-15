@@ -1,4 +1,6 @@
-# About
+&#8226; [Home](index.md) &#8226; About
+
+# About voice2json
 
 `voice2json` was created and is currently maintained by [Michael Hansen](https://synesthesiam.com/).
 

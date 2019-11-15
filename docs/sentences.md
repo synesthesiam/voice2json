@@ -1,3 +1,5 @@
+&#8226; [Home](index.md) &#8226; Sentences
+
 # Template Language
 
 Voice commands are recognized by `voice2json` from a set of **template sentences** that you define in your [profile](profiles.md). These are stored in an [ini file](https://docs.python.org/3/library/configparser.html) (`sentences.ini`) whose  section values are simplified [JSGF grammars](https://www.w3.org/TR/jsgf/). The set of all sentences *represented* in these grammars is used to create an [ARPA language model](https://cmusphinx.github.io/wiki/arpaformat/) and an intent recognizer. See [the whitepaper](whitepaper.md) for details.

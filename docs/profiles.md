@@ -1,4 +1,6 @@
-# Profiles
+&#8226; [Home](index.md) &#8226; Profiles
+
+# Your Profile
 
 A `voice2json` <strong>profile</strong> contains everything necessary to recognize voice commands, including:
 

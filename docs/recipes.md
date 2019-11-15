@@ -1,3 +1,5 @@
+&#8226; [Home](index.md) &#8226; Recipes
+
 # voice2json Recipes
 
 Below are small demonstrations of how to use `voice2json` for a specific problem or as part of a larger system.
@@ -471,7 +473,7 @@ $ gst-launch-1.0 \
 
 where `<Destination IP>` matches the first command and `<Command>` is [wait-wake](commands.md#wait-wake), [record-command](commands.md#record-command), or [record-examples](commands.md#record-examples).
 
-See the GStreamer [multiudpsink plugin](https://gstreamer.freedesktop.org/documentation/udp/multiudpsink.html) for streaming to multiple machines simultaneously (it also has multicast support too).
+See the GStreamer [multiudpsink plugin](https://gstreamer.freedesktop.org/documentation/udp/multiudpsink.html) for streaming to multiple machines simultaneously (it also has multicast support).
 
 ---
 

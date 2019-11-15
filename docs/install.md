@@ -1,3 +1,5 @@
+&#8226; [Home](index.md) &#8226; Install
+
 # Installing voice2json
 
 `voice2json` has been tested on Ubuntu 18.04. It should be able to run on most any flavor of Linux using the [Docker image](#docker-image). It may even run on Mac OSX, but I don't have a Mac to test this out.
@@ -45,7 +47,7 @@ DEB_BUILD_ARCH=amd64
 Next, install the `.deb` file:
 
 ```bash
-$ sudo dpkg -i /path/to/voice2json_<VERSION>_<ARCH>.deb
+$ sudo apt install /path/to/voice2json_<VERSION>_<ARCH>.deb
 ```
 
 where where `<VERSION>` is `voice2json`'s version (probably 1.0) and `<ARCH>` is your build architecture.

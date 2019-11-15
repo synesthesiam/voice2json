@@ -1,3 +1,5 @@
+&#8226; [Home](index.md) &#8226; Commands
+
 # Command-Line Tools
 
 ```bash
