@@ -99,13 +99,9 @@ After [downloading a profile](#download-profile), you should now be able to run 
 If you'd like to modify `voice2json`, you should clone [the repository](https://github.com/synesthesiam/voice2json) and run the [install script](https://github.com/synesthesiam/voice2json/blob/master/install.sh):
 
 ```bash
-
 $ git clone https://github.com/synesthesiam/voice2json
-
 $ cd voice2json
-
 $ ./install.sh
-
 ```
 
 Installing may take a **long time** and requires an Internet connection to download dependencies (cached in `voice2json/download`). The `install.sh` script does the following:
