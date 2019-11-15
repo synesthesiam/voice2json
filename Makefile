@@ -121,6 +121,16 @@ multiarch-debian:
 	bash build.sh voice2json.spec
 	bash debianize.sh --architecture $(DEBIAN_ARCH)
 
+# Create new docker manifest
+manifest-create:
+	docker manifest create synesthesiam/voice2json:latest \
+        synesthesiam/voice2json:amd64 \
+        synesthesiam/voice2json:armhf \
+        synesthesiam/voice2json:aarch64
+	docker manifest annotate synesthesiam/voice2json:latest synesthesiam/voice2json:armhf --os linux --arch arm
+	docker manifest annotate synesthesiam/voice2json:latest synesthesiam/voice2json:aarch64 --os linux --arch arm64
+	docker manifest push synesthesiam/voice2json:latest
+
 # Amend existing docker manifest
 manifest:
 	docker manifest push --purge synesthesiam/voice2json:latest
