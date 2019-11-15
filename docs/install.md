@@ -159,9 +159,9 @@ Downloading and installing the [en-us_pocketsphinx-cmu](https://github.com/synes
 
 ```bash
 $ mkdir -p "${HOME}/.config/voice2json"
-$ curl -sSL \
+$ curl -SL \
       https://github.com/synesthesiam/en-us_pocketsphinx-cmu/archive/v1.0.tar.gz | \
-      tar -C "${HOME}/.config/voice2json" --skip-old-files -xzvf -
+      tar -C "${HOME}/.config/voice2json" --skip-old-files --strip-components=1 -xzvf -
 ```
 
 **Note**: The `--skip-old-files` argument to `tar` will ensure that your `sentences.ini` and `custom_words.txt` files are not overwritten. Remove this argument to completely overwrite your profile.

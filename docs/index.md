@@ -96,7 +96,7 @@ When [trained](commands.md#train-profile), `voice2json` will transform [audio da
 ## Getting Started
 
 1. [Install voice2json](install.md)
-2. [Download a profile](https://github.com/synesthesiam/voice2json-profiles) and extract it to `$HOME/.config/voice2json`
+2. [Download a profile](install.md#download-profile) and extract it to `$HOME/.config/voice2json`
     * Your [profile settings](profiles.md) will be in `$HOME/.config/voice2json/profile.yml`
 3. Edit `sentences.ini` in [your profile](profiles.md) and add your [custom voice commands](sentences.md)
 4. [Train your profile](commands.md#train-profile)
