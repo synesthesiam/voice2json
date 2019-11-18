@@ -6,4 +6,5 @@ docker run -it \
        -e "HOME=$HOME" \
        -w "$(pwd)" \
        -v "${HOME}:${HOME}" \
+       --device /dev/snd:/dev/snd \
        synesthesiam/voice2json-mqtt:amd64 "$@"

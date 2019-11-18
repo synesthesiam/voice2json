@@ -3,6 +3,7 @@ FROM ${BUILD_ARCH}/ubuntu:bionic
 
 ARG BUILD_ARCH=amd64
 ARG DEBIAN_ARCH=${BUILD_ARCH}
+ARG CPU_ARCH=x86_64
 
 COPY docker/multiarch_build/bin/qemu-* /usr/bin/
 
@@ -16,14 +17,19 @@ RUN apt-get update && \
         curl
 
 # DEBUG
-COPY download/multidict-4.5.2-cp36-cp36m-manylinux1_x86_64.whl /
-RUN python3 -m pip install /multidict-4.5.2-cp36-cp36m-manylinux1_x86_64.whl
+COPY download/multidict-4.5.2-cp36-cp36m-manylinux1_${CPU_ARCH}.whl /
+RUN python3 -m pip install /multidict-4.5.2-cp36-cp36m-manylinux1_${CPU_ARCH}.whl
 
 COPY mqtt/requirements.txt /usr/lib/voice2json/mqtt/
 RUN python3 -m pip install -r /usr/lib/voice2json/mqtt/requirements.txt
 
-COPY debian/voice2json_1.0_${DEBIAN_ARCH}/usr/lib/voice2json/ /usr/lib/voice2json/
 COPY debian/voice2json_1.0_${DEBIAN_ARCH}/usr/bin/voice2json /usr/bin/
+COPY debian/voice2json_1.0_${DEBIAN_ARCH}/usr/lib/voice2json/bin /usr/lib/voice2json/bin
+COPY debian/voice2json_1.0_${DEBIAN_ARCH}/usr/lib/voice2json/etc /usr/lib/voice2json/etc
+COPY debian/voice2json_1.0_${DEBIAN_ARCH}/usr/lib/voice2json/marytts /usr/lib/voice2json/marytts
+COPY debian/voice2json_1.0_${DEBIAN_ARCH}/usr/lib/voice2json/build_${CPU_ARCH} /usr/lib/voice2json/build_${CPU_ARCH}
+COPY debian/voice2json_1.0_${DEBIAN_ARCH}/usr/lib/voice2json/voice2json /usr/lib/voice2json/voice2json
+COPY debian/voice2json_1.0_${DEBIAN_ARCH}/usr/lib/voice2json/site /usr/lib/voice2json/site
 
 COPY mqtt/ /usr/lib/voice2json/mqtt/
 

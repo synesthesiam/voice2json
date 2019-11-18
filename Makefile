@@ -2,6 +2,7 @@
 
 BUILD_ARCH ?= amd64
 DEBIAN_ARCH ?= $(BUILD_ARCH)
+CPU_ARCH ?= x86_64
 
 test:
 	bash test.sh
@@ -24,6 +25,7 @@ docker-mqtt: installer
 	docker build . -f Dockerfile.mqtt \
         --build-arg BUILD_ARCH=$(BUILD_ARCH) \
         --build-arg DEBIAN_ARCH=$(DEBIAN_ARCH) \
+        --build-arg CPU_ARCH=$(CPU_ARCH) \
         -t synesthesiam/voice2json-mqtt:$(DEBIAN_ARCH)
 
 tar-gz: installer

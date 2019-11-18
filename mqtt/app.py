@@ -611,7 +611,7 @@ if __name__ == "__main__":
         profile_path = Path(args.profile)
 
     # Get profile as JSON from voice2json
-    profile = json.load(voice2json("print-profile"))
+    profile = json.load(voice2json("print-profile", profile_path=profile_path))
 
     client = mqtt.Client()
 

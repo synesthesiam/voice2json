@@ -101,5 +101,7 @@ else
         python3 -m mqtt.app_noprofile \
                 --profile "${profile}" \
                 --cache "${download_dir}" \
+                --http-host "${http_host}" \
+                --http-port "${http_port}" \
                 "${args[@]}"
 fi

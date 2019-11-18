@@ -376,7 +376,7 @@ if [[ ! -z "${no_kaldi}" || ! -f "${kaldi_dir}/src/online2bin/online2-wav-nnet3-
         cd "${kaldi_dir}/tools" && \
         make -j "${make_threads}" && \
         cd "${kaldi_dir}/src" && \
-        ./configure --shared --mathlib=ATLAS && \
+        ./configure --shared --mathlib=ATLAS --use-cuda=no && \
             make depend -j "${make_threads}" && \
             make -j "${make_threads}"
 fi
