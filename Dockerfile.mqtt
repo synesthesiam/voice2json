@@ -8,7 +8,7 @@ ARG CPU_ARCH=x86_64
 COPY docker/multiarch_build/bin/qemu-* /usr/bin/
 
 RUN apt-get update && \
-    apt-get install -y \
+    apt-get install --no-install-recommends --yes \
         sox jq alsa-utils espeak-ng sphinxtrain perl \
         python3 python3-pip \
         libatlas-base-dev libatlas3-base \

@@ -18,6 +18,7 @@ docker: installer
 	docker build . \
         --build-arg BUILD_ARCH=$(BUILD_ARCH) \
         --build-arg DEBIAN_ARCH=$(DEBIAN_ARCH) \
+        --build-arg CPU_ARCH=$(CPU_ARCH) \
         -t synesthesiam/voice2json:$(DEBIAN_ARCH)
 
 docker-mqtt: installer
@@ -48,6 +49,7 @@ docker-multiarch-armhf: docker-multiarch-install-armhf
 	docker build . \
         --build-arg BUILD_ARCH=arm32v7 \
         --build-arg DEBIAN_ARCH=armhf \
+        --build-arg CPU_ARCH=armv7l \
         -t synesthesiam/voice2json:armhf
 
 docker-multiarch-aarch64: docker-multiarch-install-aarch64
@@ -59,6 +61,7 @@ docker-multiarch-aarch64: docker-multiarch-install-aarch64
 	docker build . \
         --build-arg BUILD_ARCH=arm64v8 \
         --build-arg DEBIAN_ARCH=aarch64 \
+        --build-arg CPU_ARCH=arm64v8 \
         -t synesthesiam/voice2json:aarch64
 
 # Installs/builds voice2json in armhf/aarch64 virtual environments

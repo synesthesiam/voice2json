@@ -66,7 +66,7 @@ mkdir -p "${build_dir}"
 # -----------------------------------------------------------------------------
 
 function install {
-    sudo apt-get install -y "$@"
+    sudo apt-get install --no-install-recommends --yes "$@"
 }
 
 function python_module {

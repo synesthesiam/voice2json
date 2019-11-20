@@ -74,7 +74,11 @@ export PYTHONPATH="${voice2json_dir}:${PYTHONPATH}"
 # -----------------------------------------------------------------------------
 
 if [[ -e "${profile}" ]]; then
-    # Do training
+    # Do full training
+    if [[ -f "${profile}/clean.sh" ]]; then
+        bash "${profile}/clean.sh"
+    fi
+
     voice2json --profile "${profile}" train-profile
 
     # Run web server and MQTT services
