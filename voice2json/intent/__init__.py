@@ -1,3 +1,4 @@
+"""Text to intent recognizers."""
 import logging
 import time
 from typing import List, Dict, Set, Optional, Tuple
@@ -25,7 +26,7 @@ class StrictRecognizer(Recognizer):
         start_time = time.perf_counter()
 
         # Only run acceptor if there are any tokens
-        if len(tokens) == 0:
+        if tokens:
             return Recognition(result=RecognitionResult.FAILURE)
 
         recognition: Optional[Recognition] = None
@@ -55,7 +56,8 @@ class StrictRecognizer(Recognizer):
         return recognition
 
     @property
-    def intent_fst(self):
+    def intent_fst(self) -> fst.Fst:
+        """Get intent finite state transducer."""
         return self._intent_fst
 
 
@@ -79,7 +81,7 @@ class FuzzyRecognizer(Recognizer):
         start_time = time.perf_counter()
 
         # Only run search if there are any tokens
-        if len(tokens) == 0:
+        if tokens:
             return Recognition(result=RecognitionResult.FAILURE)
 
         intent_symbols_and_costs = self._get_symbols_and_costs(tokens)
@@ -93,7 +95,7 @@ class FuzzyRecognizer(Recognizer):
         recognize_seconds = time.perf_counter() - start_time
         _LOGGER.debug("Recognized %s intent(s)", len(confidence_symbols))
 
-        if len(confidence_symbols) == 0:
+        if confidence_symbols:
             text = " ".join(tokens)
             return Recognition(
                 result=RecognitionResult.FAILURE,
@@ -118,7 +120,8 @@ class FuzzyRecognizer(Recognizer):
         return recognition
 
     @property
-    def intent_fst(self):
+    def intent_fst(self) -> fst.Fst:
+        """Get intent finite state transducer."""
         return self._intent_fst
 
     def _get_symbols_and_costs(
@@ -137,11 +140,11 @@ class FuzzyRecognizer(Recognizer):
         best_cost = len(n_data)
 
         # (node, in_tokens, out_tokens, cost, intent_name)
-        q = [(start_node, tokens, [], 0, None)]
+        the_q = [(start_node, tokens, [], 0, None)]
 
         # BFS it up
-        while len(q) > 0:
-            q_node, q_in_tokens, q_out_tokens, q_cost, q_intent = q.pop()
+        while the_q:
+            q_node, q_in_tokens, q_out_tokens, q_cost, q_intent = the_q.pop()
 
             # Update best intent cost on final state.
             # Don't bother reporting intents that failed to consume any tokens.
@@ -162,7 +165,7 @@ class FuzzyRecognizer(Recognizer):
 
             # Process child edges
             for next_node, edges in self.intent_graph[q_node].items():
-                for edge_idx, edge_data in edges.items():
+                for _, edge_data in edges.items():
                     in_label = edge_data["in_label"]
                     out_label = edge_data["out_label"]
                     next_in_tokens = q_in_tokens[:]
@@ -174,9 +177,7 @@ class FuzzyRecognizer(Recognizer):
                         next_intent = out_label[9:]
 
                     if in_label != eps:
-                        if (len(next_in_tokens) > 0) and (
-                            in_label == next_in_tokens[0]
-                        ):
+                        if next_in_tokens and (in_label == next_in_tokens[0]):
                             # Consume matching token immediately
                             next_in_tokens.pop(0)
 
@@ -185,9 +186,7 @@ class FuzzyRecognizer(Recognizer):
                         else:
                             # Consume non-matching tokens and increase cost
                             # unless stop word.
-                            while (len(next_in_tokens) > 0) and (
-                                in_label != next_in_tokens[0]
-                            ):
+                            while next_in_tokens and (in_label != next_in_tokens[0]):
                                 bad_token = next_in_tokens.pop(0)
                                 if bad_token not in self.stop_words:
                                     next_cost += 1
@@ -197,7 +196,7 @@ class FuzzyRecognizer(Recognizer):
                                     # identical, save for stop words.
                                     next_cost += 0.1
 
-                            if len(next_in_tokens) > 0:
+                            if next_in_tokens:
                                 # Consume matching token
                                 next_in_tokens.pop(0)
 
@@ -211,7 +210,7 @@ class FuzzyRecognizer(Recognizer):
                         if out_label != eps:
                             next_out_tokens.append(out_label)
 
-                    q.append(
+                    the_q.append(
                         [
                             next_node,
                             next_in_tokens,

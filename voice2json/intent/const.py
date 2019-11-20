@@ -6,6 +6,7 @@ from enum import Enum
 from typing import List, Optional
 
 import attr
+import pywrapfst as fst
 
 
 @attr.s
@@ -71,5 +72,6 @@ class Recognizer(ABC):
 
     @property
     @abstractmethod
-    def intent_fst(self):
+    def intent_fst(self) -> fst.Fst:
+        """Get intent finite state transducer."""
         pass

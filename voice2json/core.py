@@ -1,3 +1,6 @@
+"""
+Core voice2json command support.
+"""
 import logging
 import io
 import wave
@@ -64,16 +67,17 @@ class Voice2JsonCore:
             return self.get_kaldi_transcriber(
                 open_transcription=open_transcription, debug=debug
             )
-        elif acoustic_model_type == "julius":
+
+        if acoustic_model_type == "julius":
             # Julius
             return self.get_julius_transcriber(
                 open_transcription=open_transcription, debug=debug
             )
-        else:
-            # Pocketsphinx (default)
-            return self.get_pocketsphinx_transcriber(
-                open_transcription=open_transcription, debug=debug
-            )
+
+        # Pocketsphinx (default)
+        return self.get_pocketsphinx_transcriber(
+            open_transcription=open_transcription, debug=debug
+        )
 
     def get_pocketsphinx_transcriber(
         self, open_transcription=False, debug=False
@@ -136,9 +140,9 @@ class Voice2JsonCore:
 
             # Use Python extension
             return KaldiExtensionTranscriber(acoustic_model, graph_dir)
-        else:
-            # Use kaldi-decode script
-            return KaldiCommandLineTranscriber(model_type, acoustic_model, graph_dir)
+
+        # Use kaldi-decode script
+        return KaldiCommandLineTranscriber(model_type, acoustic_model, graph_dir)
 
     def get_julius_transcriber(
         self, open_transcription=False, debug=False
@@ -191,8 +195,9 @@ class Voice2JsonCore:
                 )
 
             return FuzzyRecognizer(intent_fst, stop_words=stop_words)
-        else:
-            return StrictRecognizer(intent_fst)
+
+        # Use strict matching
+        return StrictRecognizer(intent_fst)
 
     # -------------------------------------------------------------------------
     # Utilities
@@ -247,8 +252,7 @@ class Voice2JsonCore:
                     or (channels != expected_channels)
                 ):
                     _LOGGER.debug(
-                        "Got %s Hz, %s byte(s), %s channel(s). "
-                        + "Needed %s Hz, %s byte(s), %s channel(s)",
+                        "Got %s Hz, %s byte(s), %s channel(s). Needed %s Hz, %s byte(s), %s channel(s)",
                         rate,
                         width,
                         channels,
@@ -261,13 +265,12 @@ class Voice2JsonCore:
                     if rate < expected_rate:
                         # Probably being given 8Khz audio
                         _LOGGER.warning(
-                            "Upsampling audio from %s to %s Hz. "
-                            + "Expect poor performance!",
+                            "Upsampling audio from %s to %s Hz. Expect poor performance!",
                             rate,
                             expected_rate,
                         )
 
                     return self.convert_wav(wav_data)
-                else:
-                    # Return original data
-                    return wav_data
+
+                # Return original data
+                return wav_data

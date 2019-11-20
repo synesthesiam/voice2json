@@ -425,7 +425,7 @@ def transcribe(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     )
 
     try:
-        if (len(args.wav_file) > 0) or args.stdin_files:
+        if args.wav_files or args.stdin_files:
             # Read WAV file paths
             wav_files = args.wav_file
             if args.stdin_files:
@@ -460,7 +460,7 @@ def transcribe(args: argparse.Namespace, core: Voice2JsonCore) -> None:
             if args.input_size:
                 # Number of bytes is on separate line
                 line = sys.stdin.buffer.readline().strip()
-                if len(line) == 0:
+                if not line:
                     return
 
                 num_bytes = int(line)
@@ -479,7 +479,7 @@ def transcribe(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 
                     # Next WAV
                     line = sys.stdin.buffer.readline().strip()
-                    if len(line) == 0:
+                    if not line:
                         break
 
                     num_bytes = int(line)
@@ -547,7 +547,7 @@ def recognize(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 
         sentence_transform = number_transform
 
-    if len(args.sentence) > 0:
+    if args.sentence:
         sentences = args.sentence
     else:
         _LOGGER.debug("Reading sentences from stdin")

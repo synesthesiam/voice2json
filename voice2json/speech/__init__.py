@@ -225,7 +225,7 @@ class KaldiCommandLineTranscriber(Transcriber):
 
             # Empty string indicates failure
             text = str(result.get("text", ""))
-            if len(text) > 0:
+            if text:
                 return Transcription(
                     result=TranscriptionResult.SUCCESS,
                     text=text,
@@ -235,6 +235,10 @@ class KaldiCommandLineTranscriber(Transcriber):
                 )
 
             return Transcription(result=TranscriptionResult.FAILURE)
+
+    def stop(self):
+        """Stop transcriber."""
+        pass
 
 
 # -----------------------------------------------------------------------------
@@ -258,6 +262,7 @@ class JuliusTranscriber(Transcriber):
         self.julius_started = False
         self.julius_proc: Optional[subprocess.Popen] = None
         self.temp_dir: Optional[Path] = None
+        self.julius_in: Optional[TextIO] = None
         self.julius_out: Optional[TextIO] = None
 
     def transcribe_wav(self, wav_data: bytes) -> Dict[str, Any]:
@@ -301,7 +306,7 @@ class JuliusTranscriber(Transcriber):
 
         # Empty string indicates failure
         text = result_text.strip()
-        if len(text) > 0:
+        if text:
             return Transcription(
                 result=TranscriptionResult.SUCCESS,
                 text=text,
