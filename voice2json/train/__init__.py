@@ -17,6 +17,8 @@ import pywrapfst as fst
 import networkx as nx
 import doit
 from doit import create_after
+from doit.cmd_base import ModuleTaskLoader
+from doit.doit_cmd import DoitMain
 
 from voice2json.train.jsgf2fst import (
     get_grammar_dependencies,
@@ -34,7 +36,9 @@ logger = logging.getLogger("train")
 # -----------------------------------------------------------------------------
 
 
-def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
+def train_profile(
+    profile_dir: Path, profile: Dict[str, Any], doit_args: List[str]
+) -> None:
 
     # Compact
     def ppath(query, default=None):
@@ -583,7 +587,7 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
     inspect.getsourcelines = lambda obj: [0, 0]
 
     # Run doit main
-    doit.run(locals())
+    DoitMain(ModuleTaskLoader(locals())).run(doit_args)
 
 
 # -----------------------------------------------------------------------------
