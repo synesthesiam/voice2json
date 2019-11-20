@@ -1,11 +1,17 @@
 import logging
+import io
+import wave
 import shlex
 import subprocess
 from pathlib import Path
-from typing import Optional, Dict, Any, TextIO, BinaryIO, Union
+from typing import Optional, Dict, Any, Union
 
-from voice2json.speech.const import Transcription, KaldiModelType
+import pydash
+
+from voice2json.train import train_profile
+from voice2json.speech.const import KaldiModelType
 from voice2json.speech import (
+    Transcriber,
     PocketsphinxTranscriber,
     KaldiCommandLineTranscriber,
     KaldiExtensionTranscriber,
@@ -22,7 +28,7 @@ class Voice2JsonCore:
 
     def __init__(self, profile_dir: Path, profile: Dict[str, Any]):
         """Initialize voice2json."""
-        self.profile_dir = profile_yaml.parent
+        self.profile_dir = profile_dir
         self.profile = profile
 
     # -------------------------------------------------------------------------
@@ -35,15 +41,15 @@ class Voice2JsonCore:
             doit_args = ["--db-file", str(db_path)]
         else:
             # Store in profile directory
-            doit_args = ["--db-file", str(profile_dir / ".doit.db")]
+            doit_args = ["--db-file", str(self.profile_dir / ".doit.db")]
 
-        voice2json.train.train_profile(self.profile_dir, self.profile, doit_args)
+        train_profile(self.profile_dir, self.profile, doit_args)
 
     # -------------------------------------------------------------------------
     # transcribe-wav
     # -------------------------------------------------------------------------
 
-    def get_transcriber(open_transcription=False, debug=False) -> Transcriber:
+    def get_transcriber(self, open_transcription=False, debug=False) -> Transcriber:
         """Create Transcriber based on profile speech system."""
         # Load settings
         acoustic_model_type = pydash.get(
@@ -67,7 +73,7 @@ class Voice2JsonCore:
             )
 
     def get_pocketsphinx_transcriber(
-        open_transcription=False, debug=False
+        self, open_transcription=False, debug=False
     ) -> PocketsphinxTranscriber:
         """Create Transcriber for Pocketsphinx."""
         # Load settings
@@ -104,7 +110,7 @@ class Voice2JsonCore:
         )
 
     def get_kaldi_transcriber(
-        open_transcription=False, debug=False
+        self, open_transcription=False, debug=False
     ) -> Union[KaldiExtensionTranscriber, KaldiCommandLineTranscriber]:
         """Create Transcriber for Kaldi."""
         # Load settings
@@ -132,7 +138,7 @@ class Voice2JsonCore:
             return KaldiCommandLineTranscriber(model_type, acoustic_model, graph_dir)
 
     def get_julius_transcriber(
-        open_transcription=False, debug=False
+        self, open_transcription=False, debug=False
     ) -> JuliusTranscriber:
         """Create Transcriber for Julius."""
         # Load settings
@@ -163,8 +169,8 @@ class Voice2JsonCore:
     # Utilities
     # -------------------------------------------------------------------------
 
-    def ppath(query: str, default: Optional[str] = None) -> Optional[Path]:
-        """Return Path from profile or a default Path relative to the profile directory."""
+    def ppath(self, query: str, default: Optional[str] = None) -> Optional[Path]:
+        """Return path from profile or path relative to the profile directory."""
         result = pydash.get(self.profile, query)
         if result is None:
             if default is not None:
@@ -174,10 +180,10 @@ class Voice2JsonCore:
 
         return result
 
-    def convert_wav(wav_data: bytes) -> bytes:
+    def convert_wav(self, wav_data: bytes) -> bytes:
         """Convert WAV data to expected audio format."""
         convert_cmd_str = pydash.get(
-            profile,
+            self.profile,
             "audio.convert-command",
             "sox -t wav - -r 16000 -e signed-integer -b 16 -c 1 -t wav -",
         )
@@ -187,7 +193,7 @@ class Voice2JsonCore:
             convert_cmd, check=True, stdout=subprocess.PIPE, input=wav_data
         ).stdout
 
-    def maybe_convert_wav(wav_data: bytes) -> bytes:
+    def maybe_convert_wav(self, wav_data: bytes) -> bytes:
         """Convert WAV data to expected audio format if necessary."""
         expected_rate = int(
             pydash.get(self.profile, "audio.format.sample-rate-hertz", 16000)
@@ -212,7 +218,8 @@ class Voice2JsonCore:
                     or (channels != expected_channels)
                 ):
                     _LOGGER.debug(
-                        "Got %s Hz, %s byte(s), %s channel(s). Needed %s Hz, %s byte(s), %s channel(s)",
+                        "Got %s Hz, %s byte(s), %s channel(s). "
+                        + "Needed %s Hz, %s byte(s), %s channel(s)",
                         rate,
                         width,
                         channels,
@@ -225,12 +232,13 @@ class Voice2JsonCore:
                     if rate < expected_rate:
                         # Probably being given 8Khz audio
                         _LOGGER.warning(
-                            "Upsampling audio from %s to %s Hz. Expect poor performance!",
+                            "Upsampling audio from %s to %s Hz. "
+                            + "Expect poor performance!",
                             rate,
                             expected_rate,
                         )
 
-                    return convert_wav(profile, wav_data)
+                    return self.convert_wav(wav_data)
                 else:
                     # Return original data
                     return wav_data

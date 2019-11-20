@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Any, BinaryIO, Dict, List, Optional, Set, Tuple
 from xml.etree import ElementTree as etree
 
+import attr
 import jsonlines
 import pydash
 import requests
@@ -62,7 +63,7 @@ def main():
 # -----------------------------------------------------------------------------
 
 
-def get_args() -> args.Namespace:
+def get_args() -> argparse.Namespace:
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(prog="voice2json", description="voice2json")
     parser.add_argument("--profile", "-p", help="Path to profle directory")
@@ -411,9 +412,7 @@ def transcribe(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     check_trained(core)
 
     # Get speech to text transcriber for profile
-    transcriber = core.get_transcriber(
-        open_transcription=args.open, debug=args.debug
-    )
+    transcriber = core.get_transcriber(open_transcription=args.open, debug=args.debug)
 
     # Directory to report WAV file names relative to
     relative_dir = (
@@ -439,7 +438,7 @@ def transcribe(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 
                 # Transcribe
                 transcription = transcriber.transcribe_wav(wav_data)
-                result_json = transcription.as_dict()
+                result = attr.asdict(transcription)
 
                 if relative_dir is None:
                     # Add name of WAV file to result
@@ -467,7 +466,10 @@ def transcribe(args: argparse.Namespace, core: Voice2JsonCore) -> None:
                         wav_data = sys.stdin.buffer.read(num_bytes - len(wav_data))
 
                     # Transcribe
-                    result = transcriber.transcribe_wav(wav_data)
+                    wav_data = core.maybe_convert_wav(wav_data)
+                    transcription = transcriber.transcribe_wav(wav_data)
+                    result = attr.asdict(transcription)
+
                     print_json(result)
 
                     # Next WAV
@@ -478,10 +480,12 @@ def transcribe(args: argparse.Namespace, core: Voice2JsonCore) -> None:
                     num_bytes = int(line)
             else:
                 # Load and convert entire input
-                wav_data = sys.stdin.buffer.read()
+                wav_data = core.maybe_convert_wav(sys.stdin.buffer.read())
 
                 # Transcribe
-                result = transcriber.transcribe_wav(wav_data)
+                transcription = transcriber.transcribe_wav(wav_data)
+                result = attr.asdict(transcription)
+
                 print_json(result)
     except KeyboardInterrupt:
         pass

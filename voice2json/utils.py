@@ -122,6 +122,14 @@ def should_convert_wav(profile: Dict[str, Any], wav_io: BinaryIO) -> bool:
         )
 
 
+def get_wav_duration(wav_bytes: bytes) -> float:
+    with io.BytesIO(wav_data) as wav_buffer:
+        with wave.open(wav_buffer) as wav_file:
+            frames = wav_file.getnframes()
+            rate = wav_file.getframerate()
+            return frames / float(rate)
+
+
 # -----------------------------------------------------------------------------
 
 

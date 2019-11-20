@@ -22,6 +22,7 @@ class Transcription:
     text: str = attr.ib(default="")
     likelihood: float = attr.ib(default=0)
     transcribe_seconds: float = attr.ib(default=0)
+    wav_seconds: float = attr.ib(default=0)
 
 
 class Transcriber(ABC):

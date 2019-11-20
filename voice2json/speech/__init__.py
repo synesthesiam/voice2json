@@ -1,5 +1,6 @@
 """voice2json speech to text transcriber."""
 import io
+import os
 import json
 import logging
 import struct
@@ -8,13 +9,19 @@ import tempfile
 import time
 import wave
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict, Any, Tuple, TextIO
 
 import numpy as np
 import pocketsphinx
 from kaldi_speech.nnet3 import KaldiNNet3OnlineModel, KaldiNNet3OnlineDecoder
 
-from voice2json.speech.const import Transcriber, Transcription, KaldiModelType
+from voice2json.speech.const import (
+    Transcriber,
+    Transcription,
+    KaldiModelType,
+    TranscriptionResult,
+)
+from voice2json.utils import get_wav_duration
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -58,23 +65,23 @@ class PocketsphinxTranscriber(Transcriber):
 
         # Process data as an entire utterance
         start_time = time.perf_counter()
-        decoder.start_utt()
-        decoder.process_raw(audio_data, False, True)
-        decoder.end_utt()
-        end_time = time.perf_counter()
+        self.decoder.start_utt()
+        self.decoder.process_raw(audio_data, False, True)
+        self.decoder.end_utt()
 
-        decode_seconds = end_time - start_time
-        _LOGGER.debug("Decoded audio in %s second(s)", decode_seconds)
+        transcribe_seconds = time.perf_counter - start_time
+        _LOGGER.debug("Decoded audio in %s second(s)", transcribe_seconds)
 
-        hyp = decoder.hyp()
+        hyp = self.decoder.hyp()
         if hyp is not None:
             return Transcription(result=TranscriptionResult.FAILURE)
 
         return Transcription(
             result=TranscriptionResult.SUCCESS,
             text=hyp.hypstr,
-            likelihood=decoder.get_logmath().exp(hyp.prob),
-            decode_seconds=decode_seconds,
+            likelihood=self.decoder.get_logmath().exp(hyp.prob),
+            transcribe_seconds=transcribe_seconds,
+            wav_seconds=wav_duration,
         )
 
     def get_decoder(self) -> pocketsphinx.Decoder:
@@ -141,13 +148,14 @@ class KaldiExtensionTranscriber(Transcriber):
 
                 if success:
                     text, likelihood = self.decoder.get_decoded_string()
-                    decode_seconds = time.perf_counter() - start_time
+                    transcribe_seconds = time.perf_counter() - start_time
 
                     return Transcription(
                         result=TranscriptionResult.SUCCESS,
                         text=text,
                         likelihood=likelihood,
-                        decode_seconds=decode_seconds,
+                        transcribe_seconds=transcribe_seconds,
+                        wav_seconds=wav_duration,
                     )
 
                 return Transcription(result=TranscriptionResult.FAILURE)
@@ -163,7 +171,7 @@ class KaldiExtensionTranscriber(Transcriber):
         model = KaldiNNet3OnlineModel(str(self.model_dir), str(self.graph_dir))
 
         _LOGGER.debug("Creating decoder")
-        self.decoder = KaldiNNet3OnlineDecoder(self.model)
+        decoder = KaldiNNet3OnlineDecoder(model)
         _LOGGER.debug("Kaldi decoder loaded")
 
         return model, decoder
@@ -221,8 +229,9 @@ class KaldiCommandLineTranscriber(Transcriber):
                 return Transcription(
                     result=TranscriptionResult.SUCCESS,
                     text=text,
-                    likelihood=float(result["likelihood"]),
-                    decode_seconds=float(result["decode_seconds"]),
+                    likelihood=float(result.get("likelihood", 0)),
+                    transcribe_seconds=float(result.get("transcribe_seconds", 0)),
+                    wav_seconds=float(result.get("wav_seconds", 0)),
                 )
 
             return Transcription(result=TranscriptionResult.FAILURE)
@@ -255,6 +264,8 @@ class JuliusTranscriber(Transcriber):
         if not self.julius_started:
             self.start_julius()
 
+        wav_duration = get_wav_duration(wav_data)
+
         # Write path to WAV file
         _LOGGER.debug("Sending %s byte(s) to Julius", len(wav_data))
         start_time = time.perf_counter()
@@ -286,16 +297,19 @@ class JuliusTranscriber(Transcriber):
             # Exclude <s> and </s>
             _LOGGER.debug(sentence_line)
             result_text = sentence_line.replace("<s>", "").replace("</s>", "").strip()
-            end_time = time.time()
+            transcribe_seconds = time.perf_counter() - start_time
 
         # Empty string indicates failure
         text = result_text.strip()
+        if len(text) > 0:
+            return Transcription(
+                result=TranscriptionResult.SUCCESS,
+                text=text,
+                transcribe_seconds=transcribe_seconds,
+                wav_seconds=wav_duration,
+            )
 
-        return {
-            "text": result_text.strip(),
-            "transcribe_seconds": end_time - start_time,
-            "wav_seconds": wav_duration,
-        }
+        return Transcription(result=TranscriptionResult.FAILURE)
 
     def stop(self):
         """Stop transcriber."""
@@ -350,12 +364,12 @@ class JuliusTranscriber(Transcriber):
             # DNN model
             julius_cmd.extend(["-dnnconf", str(dnn_conf)])
 
-        if language_model.suffix.lower() == ".txt":
+        if self.language_model.suffix.lower() == ".txt":
             # ARPA forward n-grams
-            julius_cmd.extend(["-nlr", str(language_model)])
+            julius_cmd.extend(["-nlr", str(self.language_model)])
         else:
             # Binary n-gram
-            julius_cmd.extend(["-d", str(language_model)])
+            julius_cmd.extend(["-d", str(self.language_model)])
 
         _LOGGER.debug(julius_cmd)
 
