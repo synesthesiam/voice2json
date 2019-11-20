@@ -31,7 +31,12 @@ import requests
 import yaml
 
 from voice2json.core import Voice2JsonCore
-from voice2json.utils import numbers_to_words, recursive_update, maybe_convert_wav
+from voice2json.utils import (
+    numbers_to_words,
+    recursive_update,
+    maybe_convert_wav,
+    split_whitespace,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -126,31 +131,31 @@ def get_args() -> argparse.Namespace:
         help="WAV file size is sent on a separate line for each input WAV on stdin",
     )
 
-    # # recognize-intent
-    # recognize_parser = sub_parsers.add_parser(
-    #     "recognize-intent", help="Recognize intent from JSON or text"
-    # )
-    # recognize_parser.set_defaults(func=recognize)
-    # recognize_parser.add_argument(
-    #     "sentence", nargs="*", default=[], help="Sentences to recognize"
-    # )
-    # recognize_parser.add_argument(
-    #     "--text-input",
-    #     "-t",
-    #     action="store_true",
-    #     help="Input is plain text instead of JSON",
-    # )
-    # recognize_parser.add_argument(
-    #     "--replace-numbers",
-    #     "-n",
-    #     action="store_true",
-    #     help="Replace numbers with words in input sentence",
-    # )
-    # recognize_parser.add_argument(
-    #     "--perplexity",
-    #     action="store_true",
-    #     help="Compute perplexity of input text relative to language model",
-    # )
+    # recognize-intent
+    recognize_parser = sub_parsers.add_parser(
+        "recognize-intent", help="Recognize intent from JSON or text"
+    )
+    recognize_parser.set_defaults(func=recognize)
+    recognize_parser.add_argument(
+        "sentence", nargs="*", default=[], help="Sentences to recognize"
+    )
+    recognize_parser.add_argument(
+        "--text-input",
+        "-t",
+        action="store_true",
+        help="Input is plain text instead of JSON",
+    )
+    recognize_parser.add_argument(
+        "--replace-numbers",
+        "-n",
+        action="store_true",
+        help="Replace numbers with words in input sentence",
+    )
+    recognize_parser.add_argument(
+        "--perplexity",
+        action="store_true",
+        help="Compute perplexity of input text relative to language model",
+    )
 
     # # record-command
     # command_parser = sub_parsers.add_parser(
@@ -496,114 +501,133 @@ def transcribe(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 # -----------------------------------------------------------------------------
 
 
-# def recognize(
-#     args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]
-# ) -> None:
-#     from voice2json import get_recognizer
+def recognize(args: argparse.Namespace, core: Voice2JsonCore) -> None:
+    """Recognize intent from sentence(s)."""
+    # Make sure profile has been trained
+    check_trained(core)
 
-#     # Make sure profile has been trained
-#     check_trained(profile, profile_dir)
+    # Load settings
+    language_code = pydash.get(core.profile, "language.code", "en-US")
+    word_casing = pydash.get(core.profile, "training.word-casing", "ignore").lower()
+    skip_unknown = pydash.get(core.profile, "intent-recognition.skip_unknown", True)
 
-#     # Load settings
-#     language_code = pydash.get(profile, "language.code", "en-US")
-#     word_casing = pydash.get(profile, "training.word-casing", "ignore").lower()
+    # Load intent recognizer
+    recognizer = core.get_recognizer()
 
-#     # Load intent recognizer
-#     recognizer = get_recognizer(profile_dir, profile)
+    # Ignore words outside of input symbol table
+    known_tokens: Optional[Set[str]] = None
+    if skip_unknown:
+        known_tokens = set()
+        in_symbols = recognizer.intent_fst.input_symbols()
+        for i in range(in_symbols.num_symbols()):
+            key = in_symbols.get_nth_key(i)
+            token = in_symbols.find(i).decode()
 
-#     # Build up sentence transformer
-#     def identity(x):
-#         return x
+            # Exclude meta tokens and <eps>
+            if not (token.startswith("__") or token.startswith("<")):
+                known_tokens.add(token)
 
-#     sentence_transform = identity
+    # Build up sentence transformer
+    def identity(x):
+        return x
 
-#     if word_casing == "upper":
-#         sentence_transform = str.upper
-#     elif word_casing == "lower":
-#         sentence_transform = str.lower
+    sentence_transform = identity
 
-#     if args.replace_numbers:
-#         old_transform = sentence_transform
+    if word_casing == "upper":
+        sentence_transform = str.upper
+    elif word_casing == "lower":
+        sentence_transform = str.lower
 
-#         def number_transform(s):
-#             return numbers_to_words(old_transform(s), language=language_code)
+    if args.replace_numbers:
+        old_transform = sentence_transform
 
-#         sentence_transform = number_transform
+        def number_transform(s):
+            # Automatically convert numbers to words
+            return numbers_to_words(old_transform(s), language=language_code)
 
-#     if len(args.sentence) > 0:
-#         sentences = args.sentence
-#     else:
-#         _LOGGER.debug("Reading sentences from stdin")
-#         sentences = sys.stdin
+        sentence_transform = number_transform
 
-#     # Process sentences
-#     try:
-#         for sentence in sentences:
-#             if args.text_input:
-#                 # Input is plain text
-#                 text = sentence
-#                 sentence_object = {"text": text}
-#             else:
-#                 # Input is JSON
-#                 sentence_object = json.loads(sentence)
-#                 text = sentence_object.get("text", "")
+    if len(args.sentence) > 0:
+        sentences = args.sentence
+    else:
+        _LOGGER.debug("Reading sentences from stdin")
+        sentences = sys.stdin
 
-#             text = sentence_transform(text.strip())
+    # Process sentences
+    try:
+        for sentence in sentences:
+            if args.text_input:
+                # Input is plain text
+                text = sentence
+                sentence_object = {"text": text}
+            else:
+                # Input is JSON
+                sentence_object = json.loads(sentence)
+                text = sentence_object.get("text", "")
 
-#             # Recognize intent
-#             intent = recognizer.recognize(text)
+            # Tokenize
+            text = text.strip()
+            tokens = split_whitespace(text)
 
-#             if args.perplexity:
-#                 try:
-#                     # Compute sentence perplexity with ngramperplexity
-#                     with tempfile.TemporaryDirectory() as temp_dir_name:
-#                         temp_path = Path(temp_dir_name)
-#                         text_path = temp_path / "sentence.txt"
-#                         text_path.write_text(text)
+            if known_tokens is not None:
+                # Filter tokens
+                known_tokens = [t for t in tokens if t in known_tokens]
 
-#                         symbols_path = temp_path / "sentence.syms"
-#                         subprocess.check_call(
-#                             ["ngramsymbols", str(text_path), str(symbols_path)]
-#                         )
+            # Recognize intent
+            recognition = recognizer.recognize(tokens)
+            result = attr.asdict(recognition)
 
-#                         far_path = temp_path / "sentence.far"
-#                         subprocess.check_call(
-#                             [
-#                                 "farcompilestrings",
-#                                 f"-symbols={symbols_path}",
-#                                 "-keep_symbols=1",
-#                                 str(text_path),
-#                                 str(far_path),
-#                             ]
-#                         )
+            if args.perplexity:
+                try:
+                    # Compute sentence perplexity with ngramperplexity
+                    with tempfile.TemporaryDirectory() as temp_dir_name:
+                        temp_path = Path(temp_dir_name)
+                        text_path = temp_path / "sentence.txt"
+                        text_path.write_text(text)
 
-#                         verbosity = 1 if args.debug else 0
-#                         output = subprocess.check_output(
-#                             [
-#                                 "ngramperplexity",
-#                                 f"--v={verbosity}",
-#                                 str(profile_dir / "intent.fst.model"),
-#                                 str(far_path),
-#                             ]
-#                         ).decode()
+                        symbols_path = temp_path / "sentence.syms"
+                        subprocess.check_call(
+                            ["ngramsymbols", str(text_path), str(symbols_path)]
+                        )
 
-#                         _LOGGER.debug(output)
+                        far_path = temp_path / "sentence.far"
+                        subprocess.check_call(
+                            [
+                                "farcompilestrings",
+                                f"-symbols={symbols_path}",
+                                "-keep_symbols=1",
+                                str(text_path),
+                                str(far_path),
+                            ]
+                        )
 
-#                         last_line = output.strip().splitlines()[-1]
-#                         perplexity = float(
-#                             re.match(r"^.*perplexity\s*=\s*(.+)$", last_line).group(1)
-#                         )
-#                         intent["perplexity"] = perplexity
-#                 except Exception:
-#                     logger.exception("perplexity")
+                        verbosity = 1 if args.debug else 0
+                        output = subprocess.check_output(
+                            [
+                                "ngramperplexity",
+                                f"--v={verbosity}",
+                                str(core.profile_dir / "intent.fst.model"),
+                                str(far_path),
+                            ]
+                        ).decode()
 
-#             # Merge with input object
-#             for key, value in intent.items():
-#                 sentence_object[key] = value
+                        _LOGGER.debug(output)
 
-#             print_json(sentence_object)
-#     except KeyboardInterrupt:
-#         pass
+                        last_line = output.strip().splitlines()[-1]
+                        perplexity = float(
+                            re.match(r"^.*perplexity\s*=\s*(.+)$", last_line).group(1)
+                        )
+                        result["perplexity"] = perplexity
+                except Exception:
+                    _LOGGER.exception("perplexity")
+
+            # Merge with input object
+            for key, value in result.items():
+                sentence_object[key] = value
+
+            print_json(sentence_object)
+    except KeyboardInterrupt:
+        pass
 
 
 # # -----------------------------------------------------------------------------

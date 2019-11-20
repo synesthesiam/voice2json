@@ -20,16 +20,6 @@ import networkx as nx
 from .FSTListener import FSTListener
 from .DependencyListener import DependencyListener
 
-from .fstaccept import (
-    fstaccept,
-    fstprintall,
-    symbols2intent,
-    longest_path,
-    filter_words,
-    make_slot_acceptor,
-    apply_fst,
-)
-
 from voice2json.utils import numbers_to_words
 
 logger = logging.getLogger("jsgf2fst")

@@ -283,7 +283,7 @@ def numbers_to_words(
     sentence: str, language: Optional[str] = None, add_substitution: bool = False
 ) -> str:
     """Replaces numbers with words in a sentence. Optionally substitues number back in."""
-    words = WHITESPACE_PATTERN.split(sentence)
+    words = split_whitespace(sentence)
     changed = False
     for i, word in enumerate(words):
         try:
@@ -295,7 +295,7 @@ def numbers_to_words(
             if add_substitution:
                 # Empty substitution for everything but last word.
                 # seventy five -> seventy: five:75
-                number_words = [w + ":" for w in WHITESPACE_PATTERN.split(words[i])]
+                number_words = [w + ":" for w in split_whitespace(words[i])]
                 number_words[-1] += word
                 words[i] = " ".join(number_words)
 
@@ -309,3 +309,10 @@ def numbers_to_words(
         return sentence
 
     return " ".join(words)
+
+
+# -----------------------------------------------------------------------------
+
+
+def split_whitespace(text: str) -> List[str]:
+    return WHITESPACE_PATTERN.split(text)

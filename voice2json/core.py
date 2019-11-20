@@ -4,9 +4,10 @@ import wave
 import shlex
 import subprocess
 from pathlib import Path
-from typing import Optional, Dict, Any, Union
+from typing import Optional, Dict, Any, Union, Set
 
 import pydash
+import pywrapfst as fst
 
 from voice2json.train import train_profile
 from voice2json.speech.const import KaldiModelType
@@ -17,6 +18,8 @@ from voice2json.speech import (
     KaldiExtensionTranscriber,
     JuliusTranscriber,
 )
+from voice2json.intent import StrictRecognizer, FuzzyRecognizer
+from voice2json.intent.const import Recognizer
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -164,6 +167,32 @@ class Voice2JsonCore:
         return JuliusTranscriber(
             acoustic_model, dictionary, language_model, debug=debug
         )
+
+    # -------------------------------------------------------------------------
+    # recognize-intent
+    # -------------------------------------------------------------------------
+
+    def get_recognizer(self) -> Recognizer:
+        """Create intent recognizer based on profile settings."""
+        # Load settings
+        intent_fst_path = self.ppath("intent-recognition.intent-fst", "intent.fst")
+        stop_words_path = self.ppath("intent-recognition.stop-words", "stop_words.txt")
+        fuzzy = pydash.get(self.profile, "intent-recognition.fuzzy", True)
+
+        # Load intent finite state transducer
+        intent_fst = fst.Fst.read(str(intent_fst_path))
+
+        if fuzzy:
+            # Load stop words (common words that can be safely ignored)
+            stop_words: Set[str] = set()
+            if (stop_words_path is not None) and stop_words_path.exists():
+                stop_words.update(
+                    w.strip() for w in stop_words_path.read_text().splitlines()
+                )
+
+            return FuzzyRecognizer(intent_fst, stop_words=stop_words)
+        else:
+            return StrictRecognizer(intent_fst)
 
     # -------------------------------------------------------------------------
     # Utilities
