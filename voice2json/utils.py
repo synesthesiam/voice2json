@@ -253,17 +253,6 @@ def align2json(align_file: TextIO) -> Dict[str, Any]:
     return results
 
 
-def get_audio_source(profile: Dict[str, Any]) -> BinaryIO:
-    """Starts a recording subprocess for raw 16-bit 16Khz mono audio"""
-    record_cmd_str = pydash.get(
-        profile, "audio.record-command", "arecord -q -r 16000 -c 1 -f S16_LE -t raw"
-    )
-    record_cmd = shlex.split(record_cmd_str)
-    logger.debug(record_cmd)
-    record_proc = subprocess.Popen(record_cmd, stdout=subprocess.PIPE)
-    return record_proc.stdout
-
-
 # -----------------------------------------------------------------------------
 
 

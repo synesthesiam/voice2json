@@ -7,7 +7,7 @@ import wave
 import shlex
 import subprocess
 from pathlib import Path
-from typing import Optional, Dict, Any, Union, Set
+from typing import Optional, Dict, Any, Union, Set, BinaryIO
 
 import pydash
 import pywrapfst as fst
@@ -200,6 +200,25 @@ class Voice2JsonCore:
         return StrictRecognizer(intent_fst)
 
     # -------------------------------------------------------------------------
+    # record-command
+    # -------------------------------------------------------------------------
+
+    def get_recorder(self) -> Recorder:
+        # Load settings
+        vad_mode = int(pydash.get(self.profile, "voice-command.vad-mode", 3))
+        min_seconds = float(pydash.get(self.profile, "voice-command.minimum-seconds", 2))
+        max_seconds = float(pydash.get(self.profile, "voice-command.maximum-seconds", 30))
+        speech_seconds = float(
+            pydash.get(self.profile, "voice-command.speech-seconds", 0.3)
+        )
+        silence_seconds = float(
+            pydash.get(self.profile, "voice-command.silence-seconds", 0.5)
+        )
+        before_seconds = float(
+            pydash.get(self.profile, "voice-command.before-seconds", 0.25)
+        )
+
+    # -------------------------------------------------------------------------
     # Utilities
     # -------------------------------------------------------------------------
 
@@ -274,3 +293,16 @@ class Voice2JsonCore:
 
                 # Return original data
                 return wav_data
+
+    def get_audio_source(self) -> BinaryIO:
+        """Start a recording subprocess for expected audio format."""
+        record_cmd_str = pydash.get(
+            core.profile,
+            "audio.record-command",
+            "arecord -q -r 16000 -c 1 -f S16_LE -t raw",
+        )
+        record_cmd = shlex.split(record_cmd_str)
+        _LOGGER.debug(record_cmd)
+        record_proc = subprocess.Popen(record_cmd, stdout=subprocess.PIPE)
+
+        return record_proc.stdout

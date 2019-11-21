@@ -157,22 +157,22 @@ def get_args() -> argparse.Namespace:
         help="Compute perplexity of input text relative to language model",
     )
 
-    # # record-command
-    # command_parser = sub_parsers.add_parser(
-    #     "record-command", help="Record voice command and write WAV to stdout"
-    # )
-    # command_parser.add_argument(
-    #     "--audio-source", "-a", help="File to read raw 16-bit 16Khz mono audio from"
-    # )
-    # command_parser.add_argument(
-    #     "--wav-sink", "-w", help="File to write WAV data to instead of stdout"
-    # )
-    # command_parser.add_argument(
-    #     "--output-size",
-    #     action="store_true",
-    #     help="Write line with output byte count before output",
-    # )
-    # command_parser.set_defaults(func=record_command)
+    # record-command
+    command_parser = sub_parsers.add_parser(
+        "record-command", help="Record voice command and write WAV to stdout"
+    )
+    command_parser.add_argument(
+        "--audio-source", "-a", help="File to read raw 16-bit 16Khz mono audio from"
+    )
+    command_parser.add_argument(
+        "--wav-sink", "-w", help="File to write WAV data to instead of stdout"
+    )
+    command_parser.add_argument(
+        "--output-size",
+        action="store_true",
+        help="Write line with output byte count before output",
+    )
+    command_parser.set_defaults(func=record_command)
 
     # # wait-wake
     # wake_parser = sub_parsers.add_parser(
@@ -633,78 +633,63 @@ def recognize(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 # # -----------------------------------------------------------------------------
 
 
-# def record_command(
-#     args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]
-# ) -> None:
-#     from voice2json.command.webrtcvad import wait_for_command
-#     from voice2json.utils import buffer_to_wav, get_audio_source
+def record_command(args: argparse.Namespace, core: Voice2JsonCore) -> None:
+    """Segment audio by speech and silence."""
+    # Make sure profile has been trained
+    check_trained(core)
 
-#     # Make sure profile has been trained
-#     check_trained(profile, profile_dir)
+    # Expecting raw 16-bit, 16Khz mono audio
+    if args.audio_source is None:
+        audio_source = core.get_audio_source()
+        _LOGGER.debug("Recording raw 16-bit 16Khz mono audio")
+    elif args.audio_source == "-":
+        # Avoid crash when stdin is closed/read in daemon thread
+        class FakeStdin:
+            def __init__(self):
+                self.done = False
 
-#     # Load settings
-#     vad_mode = int(pydash.get(profile, "voice-command.vad-mode", 3))
-#     min_seconds = float(pydash.get(profile, "voice-command.minimum-seconds", 2))
-#     max_seconds = float(pydash.get(profile, "voice-command.maximum-seconds", 30))
-#     speech_seconds = float(pydash.get(profile, "voice-command.speech-seconds", 0.3))
-#     silence_seconds = float(pydash.get(profile, "voice-command.silence-seconds", 0.5))
-#     before_seconds = float(pydash.get(profile, "voice-command.before-seconds", 0.25))
+            def read(self, n):
+                if self.done:
+                    return None
 
-#     # Expecting raw 16-bit, 16Khz mono audio
-#     if args.audio_source is None:
-#         audio_source = get_audio_source(profile)
-#         _LOGGER.debug("Recording raw 16-bit 16Khz mono audio")
-#     elif args.audio_source == "-":
-#         # Avoid crash when stdin is closed/read in daemon thread
-#         class FakeStdin:
-#             def __init__(self):
-#                 self.done = False
+                return sys.stdin.buffer.read(n)
 
-#             def read(self, n):
-#                 if self.done:
-#                     return None
+            def close(self):
+                self.done = True
 
-#                 return sys.stdin.buffer.read(n)
+        audio_source = FakeStdin()
+        _LOGGER.debug("Recording raw 16-bit 16Khz mono audio from stdin")
+    else:
+        audio_source: BinaryIO = open(args.audio_source, "rb")
+        _LOGGER.debug(
+            "Recording raw 16-bit 16Khz mono audio from %s", args.audio_source
+        )
 
-#             def close(self):
-#                 self.done = True
+    # JSON events are not printed by default
+    json_file = None
+    wav_sink = sys.stdout.buffer
 
-#         audio_source = FakeStdin()
-#         _LOGGER.debug("Recording raw 16-bit 16Khz mono audio from stdin")
-#     else:
-#         audio_source: BinaryIO = open(args.audio_source, "rb")
-#         _LOGGER.debug("Recording raw 16-bit 16Khz mono audio from %s", args.audio_source)
+    if (args.wav_sink is not None) and (args.wav_sink != "-"):
+        wav_sink = open(args.wav_sink, "wb")
 
-#     # JSON events are not printed by default
-#     json_file = None
-#     wav_sink = sys.stdout.buffer
+        # Print JSON to stdout
+        json_file = sys.stdout
 
-#     if (args.wav_sink is not None) and (args.wav_sink != "-"):
-#         wav_sink = open(args.wav_sink, "wb")
+    # Record command
+    audio_buffer = core.wait_for_command(
+        audio_source,
+        json_file=json_file,
+    )
 
-#         # Print JSON to stdout
-#         json_file = sys.stdout
+    # Output WAV data
+    wav_bytes = core.buffer_to_wav(audio_buffer)
 
-#     # Record command
-#     audio_buffer = wait_for_command(
-#         audio_source,
-#         vad_mode=vad_mode,
-#         min_seconds=min_seconds,
-#         max_seconds=max_seconds,
-#         speech_seconds=speech_seconds,
-#         silence_seconds=silence_seconds,
-#         before_seconds=before_seconds,
-#         json_file=json_file,
-#     )
+    if args.output_size:
+        # Write size first on a separate line
+        size_str = str(len(wav_bytes)) + "\n"
+        wav_sink.write(size_str.encode())
 
-#     # Output WAV data
-#     wav_bytes = buffer_to_wav(profile, audio_buffer)
-
-#     if args.output_size:
-#         size_str = str(len(wav_bytes)) + "\n"
-#         wav_sink.write(size_str.encode())
-
-#     wav_sink.write(wav_bytes)
+    wav_sink.write(wav_bytes)
 
 
 # # -----------------------------------------------------------------------------
