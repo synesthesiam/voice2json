@@ -20,6 +20,8 @@ import sys
 import tempfile
 import threading
 import time
+import http.server
+import socketserver
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, BinaryIO, Dict, List, Optional, Set, Tuple
@@ -293,17 +295,17 @@ def get_args() -> argparse.Namespace:
     # )
     # tune_examples_parser.set_defaults(func=tune_examples)
 
-    # # show-documentation
-    # show_documentation_parser = sub_parsers.add_parser(
-    #     "show-documentation", help="Run local HTTP server with documentation"
-    # )
-    # show_documentation_parser.add_argument(
-    #     "--port",
-    #     type=int,
-    #     default=8000,
-    #     help="Port to host web server on (default: 8000)",
-    # )
-    # show_documentation_parser.set_defaults(func=show_documentation)
+    # show-documentation
+    show_documentation_parser = sub_parsers.add_parser(
+        "show-documentation", help="Run local HTTP server with documentation"
+    )
+    show_documentation_parser.add_argument(
+        "--port",
+        type=int,
+        default=8000,
+        help="Port to host web server on (default: 8000)",
+    )
+    show_documentation_parser.set_defaults(func=show_documentation)
 
     # # speak-sentence
     # speak_parser = sub_parsers.add_parser(
@@ -679,7 +681,7 @@ async def record_command(args: argparse.Namespace, core: Voice2JsonCore) -> None
     # Record command
     try:
         recorder = core.get_command_recorder()
-        result = core.loop.run_until_complete(recorder.record(audio_source))
+        result = await recorder.record(audio_source)
 
         try:
             audio_source.close()
@@ -1541,20 +1543,20 @@ async def wake(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 # # -----------------------------------------------------------------------------
 
 
-# def show_documentation(
-#     args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]
-# ) -> None:
-#     import http.server
-#     import socketserver
+async def show_documentation(args: argparse.Namespace, core: Voice2JsonCore) -> None:
+    """Run basic web server with documentation."""
+    voice2json_dir = Path(os.environ.get("voice2json_dir", os.getcwd()))
+    site_dir = voice2json_dir / "site"
 
-#     voice2json_dir = Path(os.environ.get("voice2json_dir", os.getcwd()))
-#     site_dir = voice2json_dir / "site"
+    os.chdir(site_dir)
+    Handler = http.server.SimpleHTTPRequestHandler
+    httpd = socketserver.TCPServer(("", args.port), Handler)
+    print(f"Running HTTP server at http://127.0.0.1:{args.port}")
 
-#     os.chdir(site_dir)
-#     Handler = http.server.SimpleHTTPRequestHandler
-#     httpd = socketserver.TCPServer(("", args.port), Handler)
-#     print(f"Running HTTP server at http://127.0.0.1:{args.port}")
-#     httpd.serve_forever()
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        pass  # expected
 
 
 # # -----------------------------------------------------------------------------
