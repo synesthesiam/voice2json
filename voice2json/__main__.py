@@ -5,6 +5,7 @@ For more details, see https://voice2json.org
 """
 
 import argparse
+import asyncio
 import io
 import itertools
 import json
@@ -44,7 +45,7 @@ _LOGGER = logging.getLogger(__name__)
 # -----------------------------------------------------------------------------
 
 
-def main():
+async def main():
     """Called at startup."""
     yaml.SafeLoader.add_constructor("!env", env_constructor)
 
@@ -62,7 +63,7 @@ def main():
     core = get_core(args)
 
     # Call sub-commmand
-    args.func(args, core)
+    await args.func(args, core)
 
 
 # -----------------------------------------------------------------------------
@@ -174,20 +175,20 @@ def get_args() -> argparse.Namespace:
     )
     command_parser.set_defaults(func=record_command)
 
-    # # wait-wake
-    # wake_parser = sub_parsers.add_parser(
-    #     "wait-wake", help="Listen to audio until wake word is spoken"
-    # )
-    # wake_parser.add_argument(
-    #     "--audio-source", "-a", help="File to read raw 16-bit 16Khz mono audio from"
-    # )
-    # wake_parser.add_argument(
-    #     "--exit-count",
-    #     "-c",
-    #     type=int,
-    #     help="Exit after the wake word has been spoken some number of times",
-    # )
-    # wake_parser.set_defaults(func=wake)
+    # wait-wake
+    wake_parser = sub_parsers.add_parser(
+        "wait-wake", help="Listen to audio until wake word is spoken"
+    )
+    wake_parser.add_argument(
+        "--audio-source", "-a", help="File to read raw 16-bit 16Khz mono audio from"
+    )
+    wake_parser.add_argument(
+        "--exit-count",
+        "-c",
+        type=int,
+        help="Exit after the wake word has been spoken some number of times",
+    )
+    wake_parser.set_defaults(func=wake)
 
     # # pronounce-word
     # pronounce_parser = sub_parsers.add_parser(
@@ -394,7 +395,7 @@ def get_core(args: argparse.Namespace):
 # -----------------------------------------------------------------------------
 
 
-def print_profile(args: argparse.Namespace, core: Voice2JsonCore) -> None:
+async def print_profile(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     """Print all settings as JSON."""
     json.dump(core.profile, sys.stdout, indent=4)
 
@@ -402,7 +403,7 @@ def print_profile(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 # -----------------------------------------------------------------------------
 
 
-def train(args: argparse.Namespace, core: Voice2JsonCore) -> None:
+async def train(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     """Create speech/intent artifacts for a profile."""
     core.train_profile(db_path=args.db_file)
 
@@ -410,7 +411,7 @@ def train(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 # -----------------------------------------------------------------------------
 
 
-def transcribe(args: argparse.Namespace, core: Voice2JsonCore) -> None:
+async def transcribe(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     """Speech to text from WAV file(s)."""
 
     # Make sure profile has been trained
@@ -501,7 +502,7 @@ def transcribe(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 # -----------------------------------------------------------------------------
 
 
-def recognize(args: argparse.Namespace, core: Voice2JsonCore) -> None:
+async def recognize(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     """Recognize intent from sentence(s)."""
     # Make sure profile has been trained
     check_trained(core)
@@ -633,7 +634,7 @@ def recognize(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 # # -----------------------------------------------------------------------------
 
 
-def record_command(args: argparse.Namespace, core: Voice2JsonCore) -> None:
+async def record_command(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     """Segment audio by speech and silence."""
     # Make sure profile has been trained
     check_trained(core)
@@ -676,92 +677,63 @@ def record_command(args: argparse.Namespace, core: Voice2JsonCore) -> None:
         json_file = sys.stdout
 
     # Record command
-    recorder = core.get_command_recorder()
-    result = core.loop.run_until_complete(recorder.record(audio_source))
-
     try:
-        audio_source.close()
-    except Exception:
-        _LOGGER.exception("close audio")
+        recorder = core.get_command_recorder()
+        result = core.loop.run_until_complete(recorder.record(audio_source))
 
-    # Output WAV data
-    wav_bytes = core.buffer_to_wav(result.audio_data)
+        try:
+            audio_source.close()
+        except Exception:
+            _LOGGER.exception("close audio")
 
-    if args.output_size:
-        # Write size first on a separate line
-        size_str = str(len(wav_bytes)) + "\n"
-        wav_sink.write(size_str.encode())
+        # Output WAV data
+        wav_bytes = core.buffer_to_wav(result.audio_data)
 
-    wav_sink.write(wav_bytes)
+        if args.output_size:
+            # Write size first on a separate line
+            size_str = str(len(wav_bytes)) + "\n"
+            wav_sink.write(size_str.encode())
 
-    if json_file:
-        for event in result.events:
-            print_json(attr.asdict(event), out_file=json_file)
+        wav_sink.write(wav_bytes)
+
+        if json_file:
+            for event in result.events:
+                print_json(attr.asdict(event), out_file=json_file)
+    except KeyboardInterrupt:
+        pass  # expected
 
 
 # # -----------------------------------------------------------------------------
 
 
-# def wake(args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]) -> None:
-#     import struct
-#     from voice2json.utils import get_audio_source
-#     from voice2json.wake.porcupine import Porcupine
+async def wake(args: argparse.Namespace, core: Voice2JsonCore) -> None:
+    """Wait for wake word in audio stream."""
+    # Expecting raw 16-bit, 16Khz mono audio
+    if args.audio_source is None:
+        audio_source = core.get_audio_source()
+        _LOGGER.debug("Recording raw 16-bit 16Khz mono audio")
+    elif args.audio_source == "-":
+        audio_source = sys.stdin.buffer
+        _LOGGER.debug("Recording raw 16-bit 16Khz mono audio from stdin")
+    else:
+        audio_source: BinaryIO = open(args.audio_source, "rb")
+        _LOGGER.debug(
+            "Recording raw 16-bit 16Khz mono audio from %s", args.audio_source
+        )
 
-#     # Load settings
-#     library_path = ppath(profile, profile_dir, "wake-word.porcupine.library-file")
-#     params_path = ppath(profile, profile_dir, "wake-word.porcupine.params-file")
-#     keyword_path = ppath(profile, profile_dir, "wake-word.porcupine.keyword-file")
-#     sensitivity = float(pydash.get(profile, "wake-word.sensitivity", 0.5))
+    try:
+        detector = core.get_wake_detector()
 
-#     # Load porcupine
-#     handle = Porcupine(
-#         str(library_path),
-#         str(params_path),
-#         keyword_file_paths=[str(keyword_path)],
-#         sensitivities=[sensitivity],
-#     )
+        async for detection in detector.detect(audio_source):
+            print_json(attr.asdict(detection))
 
-#     chunk_size = handle.frame_length * 2
-#     chunk_format = "h" * handle.frame_length
-
-#     # Expecting raw 16-bit, 16Khz mono audio
-#     if args.audio_source is None:
-#         audio_source = get_audio_source(profile)
-#         _LOGGER.debug("Recording raw 16-bit 16Khz mono audio")
-#     elif args.audio_source == "-":
-#         audio_source = sys.stdin.buffer
-#         _LOGGER.debug("Recording raw 16-bit 16Khz mono audio from stdin")
-#     else:
-#         audio_source: BinaryIO = open(args.audio_source, "rb")
-#         _LOGGER.debug("Recording raw 16-bit 16Khz mono audio from %s", args.audio_source)
-
-#     # Read first audio chunk
-#     start_time = time.time()
-#     chunk = audio_source.read(chunk_size)
-
-#     try:
-#         while len(chunk) == chunk_size:
-#             # Process audio chunk
-#             unpacked_chunk = struct.unpack_from(chunk_format, chunk)
-#             keyword_index = handle.process(unpacked_chunk)
-
-#             if keyword_index:
-#                 result = {
-#                     "keyword": str(keyword_path),
-#                     "detect_seconds": time.time() - start_time,
-#                 }
-#                 print_json(result)
-
-#                 # Check exit count
-#                 if args.exit_count is not None:
-#                     args.exit_count -= 1
-#                     if args.exit_count <= 0:
-#                         break
-
-#             # Get next chunk
-#             chunk = audio_source.read(chunk_size)
-#     except KeyboardInterrupt:
-#         pass  # expected
+            # Check exit count
+            if args.exit_count is not None:
+                args.exit_count -= 1
+                if args.exit_count <= 0:
+                    break
+    except KeyboardInterrupt:
+        pass  # expected
 
 
 # # -----------------------------------------------------------------------------
@@ -1803,4 +1775,5 @@ def check_trained(core: Voice2JsonCore) -> None:
 # -----------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    main()
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())

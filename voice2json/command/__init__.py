@@ -108,101 +108,96 @@ class WebRtcVadRecorder(VoiceCommandRecorder):
         current_seconds: float = 0
 
         # Process audio chunks
-        try:
-            async for chunk in async_chunks():
-                if report_audio:
-                    _LOGGER.debug("Receiving audio")
-                    report_audio = False
+        async for chunk in async_chunks():
+            if report_audio:
+                _LOGGER.debug("Receiving audio")
+                report_audio = False
 
-                if in_phrase:
-                    phrase_buffer += chunk
-                else:
-                    before_phrase_chunks.append(chunk)
+            if in_phrase:
+                phrase_buffer += chunk
+            else:
+                before_phrase_chunks.append(chunk)
 
-                current_seconds += self.seconds_per_buffer
+            current_seconds += self.seconds_per_buffer
 
-                # Check maximum number of seconds to record
-                max_buffers -= 1
-                if max_buffers <= 0:
-                    # Timeout
-                    _LOGGER.warning("Voice command timeout")
-                    return VoiceCommand(
-                        result=VoiceCommandResult.FAILURE, events=events
+            # Check maximum number of seconds to record
+            max_buffers -= 1
+            if max_buffers <= 0:
+                # Timeout
+                _LOGGER.warning("Voice command timeout")
+                return VoiceCommand(result=VoiceCommandResult.FAILURE, events=events)
+
+            # Detect speech in chunk
+            is_speech = self.vad.is_speech(chunk, self.sample_rate)
+            if is_speech and not last_speech:
+                # Silence -> speech
+                events.append(
+                    VoiceCommandEvent(
+                        type=VoiceCommandEventType.SPEECH, time=current_seconds
                     )
+                )
+                pass
+            elif not is_speech and last_speech:
+                # Speech -> silence
+                events.append(
+                    VoiceCommandEvent(
+                        type=VoiceCommandEventType.SILENCE, time=current_seconds
+                    )
+                )
+                pass
 
-                # Detect speech in chunk
-                is_speech = self.vad.is_speech(chunk, self.sample_rate)
-                if is_speech and not last_speech:
-                    # Silence -> speech
+            last_speech = is_speech
+
+            # Handle state changes
+            if is_speech and speech_buffers_left > 0:
+                speech_buffers_left -= 1
+            elif is_speech and not in_phrase:
+                # Start of phrase
+                events.append(
+                    VoiceCommandEvent(
+                        type=VoiceCommandEventType.STARTED, time=current_seconds
+                    )
+                )
+                in_phrase = True
+                after_phrase = False
+                min_phrase_buffers = int(
+                    math.ceil(self.min_seconds / self.seconds_per_buffer)
+                )
+            elif in_phrase and (min_phrase_buffers > 0):
+                # In phrase, before minimum seconds
+                min_phrase_buffers -= 1
+            elif not is_speech:
+                # Outside of speech
+                if not in_phrase:
+                    # Reset
+                    speech_buffers_left = self.speech_buffers
+                elif after_phrase and (silence_buffers > 0):
+                    # After phrase, before stop
+                    silence_buffers -= 1
+                elif after_phrase and (silence_buffers <= 0):
+                    # Phrase complete
                     events.append(
                         VoiceCommandEvent(
-                            type=VoiceCommandEventType.SPEECH, time=current_seconds
+                            type=VoiceCommandEventType.STOPPED, time=current_seconds
                         )
                     )
-                    pass
-                elif not is_speech and last_speech:
-                    # Speech -> silence
-                    events.append(
-                        VoiceCommandEvent(
-                            type=VoiceCommandEventType.SILENCE, time=current_seconds
-                        )
+                    break
+                elif in_phrase and (min_phrase_buffers <= 0):
+                    # Transition to after phrase
+                    after_phrase = True
+                    silence_buffers = int(
+                        math.ceil(self.silence_seconds / self.seconds_per_buffer)
                     )
-                    pass
 
-                last_speech = is_speech
+        # -------------------------------------------------------------------------
 
-                # Handle state changes
-                if is_speech and speech_buffers_left > 0:
-                    speech_buffers_left -= 1
-                elif is_speech and not in_phrase:
-                    # Start of phrase
-                    events.append(
-                        VoiceCommandEvent(
-                            type=VoiceCommandEventType.STARTED, time=current_seconds
-                        )
-                    )
-                    in_phrase = True
-                    after_phrase = False
-                    min_phrase_buffers = int(
-                        math.ceil(self.min_seconds / self.seconds_per_buffer)
-                    )
-                elif in_phrase and (min_phrase_buffers > 0):
-                    # In phrase, before minimum seconds
-                    min_phrase_buffers -= 1
-                elif not is_speech:
-                    # Outside of speech
-                    if not in_phrase:
-                        # Reset
-                        speech_buffers_left = self.speech_buffers
-                    elif after_phrase and (silence_buffers > 0):
-                        # After phrase, before stop
-                        silence_buffers -= 1
-                    elif after_phrase and (silence_buffers <= 0):
-                        # Phrase complete
-                        events.append(
-                            VoiceCommandEvent(
-                                type=VoiceCommandEventType.STOPPED, time=current_seconds
-                            )
-                        )
-                        break
-                    elif in_phrase and (min_phrase_buffers <= 0):
-                        # Transition to after phrase
-                        after_phrase = True
-                        silence_buffers = int(
-                            math.ceil(self.silence_seconds / self.seconds_per_buffer)
-                        )
+        # Merge before/during command audio data
+        before_buffer = bytes()
+        for chunk in before_phrase_chunks:
+            before_buffer += chunk
 
-            # -------------------------------------------------------------------------
-
-            # Merge before/during command audio data
-            before_buffer = bytes()
-            for chunk in before_phrase_chunks:
-                before_buffer += chunk
-
-            return VoiceCommand(
-                result=VoiceCommandResult.SUCCESS,
-                audio_data=before_buffer + phrase_buffer,
-                events=events,
-            )
-        except KeyboardInterrupt:
-            return bytes()
+        return VoiceCommand(
+            result=VoiceCommandResult.SUCCESS,
+            audio_data=before_buffer + phrase_buffer,
+            events=events,
+        )

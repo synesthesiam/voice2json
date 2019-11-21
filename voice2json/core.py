@@ -9,6 +9,7 @@ import shlex
 import subprocess
 from pathlib import Path
 from typing import Optional, Dict, Any, Union, Set, BinaryIO
+import struct
 
 import pydash
 import pywrapfst as fst
@@ -26,6 +27,8 @@ from voice2json.intent import StrictRecognizer, FuzzyRecognizer
 from voice2json.intent.const import Recognizer
 from voice2json.command.const import VoiceCommandRecorder
 from voice2json.command import WebRtcVadRecorder
+from voice2json.wake import PorcupineDetector
+from voice2json.wake.const import WakeWordDetector
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -240,6 +243,19 @@ class Voice2JsonCore:
             silence_seconds=silence_seconds,
             before_seconds=before_seconds,
         )
+
+    # -------------------------------------------------------------------------
+    # wait-wake
+    # -------------------------------------------------------------------------
+
+    def get_wake_detector(self) -> WakeWordDetector:
+        # Load settings
+        library_path = self.ppath("wake-word.porcupine.library-file")
+        params_path = self.ppath("wake-word.porcupine.params-file")
+        keyword_path = self.ppath("wake-word.porcupine.keyword-file")
+        sensitivity = float(pydash.get(self, "wake-word.sensitivity", 0.5))
+
+        return PorcupineDetector(library_path, params_path, keyword_path, sensitivity)
 
     # -------------------------------------------------------------------------
     # Utilities
