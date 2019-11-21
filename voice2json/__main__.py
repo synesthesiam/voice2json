@@ -676,13 +676,16 @@ def record_command(args: argparse.Namespace, core: Voice2JsonCore) -> None:
         json_file = sys.stdout
 
     # Record command
-    audio_buffer = core.wait_for_command(
-        audio_source,
-        json_file=json_file,
-    )
+    recorder = core.get_command_recorder()
+    result = core.loop.run_until_complete(recorder.record(audio_source))
+
+    try:
+        audio_source.close()
+    except Exception:
+        _LOGGER.exception("close audio")
 
     # Output WAV data
-    wav_bytes = core.buffer_to_wav(audio_buffer)
+    wav_bytes = core.buffer_to_wav(result.audio_data)
 
     if args.output_size:
         # Write size first on a separate line
@@ -690,6 +693,10 @@ def record_command(args: argparse.Namespace, core: Voice2JsonCore) -> None:
         wav_sink.write(size_str.encode())
 
     wav_sink.write(wav_bytes)
+
+    if json_file:
+        for event in result.events:
+            print_json(attr.asdict(event), out_file=json_file)
 
 
 # # -----------------------------------------------------------------------------
@@ -1583,12 +1590,12 @@ def record_command(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 # # -----------------------------------------------------------------------------
 
 
-def print_json(value: Any) -> None:
+def print_json(value: Any, out_file=sys.stdout) -> None:
     """Print a single line of JSON to stdout."""
-    with jsonlines.Writer(sys.stdout) as out:
+    with jsonlines.Writer(out_file) as out:
         out.write(value)
 
-    sys.stdout.flush()
+    out_file.flush()
 
 
 def env_constructor(loader, node):

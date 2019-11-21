@@ -1,6 +1,7 @@
 """
 Core voice2json command support.
 """
+import asyncio
 import logging
 import io
 import wave
@@ -23,6 +24,8 @@ from voice2json.speech import (
 )
 from voice2json.intent import StrictRecognizer, FuzzyRecognizer
 from voice2json.intent.const import Recognizer
+from voice2json.command.const import VoiceCommandRecorder
+from voice2json.command import WebRtcVadRecorder
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -36,6 +39,7 @@ class Voice2JsonCore:
         """Initialize voice2json."""
         self.profile_dir = profile_dir
         self.profile = profile
+        self.loop = asyncio.get_event_loop()
 
     # -------------------------------------------------------------------------
     # train-profile
@@ -203,11 +207,15 @@ class Voice2JsonCore:
     # record-command
     # -------------------------------------------------------------------------
 
-    def get_recorder(self) -> Recorder:
+    def get_command_recorder(self) -> VoiceCommandRecorder:
         # Load settings
         vad_mode = int(pydash.get(self.profile, "voice-command.vad-mode", 3))
-        min_seconds = float(pydash.get(self.profile, "voice-command.minimum-seconds", 2))
-        max_seconds = float(pydash.get(self.profile, "voice-command.maximum-seconds", 30))
+        min_seconds = float(
+            pydash.get(self.profile, "voice-command.minimum-seconds", 2)
+        )
+        max_seconds = float(
+            pydash.get(self.profile, "voice-command.maximum-seconds", 30)
+        )
         speech_seconds = float(
             pydash.get(self.profile, "voice-command.speech-seconds", 0.3)
         )
@@ -216,6 +224,21 @@ class Voice2JsonCore:
         )
         before_seconds = float(
             pydash.get(self.profile, "voice-command.before-seconds", 0.25)
+        )
+        chunk_size = int(pydash.get(self.profile, "voice-command.chunk-size", 960))
+        sample_rate = int(
+            pydash.get(self.profile, "audio.format.sample-rate-hertz", 16000)
+        )
+
+        return WebRtcVadRecorder(
+            vad_mode=vad_mode,
+            sample_rate=sample_rate,
+            chunk_size=chunk_size,
+            min_seconds=min_seconds,
+            max_seconds=max_seconds,
+            speech_seconds=speech_seconds,
+            silence_seconds=silence_seconds,
+            before_seconds=before_seconds,
         )
 
     # -------------------------------------------------------------------------
@@ -293,6 +316,21 @@ class Voice2JsonCore:
 
                 # Return original data
                 return wav_data
+
+    def buffer_to_wav(self, buffer: bytes) -> bytes:
+        """Wraps a buffer of raw audio data in a WAV"""
+        rate = int(pydash.get(self.profile, "audio.format.sample-rate-hertz", 16000))
+        width = int(pydash.get(self.profile, "audio.format.sample-width-bits", 16)) // 8
+        channels = int(pydash.get(self.profile, "audio.format.channel-count", 1))
+
+        with io.BytesIO() as wav_buffer:
+            with wave.open(wav_buffer, mode="wb") as wav_file:
+                wav_file.setframerate(rate)
+                wav_file.setsampwidth(width)
+                wav_file.setnchannels(channels)
+                wav_file.writeframesraw(buffer)
+
+            return wav_buffer.getvalue()
 
     def get_audio_source(self) -> BinaryIO:
         """Start a recording subprocess for expected audio format."""

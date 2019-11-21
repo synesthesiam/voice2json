@@ -379,7 +379,7 @@ Records from a live audio stream until a voice command has been spoken. Outputs 
 $ voice2json record-command > my-voice-command.wav
 ```
 
-`record-command` uses the [webrtcvad](https://github.com/wiseman/py-webrtcvad) library to detect live speech. Once speech has been detected, `voice2json` begins recording until there is silence. If speech goes on too long, a timeout is reached and recording stops. The [profile settings](profiles.md) under the `voice-command** section control exactly how many seconds of speech and silence are needed to segment live audio.
+`record-command` uses the [webrtcvad](https://github.com/wiseman/py-webrtcvad) library to detect live speech. Once speech has been detected, `voice2json` begins recording until there is silence. If speech goes on too long, a timeout is reached and recording stops. The [profile settings](profiles.md) under the `voice-command` section control exactly how many seconds of speech and silence are needed to segment live audio.
 
 See [audio sources](#audio-sources) for a description of how `record-command` gets audio input.
 

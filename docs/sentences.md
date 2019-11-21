@@ -308,7 +308,7 @@ will generate JSON events like:
 }
 ```
 
-If you update the `movies` file, make sure to [re-train voice2json](commands.md#train-profile) in order to pick up the new movie names. Only intent grammars that reference `$movies` will be re-built.
+If you update the `movies` file, make sure to [re-train `voice2json`](commands.md#train-profile) in order to pick up the new movie names. Only intent grammars that reference `$movies` will be re-built.
 
 ## Number Replacement
 

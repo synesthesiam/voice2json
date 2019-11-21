@@ -18,9 +18,9 @@ After installation:
 
 ## Debian Package
 
-Pre-compiled packages are available for Debian-based distributions (Ubuntu, Linux Mint, etc.) on `amd64`, `armhf`, and `aarch64` architectures. These packages are built using [PyInstaller](https://www.pyinstaller.org) and `dpkg`.
+Pre-compiled packages are available for Debian-based distributions (Ubuntu, Linux Mint, etc.) on `amd64`, `armhf`, and `aarch64` architectures. These packages are built using [PyInstaller](https://www.pyinstaller.org) and `apt` or `dpkg`.
 
-Before installing `voice2json`, you will need to install a few dependencies:
+Before installing `voice2json`, you may need to install a few dependencies (these should be automatically installed by `apt`):
 
 ```bash
 $ sudo apt-get install sox jq alsa-utils espeak-ng sphinxtrain perl
