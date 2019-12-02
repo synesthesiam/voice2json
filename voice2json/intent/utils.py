@@ -99,6 +99,7 @@ def symbols2intent(
 ) -> Recognition:
     """Transform FST symbols into an intent and recognition."""
     intent: Optional[Intent] = None
+    entities: List[Entity] = []
     tag_stack: List[TagInfo] = []
     out_symbols: List[str] = []
     raw_symbols: List[str] = []
@@ -154,7 +155,7 @@ def symbols2intent(
 
             out_index += len(tag_value) + 1  # space
             raw_out_index += len(raw_value) + 1  # space
-            intent.entities.append(
+            entities.append(
                 Entity(
                     entity=tag,
                     value=tag_value,
@@ -165,17 +166,17 @@ def symbols2intent(
                     raw_end=raw_out_index - 1,
                 )
             )
-        elif len(tag_stack) > 0:
+        elif tag_stack:
             # Inside tag
             for tag_info in tag_stack:
                 if ":" in sym:
                     # Use replacement text
                     in_sym, out_sym = sym.split(":", maxsplit=1)
 
-                    if len(in_sym.strip()) > 0:
+                    if in_sym.strip():
                         tag_info.raw_symbols.append(in_sym)
 
-                    if len(out_sym.strip()) > 0:
+                    if out_sym.strip():
                         # Ignore empty output symbols
                         tag_info.symbols.append(out_sym)
                 else:
@@ -188,10 +189,10 @@ def symbols2intent(
                 # Use replacement symbol
                 in_sym, out_sym = sym.split(":", maxsplit=1)
 
-                if len(in_sym.strip()) > 0:
+                if in_sym.strip():
                     raw_symbols.append(in_sym)
 
-                if len(out_sym.strip()) > 0:
+                if out_sym.strip():
                     # Ignore empty output symbols
                     out_symbols.append(out_sym)
                     out_index += len(out_sym) + 1  # space
@@ -209,6 +210,7 @@ def symbols2intent(
     return Recognition(
         result=RecognitionResult.SUCCESS,
         intent=intent,
+        entities=entities,
         text=" ".join(out_symbols),
         raw_text=" ".join(raw_symbols),
         tokens=out_symbols,

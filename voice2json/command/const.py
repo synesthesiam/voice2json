@@ -38,7 +38,7 @@ class VoiceCommand:
 
     result: VoiceCommandResult = attr.ib()
     audio_data: Optional[bytes] = attr.ib(default=None)
-    events: List[VoiceCommandEvent] = attr.ib(default=[])
+    events: List[VoiceCommandEvent] = attr.ib(factory=list)
 
 
 class VoiceCommandRecorder(ABC):

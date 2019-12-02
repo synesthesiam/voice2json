@@ -6,11 +6,14 @@ import logging
 import io
 import wave
 import shlex
+import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 from typing import Optional, Dict, Any, Union, Set, BinaryIO
 import struct
 
+import attr
 import pydash
 import pywrapfst as fst
 
@@ -24,7 +27,7 @@ from voice2json.speech import (
     JuliusTranscriber,
 )
 from voice2json.intent import StrictRecognizer, FuzzyRecognizer
-from voice2json.intent.const import Recognizer
+from voice2json.intent.const import Recognizer, Recognition
 from voice2json.command.const import VoiceCommandRecorder
 from voice2json.command import WebRtcVadRecorder
 from voice2json.wake import PorcupineDetector
@@ -211,6 +214,7 @@ class Voice2JsonCore:
     # -------------------------------------------------------------------------
 
     def get_command_recorder(self) -> VoiceCommandRecorder:
+        """Get voice command recorder based on profile settings."""
         # Load settings
         vad_mode = int(pydash.get(self.profile, "voice-command.vad-mode", 3))
         min_seconds = float(
@@ -249,6 +253,7 @@ class Voice2JsonCore:
     # -------------------------------------------------------------------------
 
     def get_wake_detector(self) -> WakeWordDetector:
+        """Get wake word detector based on profile settings."""
         # Load settings
         library_path = self.ppath("wake-word.porcupine.library-file")
         params_path = self.ppath("wake-word.porcupine.params-file")
@@ -256,6 +261,210 @@ class Voice2JsonCore:
         sensitivity = float(pydash.get(self, "wake-word.sensitivity", 0.5))
 
         return PorcupineDetector(library_path, params_path, keyword_path, sensitivity)
+
+    # -------------------------------------------------------------------------
+    # test-examples
+    # -------------------------------------------------------------------------
+
+    def test_examples(
+        self, expected: Dict[str, Recognition], actual: Dict[str, Recognition]
+    ) -> Dict[str, Any]:
+        """Generate report of comparison between expected and actual recognition results."""
+        # Actual intents and extra info about missing entities, etc.
+        actual_results: Dict[str, Dict[str, Any]] = {}
+
+        # Total number of WAV files
+        num_wavs = 0
+
+        # Number transcriptions that match *exactly*
+        correct_transcriptions = 0
+
+        # Number of words in all transcriptions (as counted by word_align.pl)
+        num_words = 0
+
+        # Number of correct words in all transcriptions (as computed by word_align.pl)
+        correct_words = 0
+
+        # Total number of intents that were attempted
+        num_intents = 0
+
+        # Number of recognized intents that match expectations
+        correct_intent_names = 0
+
+        # Number of entity/value pairs that match *exactly* in all recognized intents
+        correct_entities = 0
+
+        # Number of entity/value pairs all intents
+        num_entities = 0
+
+        # Number of intents where name and entities match exactly
+        correct_intent_and_entities = 0
+
+        # Real time vs transcription time
+        speedups = []
+
+        # Compute statistics
+        for wav_name, actual_intent in actual.items():
+            actual_results[wav_name] = attr.asdict(actual_intent)
+
+            # Get corresponding expected intent
+            expected_intent = expected[wav_name]
+
+            # Compute real-time speed-up
+            wav_seconds = actual_intent.wav_seconds
+            transcribe_seconds = actual_intent.transcribe_seconds
+            if (transcribe_seconds > 0) and (wav_seconds > 0):
+                speedups.append(wav_seconds / transcribe_seconds)
+
+            # Check transcriptions
+            actual_text = actual_intent.raw_text or actual_intent.text
+            expected_text = expected_intent.raw_text or expected_intent.text
+
+            if expected_text == actual_text:
+                correct_transcriptions += 1
+
+            # Check intents
+            if expected_intent.intent is not None:
+                num_intents += 1
+                if actual_intent.intent is None:
+                    intents_match = False
+                    actual_results[wav_name]["intent"] = {"name": ""}
+                else:
+                    intents_match = (
+                        expected_intent.intent.name == actual_intent.intent.name
+                    )
+
+                # Count entities
+                expected_entities: List[Tuple[str, str]] = []
+                num_expected_entities = 0
+                for entity in expected_intent.entities:
+                    num_entities += 1
+                    num_expected_entities += 1
+                    entity_tuple = (entity.entity, entity.value)
+                    expected_entities.append(entity_tuple)
+
+                # Verify actual entities.
+                # Only check entities if intent was correct.
+                wrong_entities = []
+                missing_entities = []
+                if intents_match:
+                    correct_intent_names += 1
+                    num_actual_entities = 0
+                    for entity in actual_intent.entities:
+                        num_actual_entities += 1
+                        entity_tuple = (entity.entity, entity.value)
+
+                        if entity_tuple in expected_entities:
+                            correct_entities += 1
+                            expected_entities.remove(entity_tuple)
+                        else:
+                            wrong_entities.append(entity_tuple)
+
+                    # Anything left is missing
+                    missing_entities = expected_entities
+
+                    # Check if entities matched *exactly*
+                    if (len(expected_entities) == 0) and (
+                        num_actual_entities == num_expected_entities
+                    ):
+                        correct_intent_and_entities += 1
+
+                actual_results[wav_name]["intent"][
+                    "expected_name"
+                ] = expected_intent.intent.name
+                actual_results[wav_name]["wrong_entities"] = wrong_entities
+                actual_results[wav_name]["missing_entities"] = missing_entities
+
+            num_wavs += 1
+
+        # ---------------------------------------------------------------------
+
+        if num_wavs < 1:
+            _LOGGER.fatal("No WAV files found")
+            sys.exit(1)
+
+        # Compute word error rate (WER)
+        align_results: Dict[str, Any] = {}
+        if shutil.which("word_align.pl"):
+            from voice2json.utils import align2json
+
+            with tempfile.NamedTemporaryFile(mode="w") as reference_file:
+                # Write references
+                for expected_key, expected_intent in expected.items():
+                    print(
+                        expected_intent.raw_text or expected_intent.text,
+                        f"({expected_key})",
+                        file=reference_file,
+                    )
+
+                with tempfile.NamedTemporaryFile(mode="w") as hypothesis_file:
+                    # Write hypotheses
+                    for actual_key, actual_intent in actual.items():
+                        print(
+                            actual_intent.raw_text or actual_intent.text,
+                            f"({actual_key})",
+                            file=hypothesis_file,
+                        )
+
+                    # Calculate WER
+                    reference_file.seek(0)
+                    hypothesis_file.seek(0)
+
+                    align_cmd = [
+                        "word_align.pl",
+                        reference_file.name,
+                        hypothesis_file.name,
+                    ]
+                    _LOGGER.debug(align_cmd)
+
+                    align_output = subprocess.check_output(align_cmd).decode()
+
+                    # Convert to JSON
+                    with io.StringIO(align_output) as align_file:
+                        align_results = align2json(align_file)
+
+        else:
+            _LOGGER.warn("word_align.pl not found in PATH. Not computing WER.")
+
+        # Merge WER results
+        for key, wer in align_results.items():
+            actual_results[key]["word_error"] = wer
+            num_words += wer["words"]
+            correct_words += wer["correct"]
+
+        average_transcription_speedup = 0
+        if len(speedups) > 0:
+            average_transcription_speedup = sum(speedups) / len(speedups)
+
+        # Summarize results
+        return {
+            "statistics": {
+                "num_wavs": num_wavs,
+                "num_words": num_words,
+                "num_entities": num_entities,
+                "correct_transcriptions": correct_transcriptions,
+                "correct_intent_names": correct_intent_names,
+                "correct_words": correct_words,
+                "correct_entities": correct_entities,
+                "transcription_accuracy": correct_words / num_words
+                if num_words > 0
+                else 1,
+                "intent_accuracy": correct_intent_names / num_intents
+                if num_intents > 0
+                else 1,
+                "entity_accuracy": correct_entities / num_entities
+                if num_entities > 0
+                else 1,
+                "intent_entity_accuracy": correct_intent_and_entities / num_intents
+                if num_intents > 0
+                else 1,
+                "average_transcription_speedup": average_transcription_speedup,
+            },
+            "actual": actual_results,
+            "expected": {
+                wav_name: attr.asdict(intent) for wav_name, intent in expected.items()
+            },
+        }
 
     # -------------------------------------------------------------------------
     # Utilities

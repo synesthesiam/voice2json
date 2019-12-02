@@ -69,16 +69,16 @@ class PocketsphinxTranscriber(Transcriber):
         self.decoder.process_raw(audio_data, False, True)
         self.decoder.end_utt()
 
-        transcribe_seconds = time.perf_counter - start_time
+        transcribe_seconds = time.perf_counter() - start_time
         _LOGGER.debug("Decoded audio in %s second(s)", transcribe_seconds)
 
         hyp = self.decoder.hyp()
-        if hyp is not None:
+        if hyp is None:
             return Transcription(result=TranscriptionResult.FAILURE)
 
         return Transcription(
             result=TranscriptionResult.SUCCESS,
-            text=hyp.hypstr,
+            text=hyp.hypstr.strip(),
             likelihood=self.decoder.get_logmath().exp(hyp.prob),
             transcribe_seconds=transcribe_seconds,
             wav_seconds=wav_duration,
@@ -152,7 +152,7 @@ class KaldiExtensionTranscriber(Transcriber):
 
                     return Transcription(
                         result=TranscriptionResult.SUCCESS,
-                        text=text,
+                        text=text.strip(),
                         likelihood=likelihood,
                         transcribe_seconds=transcribe_seconds,
                         wav_seconds=wav_duration,
@@ -228,7 +228,7 @@ class KaldiCommandLineTranscriber(Transcriber):
             if text:
                 return Transcription(
                     result=TranscriptionResult.SUCCESS,
-                    text=text,
+                    text=text.strip(),
                     likelihood=float(result.get("likelihood", 0)),
                     transcribe_seconds=float(result.get("transcribe_seconds", 0)),
                     wav_seconds=float(result.get("wav_seconds", 0)),

@@ -6,6 +6,7 @@ For more details, see https://voice2json.org
 
 import argparse
 import asyncio
+import concurrent.futures
 import io
 import itertools
 import json
@@ -34,6 +35,8 @@ import requests
 import yaml
 
 from voice2json.core import Voice2JsonCore
+from voice2json.speech.const import Transcription
+from voice2json.intent.const import Recognition, RecognitionResult
 from voice2json.utils import (
     numbers_to_words,
     recursive_update,
@@ -49,6 +52,7 @@ _LOGGER = logging.getLogger(__name__)
 
 async def main():
     """Called at startup."""
+    # Expand environment variables in string value
     yaml.SafeLoader.add_constructor("!env", env_constructor)
 
     # Parse command-line arguments
@@ -87,6 +91,7 @@ def get_args() -> argparse.Namespace:
         "--debug", action="store_true", help="Print DEBUG log to console"
     )
 
+    # Create subparsers for each sub-command
     sub_parsers = parser.add_subparsers()
     sub_parsers.required = True
     sub_parsers.dest = "command"
@@ -96,7 +101,9 @@ def get_args() -> argparse.Namespace:
     )
     print_parser.set_defaults(func=print_profile)
 
+    # -------------
     # train-profile
+    # -------------
     train_parser = sub_parsers.add_parser(
         "train-profile", help="Train voice2json profile"
     )
@@ -105,7 +112,9 @@ def get_args() -> argparse.Namespace:
     )
     train_parser.set_defaults(func=train)
 
+    # --------------
     # transcribe-wav
+    # --------------
     transcribe_parser = sub_parsers.add_parser(
         "transcribe-wav", help="Transcribe WAV file to text"
     )
@@ -134,7 +143,9 @@ def get_args() -> argparse.Namespace:
         help="WAV file size is sent on a separate line for each input WAV on stdin",
     )
 
+    # ----------------
     # recognize-intent
+    # ----------------
     recognize_parser = sub_parsers.add_parser(
         "recognize-intent", help="Recognize intent from JSON or text"
     )
@@ -160,7 +171,9 @@ def get_args() -> argparse.Namespace:
         help="Compute perplexity of input text relative to language model",
     )
 
+    # --------------
     # record-command
+    # --------------
     command_parser = sub_parsers.add_parser(
         "record-command", help="Record voice command and write WAV to stdout"
     )
@@ -177,7 +190,9 @@ def get_args() -> argparse.Namespace:
     )
     command_parser.set_defaults(func=record_command)
 
+    # ---------
     # wait-wake
+    # ---------
     wake_parser = sub_parsers.add_parser(
         "wait-wake", help="Listen to audio until wake word is spoken"
     )
@@ -262,29 +277,37 @@ def get_args() -> argparse.Namespace:
     # )
     # record_examples_parser.set_defaults(func=record_examples)
 
-    # # test-examples
-    # test_examples_parser = sub_parsers.add_parser(
-    #     "test-examples", help="Test performance on previously recorded examples"
-    # )
-    # test_examples_parser.add_argument(
-    #     "--directory", "-d", help="Directory with recorded examples"
-    # )
-    # test_examples_parser.add_argument(
-    #     "--results", "-r", help="Directory to save test results"
-    # )
-    # test_examples_parser.add_argument(
-    #     "--expected", help="Path to jsonl file with expected test results"
-    # )
-    # test_examples_parser.add_argument(
-    #     "--actual", help="Path to jsonl file with actual test results"
-    # )
-    # test_examples_parser.add_argument(
-    #     "--open",
-    #     "-o",
-    #     action="store_true",
-    #     help="Use large pre-built model for transcription",
-    # )
-    # test_examples_parser.set_defaults(func=test_examples)
+    # -------------
+    # test-examples
+    # -------------
+    test_examples_parser = sub_parsers.add_parser(
+        "test-examples", help="Test performance on previously recorded examples"
+    )
+    test_examples_parser.add_argument(
+        "--directory", "-d", help="Directory with recorded examples"
+    )
+    test_examples_parser.add_argument(
+        "--results", "-r", help="Directory to save test results"
+    )
+    test_examples_parser.add_argument(
+        "--expected", help="Path to jsonl file with expected test results"
+    )
+    test_examples_parser.add_argument(
+        "--actual", help="Path to jsonl file with actual test results"
+    )
+    test_examples_parser.add_argument(
+        "--open",
+        "-o",
+        action="store_true",
+        help="Use large pre-built model for transcription",
+    )
+    test_examples_parser.add_argument(
+        "--threads",
+        type=int,
+        default=1,
+        help="Maximum number of threads to use (default=1)",
+    )
+    test_examples_parser.set_defaults(func=test_examples)
 
     # # tune-examples
     # tune_examples_parser = sub_parsers.add_parser(
@@ -295,7 +318,9 @@ def get_args() -> argparse.Namespace:
     # )
     # tune_examples_parser.set_defaults(func=tune_examples)
 
+    # ------------------
     # show-documentation
+    # ------------------
     show_documentation_parser = sub_parsers.add_parser(
         "show-documentation", help="Run local HTTP server with documentation"
     )
@@ -428,7 +453,7 @@ async def transcribe(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     )
 
     try:
-        if args.wav_files or args.stdin_files:
+        if args.wav_file or args.stdin_files:
             # Read WAV file paths
             wav_files = args.wav_file
             if args.stdin_files:
@@ -579,6 +604,9 @@ async def recognize(args: argparse.Namespace, core: Voice2JsonCore) -> None:
             # Recognize intent
             recognition = recognizer.recognize(tokens)
             result = attr.asdict(recognition)
+
+            # Add slots
+            result["slots"] = {e.entity: e.value for e in recognition.entities}
 
             if args.perplexity:
                 try:
@@ -1274,250 +1302,133 @@ async def wake(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 #     return actual
 
 
-# def test_examples(
-#     args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]
-# ) -> None:
-#     # Make sure profile has been trained
-#     check_trained(profile, profile_dir)
+async def test_examples(args: argparse.Namespace, core: Voice2JsonCore) -> None:
+    """Test speech/intent recognition against a directory of expected results."""
+    # Make sure profile has been trained
+    check_trained(core)
 
-#     results_dir = None
-#     if args.results is not None:
-#         results_dir = Path(args.results)
+    results_dir = None
+    if args.results is not None:
+        results_dir = Path(args.results)
 
-#     # Expected/actual intents
-#     expected: Dict[str, Dict[str, Any]] = {}
-#     actual: Dict[str, Dict[str, Any]] = {}
+    # Expected/actual intents
+    expected: Dict[str, Recognition] = {}
+    actual: Dict[str, Recognition] = {}
 
-#     if args.expected is None:
-#         examples_dir = (
-#             Path(args.directory) if args.directory is not None else Path.cwd()
-#         )
+    if args.expected is None:
+        # Load expected transcriptions/intents from examples directory.
+        # For each .wav file, there should be a .json (intent) or .txt file (transcription).
+        examples_dir = (
+            Path(args.directory) if args.directory is not None else Path.cwd()
+        )
 
-#         # Load expected transcriptions/intents from examples directory
-#         _LOGGER.debug("Loading expected transcriptions/intents")
-#         for wav_path in examples_dir.glob("*.wav"):
-#             # Load expected intent (optional)
-#             intent_path = examples_dir / f"{wav_path.stem}.json"
-#             expected_intent = None
-#             if intent_path.exists():
-#                 with open(intent_path, "r") as intent_file:
-#                     expected_intent = json.load(intent_file)
-#             else:
-#                 # Load expected transcription only
-#                 transcript_path = examples_dir / f"{wav_path.stem}.txt"
-#                 if transcript_path.exists():
-#                     # Use text only
-#                     expected_text = transcript_path.read_text().strip()
-#                     expected_intent = {"text": expected_text}
+        _LOGGER.debug("Loading expected transcriptions/intents from %s", args.directory)
+        for wav_path in examples_dir.glob("*.wav"):
+            # Try to load expected intent (optional)
+            intent_path = examples_dir / f"{wav_path.stem}.json"
+            expected_intent = None
+            if intent_path.exists():
+                with open(intent_path, "r") as intent_file:
+                    expected_intent = Recognition.fromdict(json.load(intent_file))
+            else:
+                # Load expected transcription only
+                transcript_path = examples_dir / f"{wav_path.stem}.txt"
+                if transcript_path.exists():
+                    # Use text only
+                    expected_text = transcript_path.read_text().strip()
+                    expected_intent = Recognition(
+                        result=RecognitionResult.SUCCESS, text=expected_text
+                    )
 
-#             if expected_intent is None:
-#                 _LOGGER.warn(f"Skipping {wav_path} (no transcription or intent files)")
-#                 continue
+            if expected_intent is None:
+                _LOGGER.warn(f"Skipping {wav_path} (no transcription or intent files)")
+                continue
 
-#             expected[wav_path.name] = expected_intent
-#     else:
-#         # Load expected results from jsonl file
-#         with open(args.expected, "r") as expected_file:
-#             for line in expected_file:
-#                 expected_intent = json.loads(line)
-#                 wav_name = expected_intent["wav_name"]
-#                 expected[wav_name] = expected_intent
+            expected[wav_path.name] = expected_intent
+    else:
+        _LOGGER.debug("Loading expected intents from %s", args.expected)
 
-#     if args.actual is None:
-#         # Do transcription/recognition
-#         actual = _get_actual_results(args, profile_dir, profile)
-#     else:
-#         # Load actual results from jsonl file
-#         with open(args.actual, "r") as actual_file:
-#             for line in actual_file:
-#                 actual_intent = json.loads(line)
-#                 wav_name = actual_intent["wav_name"]
-#                 actual[wav_name] = actual_intent
+        # Load expected results from jsonl file.
+        # Each line is an intent with a wav_name key.
+        with open(args.expected, "r") as expected_file:
+            for line in expected_file:
+                expected_intent = Recognition.fromdict(json.loads(line))
+                wav_name = expected_intent["wav_name"]
+                expected[wav_name] = expected_intent
 
-#     # ----------
-#     # Statistics
-#     # ----------
+    if not expected:
+        _LOGGER.fatal("No expected examples provided")
+        sys.exit(1)
 
-#     # Total number of WAV files
-#     num_wavs = 0
+    _LOGGER.debug("Loaded %s expected transcription(s)/intent(s)", len(expected))
 
-#     # Number transcriptions that match *exactly*
-#     correct_transcriptions = 0
+    # Load actual results
+    if args.actual is None:
+        # Do transcription/recognition
+        examples_dir = (
+            Path(args.directory) if args.directory is not None else Path.cwd()
+        )
+        _LOGGER.debug("Looking for examples in %s", examples_dir)
 
-#     # Number of words in all transcriptions (as counted by word_align.pl)
-#     num_words = 0
+        class TestWorker:
+            def __init__(self, core, open_transcription=False, debug=False):
+                self.core = core
+                self.open_transcription = open_transcription
+                self.debug = debug
+                self.transcriber = None
+                self.recognizer = None
 
-#     # Number of correct words in all transcriptions (as computed by word_align.pl)
-#     correct_words = 0
+            def __call__(self, wav_path: Path) -> Recognition:
+                if self.transcriber is None:
+                    self.transcriber = core.get_transcriber(
+                        open_transcription=self.open_transcription, debug=self.debug
+                    )
 
-#     # Total number of intents that were attempted
-#     num_intents = 0
+                if self.recognizer is None:
+                    self.recognizer = core.get_recognizer()
 
-#     # Number of recognized intents that match expectations
-#     correct_intent_names = 0
+                _LOGGER.debug("Processing %s", wav_path)
 
-#     # Number of entity/value pairs that match *exactly* in all recognized intents
-#     correct_entities = 0
+                # Convert WAV data and transcribe
+                wav_data = self.core.maybe_convert_wav(wav_path.read_bytes())
+                transcription = self.transcriber.transcribe_wav(wav_data)
 
-#     # Number of entity/value pairs all intents
-#     num_entities = 0
+                # Tokenize and do intent recognition
+                tokens = split_whitespace(transcription.text)
+                recognition = self.recognizer.recognize(tokens)
 
-#     # Number of intents where name and entities match exactly
-#     correct_intent_and_entities = 0
+                # Copy transcription fields
+                recognition.likelihood = transcription.likelihood
+                recognition.wav_seconds = transcription.wav_seconds
+                recognition.transcribe_seconds = transcription.transcribe_seconds
 
-#     # Real time vs transcription time
-#     speedups = []
+                return recognition
 
-#     # Compute statistics
-#     for wav_name, actual_intent in actual.items():
-#         expected_intent = expected[wav_name]
+        workers = [TestWorker(core, args.open, args.debug) for _ in range(args.threads)]
+        futures = {}
 
-#         wav_seconds = actual_intent.get("wav_seconds", 0)
-#         transcribe_seconds = actual_intent.get("transcribe_seconds", 0)
-#         if (transcribe_seconds > 0) and (wav_seconds > 0):
-#             speedups.append(wav_seconds / transcribe_seconds)
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=args.threads
+        ) as executor:
+            for i, wav_path in enumerate(examples_dir.glob("*.wav")):
+                future = executor.submit(workers[i % len(workers)], wav_path)
+                wav_name = wav_path.name
+                futures[wav_name] = future
 
-#         # Check transcriptions
-#         actual_text = actual_intent.get("raw_text", actual_intent.get("text", ""))
-#         expected_text = expected_intent.get("raw_text", expected_intent.get("text", ""))
+        for wav_name, future in futures.items():
+            actual[wav_name] = future.result()
+    else:
+        _LOGGER.debug("Loading actual intents from %s", args.actual)
 
-#         if expected_text == actual_text:
-#             correct_transcriptions += 1
+        # Load actual results from jsonl file
+        with open(args.actual, "r") as actual_file:
+            for line in actual_file:
+                actual_intent = Recognition.fromdict(json.loads(line))
+                wav_name = actual_intent.wav_name
+                actual[wav_name] = actual_intent
 
-#         # Check intents
-#         if "intent" in expected_intent:
-#             num_intents += 1
-#             intents_match = (
-#                 expected_intent["intent"]["name"] == actual_intent["intent"]["name"]
-#             )
-
-#             # Count entities
-#             expected_entities: List[Tuple[str, str]] = []
-#             num_expected_entities = 0
-#             for entity_dict in expected_intent.get("entities", []):
-#                 num_entities += 1
-#                 num_expected_entities += 1
-#                 entity_tuple = (entity_dict["entity"], entity_dict["value"])
-#                 expected_entities.append(entity_tuple)
-
-#             # Verify actual entities.
-#             # Only check entities if intent was correct.
-#             wrong_entities = []
-#             missing_entities = []
-#             if intents_match:
-#                 correct_intent_names += 1
-#                 num_actual_entities = 0
-#                 for entity_dict in actual_intent.get("entities", []):
-#                     num_actual_entities += 1
-#                     entity_tuple = (entity_dict["entity"], entity_dict["value"])
-
-#                     if entity_tuple in expected_entities:
-#                         correct_entities += 1
-#                         expected_entities.remove(entity_tuple)
-#                     else:
-#                         wrong_entities.append(entity_tuple)
-
-#                 # Anything left is missing
-#                 missing_entities = expected_entities
-
-#                 # Check if entities matched *exactly*
-#                 if (len(expected_entities) == 0) and (
-#                     num_actual_entities == num_expected_entities
-#                 ):
-#                     correct_intent_and_entities += 1
-
-#             actual_intent["intent"]["expected_name"] = expected_intent["intent"]["name"]
-#             actual_intent["wrong_entities"] = wrong_entities
-#             actual_intent["missing_entities"] = missing_entities
-
-#         num_wavs += 1
-
-#     # ---------------------------------------------------------------------
-
-#     if num_wavs < 1:
-#         _LOGGER.fatal("No WAV files found")
-#         sys.exit(1)
-
-#     # Compute word error rate (WER)
-#     align_results: Dict[str, Any] = {}
-#     if shutil.which("word_align.pl"):
-#         from voice2json.utils import align2json
-
-#         with tempfile.NamedTemporaryFile(mode="w") as reference_file:
-#             # Write references
-#             for expected_key, expected_intent in expected.items():
-#                 print(
-#                     expected_intent.get("raw_text", expected_intent["text"]),
-#                     f"({expected_key})",
-#                     file=reference_file,
-#                 )
-
-#             with tempfile.NamedTemporaryFile(mode="w") as hypothesis_file:
-#                 # Write hypotheses
-#                 for actual_key, actual_intent in actual.items():
-#                     print(
-#                         actual_intent.get("raw_text", actual_intent["text"]),
-#                         f"({actual_key})",
-#                         file=hypothesis_file,
-#                     )
-
-#                 # Calculate WER
-#                 reference_file.seek(0)
-#                 hypothesis_file.seek(0)
-
-#                 align_cmd = ["word_align.pl", reference_file.name, hypothesis_file.name]
-#                 _LOGGER.debug(align_cmd)
-
-#                 align_output = subprocess.check_output(align_cmd).decode()
-#                 if results_dir is not None:
-#                     align_output_path = results_dir / "word_align.txt"
-#                     align_output_path.write_text(align_output)
-#                     _LOGGER.debug("Wrote %s", align_output_path)
-
-#                 # Convert to JSON
-#                 with io.StringIO(align_output) as align_file:
-#                     align_results = align2json(align_file)
-
-#     else:
-#         _LOGGER.warn("word_align.pl not found in PATH. Not computing WER.")
-
-#     # Merge WER results
-#     for key, wer in align_results.items():
-#         actual[key]["word_error"] = wer
-#         num_words += wer["words"]
-#         correct_words += wer["correct"]
-
-#     average_transcription_speedup = 0
-#     if len(speedups) > 0:
-#         average_transcription_speedup = sum(speedups) / len(speedups)
-
-#     # Summarize results
-#     summary = {
-#         "statistics": {
-#             "num_wavs": num_wavs,
-#             "num_words": num_words,
-#             "num_entities": num_entities,
-#             "correct_transcriptions": correct_transcriptions,
-#             "correct_intent_names": correct_intent_names,
-#             "correct_words": correct_words,
-#             "correct_entities": correct_entities,
-#             "transcription_accuracy": correct_words / num_words if num_words > 0 else 1,
-#             "intent_accuracy": correct_intent_names / num_intents
-#             if num_intents > 0
-#             else 1,
-#             "entity_accuracy": correct_entities / num_entities
-#             if num_entities > 0
-#             else 1,
-#             "intent_entity_accuracy": correct_intent_and_entities / num_intents
-#             if num_intents > 0
-#             else 1,
-#             "average_transcription_speedup": average_transcription_speedup,
-#         },
-#         "actual": actual,
-#         "expected": expected,
-#     }
-
-#     print_json(summary)
+    summary = core.test_examples(expected, actual)
+    print_json(summary)
 
 
 # # -----------------------------------------------------------------------------
@@ -1559,9 +1470,9 @@ async def show_documentation(args: argparse.Namespace, core: Voice2JsonCore) -> 
         pass  # expected
 
 
-# # -----------------------------------------------------------------------------
-# # Utilities
-# # -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Utilities
+# -----------------------------------------------------------------------------
 
 
 def print_json(value: Any, out_file=sys.stdout) -> None:

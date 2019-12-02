@@ -26,7 +26,7 @@ class StrictRecognizer(Recognizer):
         start_time = time.perf_counter()
 
         # Only run acceptor if there are any tokens
-        if tokens:
+        if not tokens:
             return Recognition(result=RecognitionResult.FAILURE)
 
         recognition: Optional[Recognition] = None
@@ -36,7 +36,8 @@ class StrictRecognizer(Recognizer):
         for out_sentence in fstprintall(out_fst, exclude_meta=False):
             # Use first intent
             recognition = symbols2intent(out_sentence)
-            recognition.confidence = 1
+            if recognition.intent is not None:
+                recognition.intent.confidence = 1
             break
 
         recognize_seconds = time.perf_counter() - start_time
@@ -81,7 +82,7 @@ class FuzzyRecognizer(Recognizer):
         start_time = time.perf_counter()
 
         # Only run search if there are any tokens
-        if tokens:
+        if not tokens:
             return Recognition(result=RecognitionResult.FAILURE)
 
         intent_symbols_and_costs = self._get_symbols_and_costs(tokens)
@@ -95,7 +96,7 @@ class FuzzyRecognizer(Recognizer):
         recognize_seconds = time.perf_counter() - start_time
         _LOGGER.debug("Recognized %s intent(s)", len(confidence_symbols))
 
-        if confidence_symbols:
+        if not confidence_symbols:
             text = " ".join(tokens)
             return Recognition(
                 result=RecognitionResult.FAILURE,
@@ -114,8 +115,10 @@ class FuzzyRecognizer(Recognizer):
         # Parse symbols
         confidence, symbols = confidence_symbols[0]
         recognition = symbols2intent(symbols)
-        recognition.confidence = confidence
         recognition.recognize_seconds = recognize_seconds
+
+        if recognition.intent is not None:
+            recognition.intent.confidence = confidence
 
         return recognition
 
