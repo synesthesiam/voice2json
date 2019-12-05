@@ -304,7 +304,12 @@ if [[ ! -d "${openfst_dir}/build" ]]; then
     echo "Building openfst"
     tar -C "${build_dir}" -xf "${openfst_file}" && \
         cd "${openfst_dir}" && \
-        ./configure "--prefix=${openfst_dir}/build" --enable-far --enable-static --enable-shared --enable-ngram-fsts && \
+        ./configure "--prefix=${openfst_dir}/build" \
+                    --enable-far \
+                    --enable-static=no \
+                    --enable-bin=no \
+                    --enable-shared \
+                    --enable-ngram-fsts && \
         make -j "${make_threads}" && \
         make install
 fi
