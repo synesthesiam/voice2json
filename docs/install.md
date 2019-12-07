@@ -110,7 +110,7 @@ Installing may take a **long time** and requires an Internet connection to downl
 
 1. Installs required packages (assumes Debian)
 2. Creates a Python virtual environment at `voice2json/.venv_<CPU_ARCH>`
-    * `CPU_ARCH="$(lscpu | awk '/^Architecture/{print $2}')"`
+    * `CPU_ARCH="$(python3 -c 'import platform; print(platform.machine())')"`
     * Override location with `--venv <DIR>`
     * Avoid re-creating virtual environment with `--nocreate`
 3. Downloads and compiles these libraries in `voice2json/build_<CPU_ARCH>`:
