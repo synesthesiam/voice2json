@@ -5,7 +5,7 @@ if [[ -z "${voice2json_dir}" ]]; then
 fi
 
 if [[ -z "${kaldi_dir}" ]]; then
-    CPU_ARCH="$(python3 -c 'import platform; print(platform.machine())')"
+    CPU_ARCH="$(uname --m)"
     export kaldi_dir="${voice2json_dir}/build_${CPU_ARCH}/kaldi-master"
 fi
 

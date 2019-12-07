@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 this_dir="$( cd "$( dirname "$0" )" && pwd )"
-CPU_ARCH="$(python3 -c 'import platform; print(platform.machine())')"
+CPU_ARCH="$(uname --m)"
 export voice2json_dir="$(realpath "${this_dir}")"
 
 venv="${this_dir}/.venv_${CPU_ARCH}"

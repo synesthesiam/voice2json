@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 this_dir="$( cd "$( dirname "$0" )" && pwd )"
 
-CPU_ARCH="$(python3 -c 'import platform; print(platform.machine())')"
+CPU_ARCH="$(uname --m)"
 venv="${this_dir}/.venv_${CPU_ARCH}"
 
 # -----------------------------------------------------------------------------

@@ -7,7 +7,7 @@ if [[ ! -d "${profiles_dir}" ]]; then
     exit 1
 fi
 
-CPU_ARCH="$(python3 -c 'import platform; print(platform.machine())')"
+CPU_ARCH="$(uname --m)"
 
 # -----------------------------------------------------------------------------
 

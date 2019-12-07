@@ -27,7 +27,7 @@ if [[ -z "${architecture}" ]]; then
 fi
 
 name='voice2json'
-CPU_ARCH="$(python3 -c 'import platform; print(platform.machine())')"
+CPU_ARCH="$(uname --m)"
 
 package_name="${name}_${version}_${architecture}"
 package_dir="debian/${package_name}"
