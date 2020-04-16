@@ -13,27 +13,30 @@ from pathlib import Path
 from typing import Optional, Dict, Any, Union, Set, BinaryIO
 import struct
 
-import attr
 import pydash
-import pywrapfst as fst
+
+from rhasspyasr import Transcriber
+from rhasspyasr_pocketsphinx import PocketsphinxTranscriber
+from rhasspysilence import VoiceCommandRecorder, VoiceCommandResult, WebRtcVadRecorder
 
 from voice2json.train import train_profile
-from voice2json.speech.const import KaldiModelType
-from voice2json.speech import (
-    Transcriber,
-    PocketsphinxTranscriber,
-    KaldiCommandLineTranscriber,
-    KaldiExtensionTranscriber,
-    JuliusTranscriber,
-)
-from voice2json.intent import StrictRecognizer, FuzzyRecognizer
-from voice2json.intent.const import Recognizer, Recognition
-from voice2json.command.const import VoiceCommandRecorder
-from voice2json.command import WebRtcVadRecorder
-from voice2json.wake import PorcupineDetector
-from voice2json.wake.const import WakeWordDetector
 
-_LOGGER = logging.getLogger(__name__)
+# from voice2json.speech.const import KaldiModelType
+# from voice2json.speech import (
+#     Transcriber,
+#     PocketsphinxTranscriber,
+#     KaldiCommandLineTranscriber,
+#     KaldiExtensionTranscriber,
+#     JuliusTranscriber,
+# )
+# from voice2json.intent import StrictRecognizer, FuzzyRecognizer
+# from voice2json.intent.const import Recognizer, Recognition
+# from voice2json.command.const import VoiceCommandRecorder
+# from voice2json.command import WebRtcVadRecorder
+# from voice2json.wake import PorcupineDetector
+# from voice2json.wake.const import WakeWordDetector
+
+_LOGGER = logging.getLogger("voice2json.core")
 
 # -----------------------------------------------------------------------------
 
@@ -41,25 +44,19 @@ _LOGGER = logging.getLogger(__name__)
 class Voice2JsonCore:
     """Core voice2json command support."""
 
-    def __init__(self, profile_dir: Path, profile: Dict[str, Any]):
+    def __init__(self, profile_dir: Path, profile: Dict[str, Any], loop=None):
         """Initialize voice2json."""
         self.profile_dir = profile_dir
         self.profile = profile
-        self.loop = asyncio.get_event_loop()
+        self.loop = loop or asyncio.get_event_loop()
 
     # -------------------------------------------------------------------------
     # train-profile
     # -------------------------------------------------------------------------
 
-    def train_profile(self, db_path: Optional[Path] = None):
+    def train_profile(self):
         """Generate speech/intent artifacts for a profile."""
-        if db_path is not None:
-            doit_args = ["--db-file", str(db_path)]
-        else:
-            # Store in profile directory
-            doit_args = ["--db-file", str(self.profile_dir / ".doit.db")]
-
-        train_profile(self.profile_dir, self.profile, doit_args)
+        train_profile(self.profile_dir, self.profile)
 
     # -------------------------------------------------------------------------
     # transcribe-wav
@@ -126,345 +123,345 @@ class Voice2JsonCore:
             debug=debug,
         )
 
-    def get_kaldi_transcriber(
-        self, open_transcription=False, debug=False
-    ) -> Union[KaldiExtensionTranscriber, KaldiCommandLineTranscriber]:
-        """Create Transcriber for Kaldi."""
-        # Load settings
-        model_type = pydash.get(self.profile, "speech-to-text.kaldi.model-type", "")
-        acoustic_model = self.ppath("speech-to-text.acoustic-model", "acoustic_model")
+    # def get_kaldi_transcriber(
+    #     self, open_transcription=False, debug=False
+    # ) -> Union[KaldiExtensionTranscriber, KaldiCommandLineTranscriber]:
+    #     """Create Transcriber for Kaldi."""
+    #     # Load settings
+    #     model_type = pydash.get(self.profile, "speech-to-text.kaldi.model-type", "")
+    #     acoustic_model = self.ppath("speech-to-text.acoustic-model", "acoustic_model")
 
-        if open_transcription:
-            # Use base graph
-            graph_dir = self.ppath("speech-to-text.kaldi.base-graph-directory") or (
-                acoustic_model / "model" / "graph"
-            )
-        else:
-            # Use custom graph
-            graph_dir = self.ppath("speech-to-text.kaldi.graph-directory") or (
-                acoustic_model / "graph"
-            )
+    #     if open_transcription:
+    #         # Use base graph
+    #         graph_dir = self.ppath("speech-to-text.kaldi.base-graph-directory") or (
+    #             acoustic_model / "model" / "graph"
+    #         )
+    #     else:
+    #         # Use custom graph
+    #         graph_dir = self.ppath("speech-to-text.kaldi.graph-directory") or (
+    #             acoustic_model / "graph"
+    #         )
 
-        if model_type == KaldiModelType.NNET3:
-            _LOGGER.debug("Loading Kaldi nnet3 Python extension")
+    #     if model_type == KaldiModelType.NNET3:
+    #         _LOGGER.debug("Loading Kaldi nnet3 Python extension")
 
-            # Use Python extension
-            return KaldiExtensionTranscriber(acoustic_model, graph_dir)
+    #         # Use Python extension
+    #         return KaldiExtensionTranscriber(acoustic_model, graph_dir)
 
-        # Use kaldi-decode script
-        return KaldiCommandLineTranscriber(model_type, acoustic_model, graph_dir)
+    #     # Use kaldi-decode script
+    #     return KaldiCommandLineTranscriber(model_type, acoustic_model, graph_dir)
 
-    def get_julius_transcriber(
-        self, open_transcription=False, debug=False
-    ) -> JuliusTranscriber:
-        """Create Transcriber for Julius."""
-        # Load settings
-        acoustic_model = self.ppath("speech-to-text.acoustic-model", "acoustic_model")
+    # def get_julius_transcriber(
+    #     self, open_transcription=False, debug=False
+    # ) -> JuliusTranscriber:
+    #     """Create Transcriber for Julius."""
+    #     # Load settings
+    #     acoustic_model = self.ppath("speech-to-text.acoustic-model", "acoustic_model")
 
-        if open_transcription:
-            # Use base dictionary/language model
-            dictionary = self.ppath(
-                "speech-to-text.base-dictionary", "base_dictionary.txt"
-            )
+    #     if open_transcription:
+    #         # Use base dictionary/language model
+    #         dictionary = self.ppath(
+    #             "speech-to-text.base-dictionary", "base_dictionary.txt"
+    #         )
 
-            language_model = self.ppath(
-                "speech-to-text.base-language-model", "base_language_model.bin"
-            )
-        else:
-            # Use custom dictionary/language model
-            dictionary = self.ppath("speech-to-text.dictionary", "dictionary.txt")
+    #         language_model = self.ppath(
+    #             "speech-to-text.base-language-model", "base_language_model.bin"
+    #         )
+    #     else:
+    #         # Use custom dictionary/language model
+    #         dictionary = self.ppath("speech-to-text.dictionary", "dictionary.txt")
 
-            language_model = self.ppath(
-                "speech-to-text.language-model", "language_model.txt"
-            )
+    #         language_model = self.ppath(
+    #             "speech-to-text.language-model", "language_model.txt"
+    #         )
 
-        return JuliusTranscriber(
-            acoustic_model, dictionary, language_model, debug=debug
-        )
+    #     return JuliusTranscriber(
+    #         acoustic_model, dictionary, language_model, debug=debug
+    #     )
 
     # -------------------------------------------------------------------------
     # recognize-intent
     # -------------------------------------------------------------------------
 
-    def get_recognizer(self) -> Recognizer:
-        """Create intent recognizer based on profile settings."""
-        # Load settings
-        intent_fst_path = self.ppath("intent-recognition.intent-fst", "intent.fst")
-        stop_words_path = self.ppath("intent-recognition.stop-words", "stop_words.txt")
-        fuzzy = pydash.get(self.profile, "intent-recognition.fuzzy", True)
+    # def get_recognizer(self) -> Recognizer:
+    #     """Create intent recognizer based on profile settings."""
+    #     # Load settings
+    #     intent_fst_path = self.ppath("intent-recognition.intent-fst", "intent.fst")
+    #     stop_words_path = self.ppath("intent-recognition.stop-words", "stop_words.txt")
+    #     fuzzy = pydash.get(self.profile, "intent-recognition.fuzzy", True)
 
-        # Load intent finite state transducer
-        intent_fst = fst.Fst.read(str(intent_fst_path))
+    #     # Load intent finite state transducer
+    #     intent_fst = fst.Fst.read(str(intent_fst_path))
 
-        if fuzzy:
-            # Load stop words (common words that can be safely ignored)
-            stop_words: Set[str] = set()
-            if (stop_words_path is not None) and stop_words_path.exists():
-                stop_words.update(
-                    w.strip() for w in stop_words_path.read_text().splitlines()
-                )
+    #     if fuzzy:
+    #         # Load stop words (common words that can be safely ignored)
+    #         stop_words: Set[str] = set()
+    #         if (stop_words_path is not None) and stop_words_path.exists():
+    #             stop_words.update(
+    #                 w.strip() for w in stop_words_path.read_text().splitlines()
+    #             )
 
-            return FuzzyRecognizer(intent_fst, stop_words=stop_words)
+    #         return FuzzyRecognizer(intent_fst, stop_words=stop_words)
 
-        # Use strict matching
-        return StrictRecognizer(intent_fst)
+    #     # Use strict matching
+    #     return StrictRecognizer(intent_fst)
 
     # -------------------------------------------------------------------------
     # record-command
     # -------------------------------------------------------------------------
 
-    def get_command_recorder(self) -> VoiceCommandRecorder:
+    def get_command_recorder(self) -> WebRtcVadRecorder:
         """Get voice command recorder based on profile settings."""
-        # Load settings
-        vad_mode = int(pydash.get(self.profile, "voice-command.vad-mode", 3))
-        min_seconds = float(
-            pydash.get(self.profile, "voice-command.minimum-seconds", 2)
-        )
-        max_seconds = float(
-            pydash.get(self.profile, "voice-command.maximum-seconds", 30)
-        )
-        speech_seconds = float(
-            pydash.get(self.profile, "voice-command.speech-seconds", 0.3)
-        )
-        silence_seconds = float(
-            pydash.get(self.profile, "voice-command.silence-seconds", 0.5)
-        )
-        before_seconds = float(
-            pydash.get(self.profile, "voice-command.before-seconds", 0.25)
-        )
-        chunk_size = int(pydash.get(self.profile, "voice-command.chunk-size", 960))
-        sample_rate = int(
-            pydash.get(self.profile, "audio.format.sample-rate-hertz", 16000)
-        )
+        # # Load settings
+        # vad_mode = int(pydash.get(self.profile, "voice-command.vad-mode", 3))
+        # min_seconds = float(
+        #     pydash.get(self.profile, "voice-command.minimum-seconds", 2)
+        # )
+        # max_seconds = float(
+        #     pydash.get(self.profile, "voice-command.maximum-seconds", 30)
+        # )
+        # speech_seconds = float(
+        #     pydash.get(self.profile, "voice-command.speech-seconds", 0.3)
+        # )
+        # silence_seconds = float(
+        #     pydash.get(self.profile, "voice-command.silence-seconds", 0.5)
+        # )
+        # before_seconds = float(
+        #     pydash.get(self.profile, "voice-command.before-seconds", 0.25)
+        # )
+        # chunk_size = int(pydash.get(self.profile, "voice-command.chunk-size", 960))
+        # sample_rate = int(
+        #     pydash.get(self.profile, "audio.format.sample-rate-hertz", 16000)
+        # )
 
-        return WebRtcVadRecorder(
-            vad_mode=vad_mode,
-            sample_rate=sample_rate,
-            chunk_size=chunk_size,
-            min_seconds=min_seconds,
-            max_seconds=max_seconds,
-            speech_seconds=speech_seconds,
-            silence_seconds=silence_seconds,
-            before_seconds=before_seconds,
-        )
+        # return WebRtcVadRecorder(
+        #     vad_mode=vad_mode,
+        #     sample_rate=sample_rate,
+        #     chunk_size=chunk_size,
+        #     min_seconds=min_seconds,
+        #     max_seconds=max_seconds,
+        #     speech_seconds=speech_seconds,
+        #     silence_seconds=silence_seconds,
+        #     before_seconds=before_seconds,
+        # )
 
     # -------------------------------------------------------------------------
     # wait-wake
     # -------------------------------------------------------------------------
 
-    def get_wake_detector(self) -> WakeWordDetector:
-        """Get wake word detector based on profile settings."""
-        # Load settings
-        library_path = self.ppath("wake-word.porcupine.library-file")
-        params_path = self.ppath("wake-word.porcupine.params-file")
-        keyword_path = self.ppath("wake-word.porcupine.keyword-file")
-        sensitivity = float(pydash.get(self, "wake-word.sensitivity", 0.5))
+    # def get_wake_detector(self) -> WakeWordDetector:
+    #     """Get wake word detector based on profile settings."""
+    #     # Load settings
+    #     library_path = self.ppath("wake-word.porcupine.library-file")
+    #     params_path = self.ppath("wake-word.porcupine.params-file")
+    #     keyword_path = self.ppath("wake-word.porcupine.keyword-file")
+    #     sensitivity = float(pydash.get(self, "wake-word.sensitivity", 0.5))
 
-        return PorcupineDetector(library_path, params_path, keyword_path, sensitivity)
+    #     return PorcupineDetector(library_path, params_path, keyword_path, sensitivity)
 
     # -------------------------------------------------------------------------
     # test-examples
     # -------------------------------------------------------------------------
 
-    def test_examples(
-        self, expected: Dict[str, Recognition], actual: Dict[str, Recognition]
-    ) -> Dict[str, Any]:
-        """Generate report of comparison between expected and actual recognition results."""
-        # Actual intents and extra info about missing entities, etc.
-        actual_results: Dict[str, Dict[str, Any]] = {}
+    # def test_examples(
+    #     self, expected: Dict[str, Recognition], actual: Dict[str, Recognition]
+    # ) -> Dict[str, Any]:
+    #     """Generate report of comparison between expected and actual recognition results."""
+    # # Actual intents and extra info about missing entities, etc.
+    # actual_results: Dict[str, Dict[str, Any]] = {}
 
-        # Total number of WAV files
-        num_wavs = 0
+    # # Total number of WAV files
+    # num_wavs = 0
 
-        # Number transcriptions that match *exactly*
-        correct_transcriptions = 0
+    # # Number transcriptions that match *exactly*
+    # correct_transcriptions = 0
 
-        # Number of words in all transcriptions (as counted by word_align.pl)
-        num_words = 0
+    # # Number of words in all transcriptions (as counted by word_align.pl)
+    # num_words = 0
 
-        # Number of correct words in all transcriptions (as computed by word_align.pl)
-        correct_words = 0
+    # # Number of correct words in all transcriptions (as computed by word_align.pl)
+    # correct_words = 0
 
-        # Total number of intents that were attempted
-        num_intents = 0
+    # # Total number of intents that were attempted
+    # num_intents = 0
 
-        # Number of recognized intents that match expectations
-        correct_intent_names = 0
+    # # Number of recognized intents that match expectations
+    # correct_intent_names = 0
 
-        # Number of entity/value pairs that match *exactly* in all recognized intents
-        correct_entities = 0
+    # # Number of entity/value pairs that match *exactly* in all recognized intents
+    # correct_entities = 0
 
-        # Number of entity/value pairs all intents
-        num_entities = 0
+    # # Number of entity/value pairs all intents
+    # num_entities = 0
 
-        # Number of intents where name and entities match exactly
-        correct_intent_and_entities = 0
+    # # Number of intents where name and entities match exactly
+    # correct_intent_and_entities = 0
 
-        # Real time vs transcription time
-        speedups = []
+    # # Real time vs transcription time
+    # speedups = []
 
-        # Compute statistics
-        for wav_name, actual_intent in actual.items():
-            actual_results[wav_name] = attr.asdict(actual_intent)
+    # # Compute statistics
+    # for wav_name, actual_intent in actual.items():
+    #     actual_results[wav_name] = attr.asdict(actual_intent)
 
-            # Get corresponding expected intent
-            expected_intent = expected[wav_name]
+    #     # Get corresponding expected intent
+    #     expected_intent = expected[wav_name]
 
-            # Compute real-time speed-up
-            wav_seconds = actual_intent.wav_seconds
-            transcribe_seconds = actual_intent.transcribe_seconds
-            if (transcribe_seconds > 0) and (wav_seconds > 0):
-                speedups.append(wav_seconds / transcribe_seconds)
+    #     # Compute real-time speed-up
+    #     wav_seconds = actual_intent.wav_seconds
+    #     transcribe_seconds = actual_intent.transcribe_seconds
+    #     if (transcribe_seconds > 0) and (wav_seconds > 0):
+    #         speedups.append(wav_seconds / transcribe_seconds)
 
-            # Check transcriptions
-            actual_text = actual_intent.raw_text or actual_intent.text
-            expected_text = expected_intent.raw_text or expected_intent.text
+    #     # Check transcriptions
+    #     actual_text = actual_intent.raw_text or actual_intent.text
+    #     expected_text = expected_intent.raw_text or expected_intent.text
 
-            if expected_text == actual_text:
-                correct_transcriptions += 1
+    #     if expected_text == actual_text:
+    #         correct_transcriptions += 1
 
-            # Check intents
-            if expected_intent.intent is not None:
-                num_intents += 1
-                if actual_intent.intent is None:
-                    intents_match = False
-                    actual_results[wav_name]["intent"] = {"name": ""}
-                else:
-                    intents_match = (
-                        expected_intent.intent.name == actual_intent.intent.name
-                    )
+    #     # Check intents
+    #     if expected_intent.intent is not None:
+    #         num_intents += 1
+    #         if actual_intent.intent is None:
+    #             intents_match = False
+    #             actual_results[wav_name]["intent"] = {"name": ""}
+    #         else:
+    #             intents_match = (
+    #                 expected_intent.intent.name == actual_intent.intent.name
+    #             )
 
-                # Count entities
-                expected_entities: List[Tuple[str, str]] = []
-                num_expected_entities = 0
-                for entity in expected_intent.entities:
-                    num_entities += 1
-                    num_expected_entities += 1
-                    entity_tuple = (entity.entity, entity.value)
-                    expected_entities.append(entity_tuple)
+    #         # Count entities
+    #         expected_entities: List[Tuple[str, str]] = []
+    #         num_expected_entities = 0
+    #         for entity in expected_intent.entities:
+    #             num_entities += 1
+    #             num_expected_entities += 1
+    #             entity_tuple = (entity.entity, entity.value)
+    #             expected_entities.append(entity_tuple)
 
-                # Verify actual entities.
-                # Only check entities if intent was correct.
-                wrong_entities = []
-                missing_entities = []
-                if intents_match:
-                    correct_intent_names += 1
-                    num_actual_entities = 0
-                    for entity in actual_intent.entities:
-                        num_actual_entities += 1
-                        entity_tuple = (entity.entity, entity.value)
+    #         # Verify actual entities.
+    #         # Only check entities if intent was correct.
+    #         wrong_entities = []
+    #         missing_entities = []
+    #         if intents_match:
+    #             correct_intent_names += 1
+    #             num_actual_entities = 0
+    #             for entity in actual_intent.entities:
+    #                 num_actual_entities += 1
+    #                 entity_tuple = (entity.entity, entity.value)
 
-                        if entity_tuple in expected_entities:
-                            correct_entities += 1
-                            expected_entities.remove(entity_tuple)
-                        else:
-                            wrong_entities.append(entity_tuple)
+    #                 if entity_tuple in expected_entities:
+    #                     correct_entities += 1
+    #                     expected_entities.remove(entity_tuple)
+    #                 else:
+    #                     wrong_entities.append(entity_tuple)
 
-                    # Anything left is missing
-                    missing_entities = expected_entities
+    #             # Anything left is missing
+    #             missing_entities = expected_entities
 
-                    # Check if entities matched *exactly*
-                    if (len(expected_entities) == 0) and (
-                        num_actual_entities == num_expected_entities
-                    ):
-                        correct_intent_and_entities += 1
+    #             # Check if entities matched *exactly*
+    #             if (len(expected_entities) == 0) and (
+    #                 num_actual_entities == num_expected_entities
+    #             ):
+    #                 correct_intent_and_entities += 1
 
-                actual_results[wav_name]["intent"][
-                    "expected_name"
-                ] = expected_intent.intent.name
-                actual_results[wav_name]["wrong_entities"] = wrong_entities
-                actual_results[wav_name]["missing_entities"] = missing_entities
+    #         actual_results[wav_name]["intent"][
+    #             "expected_name"
+    #         ] = expected_intent.intent.name
+    #         actual_results[wav_name]["wrong_entities"] = wrong_entities
+    #         actual_results[wav_name]["missing_entities"] = missing_entities
 
-            num_wavs += 1
+    #     num_wavs += 1
 
-        # ---------------------------------------------------------------------
+    # # ---------------------------------------------------------------------
 
-        if num_wavs < 1:
-            _LOGGER.fatal("No WAV files found")
-            sys.exit(1)
+    # if num_wavs < 1:
+    #     _LOGGER.fatal("No WAV files found")
+    #     sys.exit(1)
 
-        # Compute word error rate (WER)
-        align_results: Dict[str, Any] = {}
-        if shutil.which("word_align.pl"):
-            from voice2json.utils import align2json
+    # # Compute word error rate (WER)
+    # align_results: Dict[str, Any] = {}
+    # if shutil.which("word_align.pl"):
+    #     from voice2json.utils import align2json
 
-            with tempfile.NamedTemporaryFile(mode="w") as reference_file:
-                # Write references
-                for expected_key, expected_intent in expected.items():
-                    print(
-                        expected_intent.raw_text or expected_intent.text,
-                        f"({expected_key})",
-                        file=reference_file,
-                    )
+    #     with tempfile.NamedTemporaryFile(mode="w") as reference_file:
+    #         # Write references
+    #         for expected_key, expected_intent in expected.items():
+    #             print(
+    #                 expected_intent.raw_text or expected_intent.text,
+    #                 f"({expected_key})",
+    #                 file=reference_file,
+    #             )
 
-                with tempfile.NamedTemporaryFile(mode="w") as hypothesis_file:
-                    # Write hypotheses
-                    for actual_key, actual_intent in actual.items():
-                        print(
-                            actual_intent.raw_text or actual_intent.text,
-                            f"({actual_key})",
-                            file=hypothesis_file,
-                        )
+    #         with tempfile.NamedTemporaryFile(mode="w") as hypothesis_file:
+    #             # Write hypotheses
+    #             for actual_key, actual_intent in actual.items():
+    #                 print(
+    #                     actual_intent.raw_text or actual_intent.text,
+    #                     f"({actual_key})",
+    #                     file=hypothesis_file,
+    #                 )
 
-                    # Calculate WER
-                    reference_file.seek(0)
-                    hypothesis_file.seek(0)
+    #             # Calculate WER
+    #             reference_file.seek(0)
+    #             hypothesis_file.seek(0)
 
-                    align_cmd = [
-                        "word_align.pl",
-                        reference_file.name,
-                        hypothesis_file.name,
-                    ]
-                    _LOGGER.debug(align_cmd)
+    #             align_cmd = [
+    #                 "word_align.pl",
+    #                 reference_file.name,
+    #                 hypothesis_file.name,
+    #             ]
+    #             _LOGGER.debug(align_cmd)
 
-                    align_output = subprocess.check_output(align_cmd).decode()
+    #             align_output = subprocess.check_output(align_cmd).decode()
 
-                    # Convert to JSON
-                    with io.StringIO(align_output) as align_file:
-                        align_results = align2json(align_file)
+    #             # Convert to JSON
+    #             with io.StringIO(align_output) as align_file:
+    #                 align_results = align2json(align_file)
 
-        else:
-            _LOGGER.warn("word_align.pl not found in PATH. Not computing WER.")
+    # else:
+    #     _LOGGER.warn("word_align.pl not found in PATH. Not computing WER.")
 
-        # Merge WER results
-        for key, wer in align_results.items():
-            actual_results[key]["word_error"] = wer
-            num_words += wer["words"]
-            correct_words += wer["correct"]
+    # # Merge WER results
+    # for key, wer in align_results.items():
+    #     actual_results[key]["word_error"] = wer
+    #     num_words += wer["words"]
+    #     correct_words += wer["correct"]
 
-        average_transcription_speedup = 0
-        if len(speedups) > 0:
-            average_transcription_speedup = sum(speedups) / len(speedups)
+    # average_transcription_speedup = 0
+    # if len(speedups) > 0:
+    #     average_transcription_speedup = sum(speedups) / len(speedups)
 
-        # Summarize results
-        return {
-            "statistics": {
-                "num_wavs": num_wavs,
-                "num_words": num_words,
-                "num_entities": num_entities,
-                "correct_transcriptions": correct_transcriptions,
-                "correct_intent_names": correct_intent_names,
-                "correct_words": correct_words,
-                "correct_entities": correct_entities,
-                "transcription_accuracy": correct_words / num_words
-                if num_words > 0
-                else 1,
-                "intent_accuracy": correct_intent_names / num_intents
-                if num_intents > 0
-                else 1,
-                "entity_accuracy": correct_entities / num_entities
-                if num_entities > 0
-                else 1,
-                "intent_entity_accuracy": correct_intent_and_entities / num_intents
-                if num_intents > 0
-                else 1,
-                "average_transcription_speedup": average_transcription_speedup,
-            },
-            "actual": actual_results,
-            "expected": {
-                wav_name: attr.asdict(intent) for wav_name, intent in expected.items()
-            },
-        }
+    # # Summarize results
+    # return {
+    #     "statistics": {
+    #         "num_wavs": num_wavs,
+    #         "num_words": num_words,
+    #         "num_entities": num_entities,
+    #         "correct_transcriptions": correct_transcriptions,
+    #         "correct_intent_names": correct_intent_names,
+    #         "correct_words": correct_words,
+    #         "correct_entities": correct_entities,
+    #         "transcription_accuracy": correct_words / num_words
+    #         if num_words > 0
+    #         else 1,
+    #         "intent_accuracy": correct_intent_names / num_intents
+    #         if num_intents > 0
+    #         else 1,
+    #         "entity_accuracy": correct_entities / num_entities
+    #         if num_entities > 0
+    #         else 1,
+    #         "intent_entity_accuracy": correct_intent_and_entities / num_intents
+    #         if num_intents > 0
+    #         else 1,
+    #         "average_transcription_speedup": average_transcription_speedup,
+    #     },
+    #     "actual": actual_results,
+    #     "expected": {
+    #         wav_name: attr.asdict(intent) for wav_name, intent in expected.items()
+    #     },
+    # }
 
     # -------------------------------------------------------------------------
     # Utilities

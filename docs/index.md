@@ -140,7 +140,7 @@ For each language, the profile with the highest transcription accuracy (lowest w
   </thead>
   <tbody>
     <tr bgcolor="#FFFFDD">
-      <td><a href="https://github.com/synesthesiam/ca_pocketsphinx-cmu/archive/v1.0.tar.gz">Download</a></td>
+      <td><a href="https://github.com/synesthesiam/ca-es_pocketsphinx-cmu/archive/v1.0.tar.gz">Download</a></td>
       <td>Catalan</td>
       <td>ca-es</td>
       <td>pocketsphinx</td>
@@ -188,7 +188,7 @@ For each language, the profile with the highest transcription accuracy (lowest w
       <td>&#9785; (1x)</td>
     </tr>
     <tr bgcolor="#FFFFDD">
-      <td><a href="https://github.com/synesthesiam/en-us_julius-github/archive/v1.0.tar.gz">Download</a></td>
+      <td><a href="https://github.com/synesthesiam/en-in_julius-github/archive/v1.0.tar.gz">Download</a></td>
       <td>Indian English</td>
       <td>en-in</td>
       <td>pocketsphinx</td>

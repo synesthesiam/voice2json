@@ -28,7 +28,7 @@ pywrapfst_path = list(site_dir.glob("pywrapfst.*.so"))[0]
 webrtcvad_path = list(site_dir.glob("_webrtcvad.*.so"))[0]
 
 a = Analysis(
-    [Path.cwd() / "voice2json" "/__main__.py"],
+    [Path.cwd() / "voice2json" / "__main__.py"],
     pathex=["."],
     binaries=[
         (pywrapfst_path, "."),

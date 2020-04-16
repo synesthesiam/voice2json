@@ -7,6 +7,8 @@ For more details, see https://voice2json.org
 import argparse
 import asyncio
 import concurrent.futures
+import dataclasses
+import gzip
 import io
 import itertools
 import json
@@ -28,15 +30,14 @@ from pathlib import Path
 from typing import Any, BinaryIO, Dict, List, Optional, Set, Tuple
 from xml.etree import ElementTree as etree
 
-import attr
 import jsonlines
 import pydash
-import requests
 import yaml
+import networkx as nx
+import rhasspynlu
 
 from voice2json.core import Voice2JsonCore
-from voice2json.speech.const import Transcription
-from voice2json.intent.const import Recognition, RecognitionResult
+
 from voice2json.utils import (
     numbers_to_words,
     recursive_update,
@@ -44,7 +45,7 @@ from voice2json.utils import (
     split_whitespace,
 )
 
-_LOGGER = logging.getLogger(__name__)
+_LOGGER = logging.getLogger("voice2json")
 
 
 # -----------------------------------------------------------------------------
@@ -107,9 +108,6 @@ def get_args() -> argparse.Namespace:
     train_parser = sub_parsers.add_parser(
         "train-profile", help="Train voice2json profile"
     )
-    train_parser.add_argument(
-        "--db-file", help="Path to save doit DB (default: profile directory)"
-    )
     train_parser.set_defaults(func=train)
 
     # --------------
@@ -165,47 +163,47 @@ def get_args() -> argparse.Namespace:
         action="store_true",
         help="Replace numbers with words in input sentence",
     )
-    recognize_parser.add_argument(
-        "--perplexity",
-        action="store_true",
-        help="Compute perplexity of input text relative to language model",
-    )
+    # recognize_parser.add_argument(
+    #     "--perplexity",
+    #     action="store_true",
+    #     help="Compute perplexity of input text relative to language model",
+    # )
 
     # --------------
     # record-command
     # --------------
-    command_parser = sub_parsers.add_parser(
-        "record-command", help="Record voice command and write WAV to stdout"
-    )
-    command_parser.add_argument(
-        "--audio-source", "-a", help="File to read raw 16-bit 16Khz mono audio from"
-    )
-    command_parser.add_argument(
-        "--wav-sink", "-w", help="File to write WAV data to instead of stdout"
-    )
-    command_parser.add_argument(
-        "--output-size",
-        action="store_true",
-        help="Write line with output byte count before output",
-    )
-    command_parser.set_defaults(func=record_command)
+    # command_parser = sub_parsers.add_parser(
+    #     "record-command", help="Record voice command and write WAV to stdout"
+    # )
+    # command_parser.add_argument(
+    #     "--audio-source", "-a", help="File to read raw 16-bit 16Khz mono audio from"
+    # )
+    # command_parser.add_argument(
+    #     "--wav-sink", "-w", help="File to write WAV data to instead of stdout"
+    # )
+    # command_parser.add_argument(
+    #     "--output-size",
+    #     action="store_true",
+    #     help="Write line with output byte count before output",
+    # )
+    # command_parser.set_defaults(func=record_command)
 
     # ---------
     # wait-wake
     # ---------
-    wake_parser = sub_parsers.add_parser(
-        "wait-wake", help="Listen to audio until wake word is spoken"
-    )
-    wake_parser.add_argument(
-        "--audio-source", "-a", help="File to read raw 16-bit 16Khz mono audio from"
-    )
-    wake_parser.add_argument(
-        "--exit-count",
-        "-c",
-        type=int,
-        help="Exit after the wake word has been spoken some number of times",
-    )
-    wake_parser.set_defaults(func=wake)
+    # wake_parser = sub_parsers.add_parser(
+    #     "wait-wake", help="Listen to audio until wake word is spoken"
+    # )
+    # wake_parser.add_argument(
+    #     "--audio-source", "-a", help="File to read raw 16-bit 16Khz mono audio from"
+    # )
+    # wake_parser.add_argument(
+    #     "--exit-count",
+    #     "-c",
+    #     type=int,
+    #     help="Exit after the wake word has been spoken some number of times",
+    # )
+    # wake_parser.set_defaults(func=wake)
 
     # # pronounce-word
     # pronounce_parser = sub_parsers.add_parser(
@@ -280,34 +278,34 @@ def get_args() -> argparse.Namespace:
     # -------------
     # test-examples
     # -------------
-    test_examples_parser = sub_parsers.add_parser(
-        "test-examples", help="Test performance on previously recorded examples"
-    )
-    test_examples_parser.add_argument(
-        "--directory", "-d", help="Directory with recorded examples"
-    )
-    test_examples_parser.add_argument(
-        "--results", "-r", help="Directory to save test results"
-    )
-    test_examples_parser.add_argument(
-        "--expected", help="Path to jsonl file with expected test results"
-    )
-    test_examples_parser.add_argument(
-        "--actual", help="Path to jsonl file with actual test results"
-    )
-    test_examples_parser.add_argument(
-        "--open",
-        "-o",
-        action="store_true",
-        help="Use large pre-built model for transcription",
-    )
-    test_examples_parser.add_argument(
-        "--threads",
-        type=int,
-        default=1,
-        help="Maximum number of threads to use (default=1)",
-    )
-    test_examples_parser.set_defaults(func=test_examples)
+    # test_examples_parser = sub_parsers.add_parser(
+    #     "test-examples", help="Test performance on previously recorded examples"
+    # )
+    # test_examples_parser.add_argument(
+    #     "--directory", "-d", help="Directory with recorded examples"
+    # )
+    # test_examples_parser.add_argument(
+    #     "--results", "-r", help="Directory to save test results"
+    # )
+    # test_examples_parser.add_argument(
+    #     "--expected", help="Path to jsonl file with expected test results"
+    # )
+    # test_examples_parser.add_argument(
+    #     "--actual", help="Path to jsonl file with actual test results"
+    # )
+    # test_examples_parser.add_argument(
+    #     "--open",
+    #     "-o",
+    #     action="store_true",
+    #     help="Use large pre-built model for transcription",
+    # )
+    # test_examples_parser.add_argument(
+    #     "--threads",
+    #     type=int,
+    #     default=1,
+    #     help="Maximum number of threads to use (default=1)",
+    # )
+    # test_examples_parser.set_defaults(func=test_examples)
 
     # # tune-examples
     # tune_examples_parser = sub_parsers.add_parser(
@@ -432,7 +430,7 @@ async def print_profile(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 
 async def train(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     """Create speech/intent artifacts for a profile."""
-    core.train_profile(db_path=args.db_file)
+    core.train_profile()
 
 
 # -----------------------------------------------------------------------------
@@ -471,7 +469,7 @@ async def transcribe(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 
                 # Transcribe
                 transcription = transcriber.transcribe_wav(wav_data)
-                result = attr.asdict(transcription)
+                result = dataclasses.asdict(transcription)
 
                 if relative_dir is None:
                     # Add name of WAV file to result
@@ -501,7 +499,7 @@ async def transcribe(args: argparse.Namespace, core: Voice2JsonCore) -> None:
                     # Transcribe
                     wav_data = core.maybe_convert_wav(wav_data)
                     transcription = transcriber.transcribe_wav(wav_data)
-                    result = attr.asdict(transcription)
+                    result = dataclasses.asdict(transcription)
 
                     print_json(result)
 
@@ -517,7 +515,7 @@ async def transcribe(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 
                 # Transcribe
                 transcription = transcriber.transcribe_wav(wav_data)
-                result = attr.asdict(transcription)
+                result = dataclasses.asdict(transcription)
 
                 print_json(result)
     except KeyboardInterrupt:
@@ -537,43 +535,34 @@ async def recognize(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     # Load settings
     language_code = pydash.get(core.profile, "language.code", "en-US")
     word_casing = pydash.get(core.profile, "training.word-casing", "ignore").lower()
-    skip_unknown = pydash.get(core.profile, "intent-recognition.skip_unknown", True)
+    # skip_unknown = pydash.get(core.profile, "intent-recognition.skip_unknown", True)
+    intent_graph_path = core.ppath("training.intent-graph", "intent.pickle.gz")
+    # stop_words_path = core.ppath("intent-recognition.stop-words", "stop_words.txt")
+    fuzzy = pydash.get(core.profile, "intent-recognition.fuzzy", True)
 
-    # Load intent recognizer
-    recognizer = core.get_recognizer()
+    # Load intent graph
+    _LOGGER.debug("Loading %s", intent_graph_path)
+    with gzip.GzipFile(intent_graph_path, mode="rb") as graph_gzip:
+        intent_graph = nx.readwrite.gpickle.read_gpickle(graph_gzip)
 
     # Ignore words outside of input symbol table
-    known_tokens: Optional[Set[str]] = None
-    if skip_unknown:
-        known_tokens = set()
-        in_symbols = recognizer.intent_fst.input_symbols()
-        for i in range(in_symbols.num_symbols()):
-            key = in_symbols.get_nth_key(i)
-            token = in_symbols.find(i).decode()
+    # known_tokens: Optional[Set[str]] = None
+    # if skip_unknown:
+    #     known_tokens = set()
+    #     in_symbols = recognizer.intent_fst.input_symbols()
+    #     for i in range(in_symbols.num_symbols()):
+    #         key = in_symbols.get_nth_key(i)
+    #         token = in_symbols.find(i).decode()
 
-            # Exclude meta tokens and <eps>
-            if not (token.startswith("__") or token.startswith("<")):
-                known_tokens.add(token)
+    #         # Exclude meta tokens and <eps>
+    #         if not (token.startswith("__") or token.startswith("<")):
+    #             known_tokens.add(token)
 
-    # Build up sentence transformer
-    def identity(x):
-        return x
-
-    sentence_transform = identity
-
+    word_transform = None
     if word_casing == "upper":
-        sentence_transform = str.upper
+        word_transform = str.upper
     elif word_casing == "lower":
-        sentence_transform = str.lower
-
-    if args.replace_numbers:
-        old_transform = sentence_transform
-
-        def number_transform(s):
-            # Automatically convert numbers to words
-            return numbers_to_words(old_transform(s), language=language_code)
-
-        sentence_transform = number_transform
+        word_transform = str.lower
 
     if args.sentence:
         sentences = args.sentence
@@ -597,60 +586,29 @@ async def recognize(args: argparse.Namespace, core: Voice2JsonCore) -> None:
             text = text.strip()
             tokens = split_whitespace(text)
 
-            if known_tokens is not None:
-                # Filter tokens
-                known_tokens = [t for t in tokens if t in known_tokens]
+            # if known_tokens is not None:
+            #     # Filter tokens
+            #     known_tokens = [t for t in tokens if t in known_tokens]
+
+            if args.replace_numbers:
+                tokens = rhasspynlu.replace_numbers(tokens, language=language_code)
 
             # Recognize intent
-            recognition = recognizer.recognize(tokens)
-            result = attr.asdict(recognition)
+            recognitions = rhasspynlu.recognize(
+                tokens, intent_graph, fuzzy=fuzzy, word_transform=word_transform
+            )
+
+            if recognitions:
+                # Use first recognition
+                recognition = recognitions[0]
+            else:
+                # Recognition failure
+                recognition = rhasspynlu.intent.Recognition.empty()
+
+            result = dataclasses.asdict(recognition)
 
             # Add slots
             result["slots"] = {e.entity: e.value for e in recognition.entities}
-
-            if args.perplexity:
-                try:
-                    # Compute sentence perplexity with ngramperplexity
-                    with tempfile.TemporaryDirectory() as temp_dir_name:
-                        temp_path = Path(temp_dir_name)
-                        text_path = temp_path / "sentence.txt"
-                        text_path.write_text(text)
-
-                        symbols_path = temp_path / "sentence.syms"
-                        subprocess.check_call(
-                            ["ngramsymbols", str(text_path), str(symbols_path)]
-                        )
-
-                        far_path = temp_path / "sentence.far"
-                        subprocess.check_call(
-                            [
-                                "farcompilestrings",
-                                f"-symbols={symbols_path}",
-                                "-keep_symbols=1",
-                                str(text_path),
-                                str(far_path),
-                            ]
-                        )
-
-                        verbosity = 1 if args.debug else 0
-                        output = subprocess.check_output(
-                            [
-                                "ngramperplexity",
-                                f"--v={verbosity}",
-                                str(core.profile_dir / "intent.fst.model"),
-                                str(far_path),
-                            ]
-                        ).decode()
-
-                        _LOGGER.debug(output)
-
-                        last_line = output.strip().splitlines()[-1]
-                        perplexity = float(
-                            re.match(r"^.*perplexity\s*=\s*(.+)$", last_line).group(1)
-                        )
-                        result["perplexity"] = perplexity
-                except Exception:
-                    _LOGGER.exception("perplexity")
 
             # Merge with input object
             for key, value in result.items():
@@ -664,106 +622,106 @@ async def recognize(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 # # -----------------------------------------------------------------------------
 
 
-async def record_command(args: argparse.Namespace, core: Voice2JsonCore) -> None:
-    """Segment audio by speech and silence."""
-    # Make sure profile has been trained
-    check_trained(core)
+# async def record_command(args: argparse.Namespace, core: Voice2JsonCore) -> None:
+#     """Segment audio by speech and silence."""
+#     # Make sure profile has been trained
+#     check_trained(core)
 
-    # Expecting raw 16-bit, 16Khz mono audio
-    if args.audio_source is None:
-        audio_source = core.get_audio_source()
-        _LOGGER.debug("Recording raw 16-bit 16Khz mono audio")
-    elif args.audio_source == "-":
-        # Avoid crash when stdin is closed/read in daemon thread
-        class FakeStdin:
-            def __init__(self):
-                self.done = False
+#     # Expecting raw 16-bit, 16Khz mono audio
+#     if args.audio_source is None:
+#         audio_source = core.get_audio_source()
+#         _LOGGER.debug("Recording raw 16-bit 16Khz mono audio")
+#     elif args.audio_source == "-":
+#         # Avoid crash when stdin is closed/read in daemon thread
+#         class FakeStdin:
+#             def __init__(self):
+#                 self.done = False
 
-            def read(self, n):
-                if self.done:
-                    return None
+#             def read(self, n):
+#                 if self.done:
+#                     return None
 
-                return sys.stdin.buffer.read(n)
+#                 return sys.stdin.buffer.read(n)
 
-            def close(self):
-                self.done = True
+#             def close(self):
+#                 self.done = True
 
-        audio_source = FakeStdin()
-        _LOGGER.debug("Recording raw 16-bit 16Khz mono audio from stdin")
-    else:
-        audio_source: BinaryIO = open(args.audio_source, "rb")
-        _LOGGER.debug(
-            "Recording raw 16-bit 16Khz mono audio from %s", args.audio_source
-        )
+#         audio_source = FakeStdin()
+#         _LOGGER.debug("Recording raw 16-bit 16Khz mono audio from stdin")
+#     else:
+#         audio_source: BinaryIO = open(args.audio_source, "rb")
+#         _LOGGER.debug(
+#             "Recording raw 16-bit 16Khz mono audio from %s", args.audio_source
+#         )
 
-    # JSON events are not printed by default
-    json_file = None
-    wav_sink = sys.stdout.buffer
+#     # JSON events are not printed by default
+#     json_file = None
+#     wav_sink = sys.stdout.buffer
 
-    if (args.wav_sink is not None) and (args.wav_sink != "-"):
-        wav_sink = open(args.wav_sink, "wb")
+#     if (args.wav_sink is not None) and (args.wav_sink != "-"):
+#         wav_sink = open(args.wav_sink, "wb")
 
-        # Print JSON to stdout
-        json_file = sys.stdout
+#         # Print JSON to stdout
+#         json_file = sys.stdout
 
-    # Record command
-    try:
-        recorder = core.get_command_recorder()
-        result = await recorder.record(audio_source)
+#     # Record command
+#     try:
+#         recorder = core.get_command_recorder()
+#         result = await recorder.record(audio_source)
 
-        try:
-            audio_source.close()
-        except Exception:
-            _LOGGER.exception("close audio")
+#         try:
+#             audio_source.close()
+#         except Exception:
+#             _LOGGER.exception("close audio")
 
-        # Output WAV data
-        wav_bytes = core.buffer_to_wav(result.audio_data)
+#         # Output WAV data
+#         wav_bytes = core.buffer_to_wav(result.audio_data)
 
-        if args.output_size:
-            # Write size first on a separate line
-            size_str = str(len(wav_bytes)) + "\n"
-            wav_sink.write(size_str.encode())
+#         if args.output_size:
+#             # Write size first on a separate line
+#             size_str = str(len(wav_bytes)) + "\n"
+#             wav_sink.write(size_str.encode())
 
-        wav_sink.write(wav_bytes)
+#         wav_sink.write(wav_bytes)
 
-        if json_file:
-            for event in result.events:
-                print_json(attr.asdict(event), out_file=json_file)
-    except KeyboardInterrupt:
-        pass  # expected
+#         if json_file:
+#             for event in result.events:
+#                 print_json(attr.asdict(event), out_file=json_file)
+#     except KeyboardInterrupt:
+#         pass  # expected
 
 
 # # -----------------------------------------------------------------------------
 
 
-async def wake(args: argparse.Namespace, core: Voice2JsonCore) -> None:
-    """Wait for wake word in audio stream."""
-    # Expecting raw 16-bit, 16Khz mono audio
-    if args.audio_source is None:
-        audio_source = core.get_audio_source()
-        _LOGGER.debug("Recording raw 16-bit 16Khz mono audio")
-    elif args.audio_source == "-":
-        audio_source = sys.stdin.buffer
-        _LOGGER.debug("Recording raw 16-bit 16Khz mono audio from stdin")
-    else:
-        audio_source: BinaryIO = open(args.audio_source, "rb")
-        _LOGGER.debug(
-            "Recording raw 16-bit 16Khz mono audio from %s", args.audio_source
-        )
+# async def wake(args: argparse.Namespace, core: Voice2JsonCore) -> None:
+#     """Wait for wake word in audio stream."""
+#     # Expecting raw 16-bit, 16Khz mono audio
+#     if args.audio_source is None:
+#         audio_source = core.get_audio_source()
+#         _LOGGER.debug("Recording raw 16-bit 16Khz mono audio")
+#     elif args.audio_source == "-":
+#         audio_source = sys.stdin.buffer
+#         _LOGGER.debug("Recording raw 16-bit 16Khz mono audio from stdin")
+#     else:
+#         audio_source: BinaryIO = open(args.audio_source, "rb")
+#         _LOGGER.debug(
+#             "Recording raw 16-bit 16Khz mono audio from %s", args.audio_source
+#         )
 
-    try:
-        detector = core.get_wake_detector()
+#     try:
+#         detector = core.get_wake_detector()
 
-        async for detection in detector.detect(audio_source):
-            print_json(attr.asdict(detection))
+#         async for detection in detector.detect(audio_source):
+#             print_json(attr.asdict(detection))
 
-            # Check exit count
-            if args.exit_count is not None:
-                args.exit_count -= 1
-                if args.exit_count <= 0:
-                    break
-    except KeyboardInterrupt:
-        pass  # expected
+#             # Check exit count
+#             if args.exit_count is not None:
+#                 args.exit_count -= 1
+#                 if args.exit_count <= 0:
+#                     break
+#     except KeyboardInterrupt:
+#         pass  # expected
 
 
 # # -----------------------------------------------------------------------------
@@ -1302,133 +1260,133 @@ async def wake(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 #     return actual
 
 
-async def test_examples(args: argparse.Namespace, core: Voice2JsonCore) -> None:
-    """Test speech/intent recognition against a directory of expected results."""
-    # Make sure profile has been trained
-    check_trained(core)
+# async def test_examples(args: argparse.Namespace, core: Voice2JsonCore) -> None:
+#     """Test speech/intent recognition against a directory of expected results."""
+#     # Make sure profile has been trained
+#     check_trained(core)
 
-    results_dir = None
-    if args.results is not None:
-        results_dir = Path(args.results)
+#     results_dir = None
+#     if args.results is not None:
+#         results_dir = Path(args.results)
 
-    # Expected/actual intents
-    expected: Dict[str, Recognition] = {}
-    actual: Dict[str, Recognition] = {}
+#     # Expected/actual intents
+#     expected: Dict[str, Recognition] = {}
+#     actual: Dict[str, Recognition] = {}
 
-    if args.expected is None:
-        # Load expected transcriptions/intents from examples directory.
-        # For each .wav file, there should be a .json (intent) or .txt file (transcription).
-        examples_dir = (
-            Path(args.directory) if args.directory is not None else Path.cwd()
-        )
+#     if args.expected is None:
+#         # Load expected transcriptions/intents from examples directory.
+#         # For each .wav file, there should be a .json (intent) or .txt file (transcription).
+#         examples_dir = (
+#             Path(args.directory) if args.directory is not None else Path.cwd()
+#         )
 
-        _LOGGER.debug("Loading expected transcriptions/intents from %s", args.directory)
-        for wav_path in examples_dir.glob("*.wav"):
-            # Try to load expected intent (optional)
-            intent_path = examples_dir / f"{wav_path.stem}.json"
-            expected_intent = None
-            if intent_path.exists():
-                with open(intent_path, "r") as intent_file:
-                    expected_intent = Recognition.fromdict(json.load(intent_file))
-            else:
-                # Load expected transcription only
-                transcript_path = examples_dir / f"{wav_path.stem}.txt"
-                if transcript_path.exists():
-                    # Use text only
-                    expected_text = transcript_path.read_text().strip()
-                    expected_intent = Recognition(
-                        result=RecognitionResult.SUCCESS, text=expected_text
-                    )
+#         _LOGGER.debug("Loading expected transcriptions/intents from %s", args.directory)
+#         for wav_path in examples_dir.glob("*.wav"):
+#             # Try to load expected intent (optional)
+#             intent_path = examples_dir / f"{wav_path.stem}.json"
+#             expected_intent = None
+#             if intent_path.exists():
+#                 with open(intent_path, "r") as intent_file:
+#                     expected_intent = Recognition.fromdict(json.load(intent_file))
+#             else:
+#                 # Load expected transcription only
+#                 transcript_path = examples_dir / f"{wav_path.stem}.txt"
+#                 if transcript_path.exists():
+#                     # Use text only
+#                     expected_text = transcript_path.read_text().strip()
+#                     expected_intent = Recognition(
+#                         result=RecognitionResult.SUCCESS, text=expected_text
+#                     )
 
-            if expected_intent is None:
-                _LOGGER.warn(f"Skipping {wav_path} (no transcription or intent files)")
-                continue
+#             if expected_intent is None:
+#                 _LOGGER.warn(f"Skipping {wav_path} (no transcription or intent files)")
+#                 continue
 
-            expected[wav_path.name] = expected_intent
-    else:
-        _LOGGER.debug("Loading expected intents from %s", args.expected)
+#             expected[wav_path.name] = expected_intent
+#     else:
+#         _LOGGER.debug("Loading expected intents from %s", args.expected)
 
-        # Load expected results from jsonl file.
-        # Each line is an intent with a wav_name key.
-        with open(args.expected, "r") as expected_file:
-            for line in expected_file:
-                expected_intent = Recognition.fromdict(json.loads(line))
-                wav_name = expected_intent["wav_name"]
-                expected[wav_name] = expected_intent
+#         # Load expected results from jsonl file.
+#         # Each line is an intent with a wav_name key.
+#         with open(args.expected, "r") as expected_file:
+#             for line in expected_file:
+#                 expected_intent = Recognition.fromdict(json.loads(line))
+#                 wav_name = expected_intent["wav_name"]
+#                 expected[wav_name] = expected_intent
 
-    if not expected:
-        _LOGGER.fatal("No expected examples provided")
-        sys.exit(1)
+#     if not expected:
+#         _LOGGER.fatal("No expected examples provided")
+#         sys.exit(1)
 
-    _LOGGER.debug("Loaded %s expected transcription(s)/intent(s)", len(expected))
+#     _LOGGER.debug("Loaded %s expected transcription(s)/intent(s)", len(expected))
 
-    # Load actual results
-    if args.actual is None:
-        # Do transcription/recognition
-        examples_dir = (
-            Path(args.directory) if args.directory is not None else Path.cwd()
-        )
-        _LOGGER.debug("Looking for examples in %s", examples_dir)
+#     # Load actual results
+#     if args.actual is None:
+#         # Do transcription/recognition
+#         examples_dir = (
+#             Path(args.directory) if args.directory is not None else Path.cwd()
+#         )
+#         _LOGGER.debug("Looking for examples in %s", examples_dir)
 
-        class TestWorker:
-            def __init__(self, core, open_transcription=False, debug=False):
-                self.core = core
-                self.open_transcription = open_transcription
-                self.debug = debug
-                self.transcriber = None
-                self.recognizer = None
+#         class TestWorker:
+#             def __init__(self, core, open_transcription=False, debug=False):
+#                 self.core = core
+#                 self.open_transcription = open_transcription
+#                 self.debug = debug
+#                 self.transcriber = None
+#                 self.recognizer = None
 
-            def __call__(self, wav_path: Path) -> Recognition:
-                if self.transcriber is None:
-                    self.transcriber = core.get_transcriber(
-                        open_transcription=self.open_transcription, debug=self.debug
-                    )
+#             def __call__(self, wav_path: Path) -> Recognition:
+#                 if self.transcriber is None:
+#                     self.transcriber = core.get_transcriber(
+#                         open_transcription=self.open_transcription, debug=self.debug
+#                     )
 
-                if self.recognizer is None:
-                    self.recognizer = core.get_recognizer()
+#                 if self.recognizer is None:
+#                     self.recognizer = core.get_recognizer()
 
-                _LOGGER.debug("Processing %s", wav_path)
+#                 _LOGGER.debug("Processing %s", wav_path)
 
-                # Convert WAV data and transcribe
-                wav_data = self.core.maybe_convert_wav(wav_path.read_bytes())
-                transcription = self.transcriber.transcribe_wav(wav_data)
+#                 # Convert WAV data and transcribe
+#                 wav_data = self.core.maybe_convert_wav(wav_path.read_bytes())
+#                 transcription = self.transcriber.transcribe_wav(wav_data)
 
-                # Tokenize and do intent recognition
-                tokens = split_whitespace(transcription.text)
-                recognition = self.recognizer.recognize(tokens)
+#                 # Tokenize and do intent recognition
+#                 tokens = split_whitespace(transcription.text)
+#                 recognition = self.recognizer.recognize(tokens)
 
-                # Copy transcription fields
-                recognition.likelihood = transcription.likelihood
-                recognition.wav_seconds = transcription.wav_seconds
-                recognition.transcribe_seconds = transcription.transcribe_seconds
+#                 # Copy transcription fields
+#                 recognition.likelihood = transcription.likelihood
+#                 recognition.wav_seconds = transcription.wav_seconds
+#                 recognition.transcribe_seconds = transcription.transcribe_seconds
 
-                return recognition
+#                 return recognition
 
-        workers = [TestWorker(core, args.open, args.debug) for _ in range(args.threads)]
-        futures = {}
+#         workers = [TestWorker(core, args.open, args.debug) for _ in range(args.threads)]
+#         futures = {}
 
-        with concurrent.futures.ThreadPoolExecutor(
-            max_workers=args.threads
-        ) as executor:
-            for i, wav_path in enumerate(examples_dir.glob("*.wav")):
-                future = executor.submit(workers[i % len(workers)], wav_path)
-                wav_name = wav_path.name
-                futures[wav_name] = future
+#         with concurrent.futures.ThreadPoolExecutor(
+#             max_workers=args.threads
+#         ) as executor:
+#             for i, wav_path in enumerate(examples_dir.glob("*.wav")):
+#                 future = executor.submit(workers[i % len(workers)], wav_path)
+#                 wav_name = wav_path.name
+#                 futures[wav_name] = future
 
-        for wav_name, future in futures.items():
-            actual[wav_name] = future.result()
-    else:
-        _LOGGER.debug("Loading actual intents from %s", args.actual)
+#         for wav_name, future in futures.items():
+#             actual[wav_name] = future.result()
+#     else:
+#         _LOGGER.debug("Loading actual intents from %s", args.actual)
 
-        # Load actual results from jsonl file
-        with open(args.actual, "r") as actual_file:
-            for line in actual_file:
-                actual_intent = Recognition.fromdict(json.loads(line))
-                wav_name = actual_intent.wav_name
-                actual[wav_name] = actual_intent
+#         # Load actual results from jsonl file
+#         with open(args.actual, "r") as actual_file:
+#             for line in actual_file:
+#                 actual_intent = Recognition.fromdict(json.loads(line))
+#                 wav_name = actual_intent.wav_name
+#                 actual[wav_name] = actual_intent
 
-    summary = core.test_examples(expected, actual)
-    print_json(summary)
+#     summary = core.test_examples(expected, actual)
+#     print_json(summary)
 
 
 # # -----------------------------------------------------------------------------
@@ -1490,24 +1448,24 @@ def env_constructor(loader, node):
 
 def check_trained(core: Voice2JsonCore) -> None:
     """Check important files to see if profile is not trained. Exits if it isn't."""
-    # Load settings
-    dictionary_path = core.ppath("speech-to-text.dictionary", "dictionary.txt")
+    # # Load settings
+    # dictionary_path = core.ppath("speech-to-text.dictionary", "dictionary.txt")
 
-    language_model_path = core.ppath(
-        "speech-to-text.language-model", "language_model.txt"
-    )
+    # language_model_path = core.ppath(
+    #     "speech-to-text.language-model", "language_model.txt"
+    # )
 
-    intent_fst_path = core.ppath("intent-recognition.intent-fst", "intent.fst")
+    # intent_fst_path = core.ppath("intent-recognition.intent-fst", "intent.fst")
 
-    missing = False
-    for path in [dictionary_path, language_model_path, intent_fst_path]:
-        if not path.exists():
-            _LOGGER.fatal("Missing %s. Did you forget to run train-profile?", path)
-            missing = True
+    # missing = False
+    # for path in [dictionary_path, language_model_path, intent_fst_path]:
+    #     if not path.exists():
+    #         _LOGGER.fatal("Missing %s. Did you forget to run train-profile?", path)
+    #         missing = True
 
-    if missing:
-        # Automatically exit
-        sys.exit(1)
+    # if missing:
+    #     # Automatically exit
+    #     sys.exit(1)
 
 
 # # -----------------------------------------------------------------------------
