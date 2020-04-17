@@ -279,34 +279,34 @@ def get_args() -> argparse.Namespace:
     # -------------
     # test-examples
     # -------------
-    # test_examples_parser = sub_parsers.add_parser(
-    #     "test-examples", help="Test performance on previously recorded examples"
-    # )
-    # test_examples_parser.add_argument(
-    #     "--directory", "-d", help="Directory with recorded examples"
-    # )
-    # test_examples_parser.add_argument(
-    #     "--results", "-r", help="Directory to save test results"
-    # )
-    # test_examples_parser.add_argument(
-    #     "--expected", help="Path to jsonl file with expected test results"
-    # )
-    # test_examples_parser.add_argument(
-    #     "--actual", help="Path to jsonl file with actual test results"
-    # )
-    # test_examples_parser.add_argument(
-    #     "--open",
-    #     "-o",
-    #     action="store_true",
-    #     help="Use large pre-built model for transcription",
-    # )
+    test_examples_parser = sub_parsers.add_parser(
+        "test-examples", help="Test performance on previously recorded examples"
+    )
+    test_examples_parser.add_argument(
+        "--directory", "-d", help="Directory with recorded examples"
+    )
+    test_examples_parser.add_argument(
+        "--results", "-r", help="Directory to save test results"
+    )
+    test_examples_parser.add_argument(
+        "--expected", help="Path to jsonl file with expected test results"
+    )
+    test_examples_parser.add_argument(
+        "--actual", help="Path to jsonl file with actual test results"
+    )
+    test_examples_parser.add_argument(
+        "--open",
+        "-o",
+        action="store_true",
+        help="Use large pre-built model for transcription",
+    )
     # test_examples_parser.add_argument(
     #     "--threads",
     #     type=int,
     #     default=1,
     #     help="Maximum number of threads to use (default=1)",
     # )
-    # test_examples_parser.set_defaults(func=test_examples)
+    test_examples_parser.set_defaults(func=test_examples)
 
     # # tune-examples
     # tune_examples_parser = sub_parsers.add_parser(
@@ -622,7 +622,14 @@ async def recognize(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 
             # Merge with input object
             for key, value in result.items():
-                sentence_object[key] = value
+                if (key not in sentence_object) or (value is not None):
+                    sentence_object[key] = value
+
+            if not sentence_object["text"]:
+                sentence_object["text"] = text
+
+            # Keep text from transcription
+            sentence_object["raw_text"] = text
 
             print_json(sentence_object)
     except KeyboardInterrupt:
@@ -1270,130 +1277,163 @@ async def recognize(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 #     return actual
 
 
-# async def test_examples(args: argparse.Namespace, core: Voice2JsonCore) -> None:
-#     """Test speech/intent recognition against a directory of expected results."""
-#     # Make sure profile has been trained
-#     check_trained(core)
+async def test_examples(args: argparse.Namespace, core: Voice2JsonCore) -> None:
+    """Test speech/intent recognition against a directory of expected results."""
+    # Make sure profile has been trained
+    check_trained(core)
 
-#     results_dir = None
-#     if args.results is not None:
-#         results_dir = Path(args.results)
+    results_dir = None
+    if args.results is not None:
+        results_dir = Path(args.results)
 
-#     # Expected/actual intents
-#     expected: Dict[str, Recognition] = {}
-#     actual: Dict[str, Recognition] = {}
+    # Expected/actual intents
+    expected: Dict[str, Recognition] = {}
+    actual: Dict[str, Recognition] = {}
 
-#     if args.expected is None:
-#         # Load expected transcriptions/intents from examples directory.
-#         # For each .wav file, there should be a .json (intent) or .txt file (transcription).
-#         examples_dir = (
-#             Path(args.directory) if args.directory is not None else Path.cwd()
-#         )
+    if args.expected:
+        _LOGGER.debug("Loading expected intents from %s", args.expected)
 
-#         _LOGGER.debug("Loading expected transcriptions/intents from %s", args.directory)
-#         for wav_path in examples_dir.glob("*.wav"):
-#             # Try to load expected intent (optional)
-#             intent_path = examples_dir / f"{wav_path.stem}.json"
-#             expected_intent = None
-#             if intent_path.exists():
-#                 with open(intent_path, "r") as intent_file:
-#                     expected_intent = Recognition.fromdict(json.load(intent_file))
-#             else:
-#                 # Load expected transcription only
-#                 transcript_path = examples_dir / f"{wav_path.stem}.txt"
-#                 if transcript_path.exists():
-#                     # Use text only
-#                     expected_text = transcript_path.read_text().strip()
-#                     expected_intent = Recognition(
-#                         result=RecognitionResult.SUCCESS, text=expected_text
-#                     )
+        # Load expected results from jsonl file.
+        # Each line is an intent with a wav_name key.
+        with open(args.expected, "r") as expected_file:
+            for line in expected_file:
+                expected_intent = rhasspynlu.intent.Recognition.from_dict(
+                    json.loads(line)
+                )
+                assert expected_intent.wav_name, f"No wav_name for {line}"
+                expected[expected_intent.wav_name] = expected_intent
 
-#             if expected_intent is None:
-#                 _LOGGER.warn(f"Skipping {wav_path} (no transcription or intent files)")
-#                 continue
+    #     if args.expected is None:
+    #         # Load expected transcriptions/intents from examples directory.
+    #         # For each .wav file, there should be a .json (intent) or .txt file (transcription).
+    #         examples_dir = (
+    #             Path(args.directory) if args.directory is not None else Path.cwd()
+    #         )
 
-#             expected[wav_path.name] = expected_intent
-#     else:
-#         _LOGGER.debug("Loading expected intents from %s", args.expected)
+    #         _LOGGER.debug("Loading expected transcriptions/intents from %s", args.directory)
+    #         for wav_path in examples_dir.glob("*.wav"):
+    #             # Try to load expected intent (optional)
+    #             intent_path = examples_dir / f"{wav_path.stem}.json"
+    #             expected_intent = None
+    #             if intent_path.exists():
+    #                 with open(intent_path, "r") as intent_file:
+    #                     expected_intent = Recognition.fromdict(json.load(intent_file))
+    #             else:
+    #                 # Load expected transcription only
+    #                 transcript_path = examples_dir / f"{wav_path.stem}.txt"
+    #                 if transcript_path.exists():
+    #                     # Use text only
+    #                     expected_text = transcript_path.read_text().strip()
+    #                     expected_intent = Recognition(
+    #                         result=RecognitionResult.SUCCESS, text=expected_text
+    #                     )
 
-#         # Load expected results from jsonl file.
-#         # Each line is an intent with a wav_name key.
-#         with open(args.expected, "r") as expected_file:
-#             for line in expected_file:
-#                 expected_intent = Recognition.fromdict(json.loads(line))
-#                 wav_name = expected_intent["wav_name"]
-#                 expected[wav_name] = expected_intent
+    #             if expected_intent is None:
+    #                 _LOGGER.warn(f"Skipping {wav_path} (no transcription or intent files)")
+    #                 continue
 
-#     if not expected:
-#         _LOGGER.fatal("No expected examples provided")
-#         sys.exit(1)
+    #             expected[wav_path.name] = expected_intent
+    #     else:
+    #         _LOGGER.debug("Loading expected intents from %s", args.expected)
 
-#     _LOGGER.debug("Loaded %s expected transcription(s)/intent(s)", len(expected))
+    #         # Load expected results from jsonl file.
+    #         # Each line is an intent with a wav_name key.
+    #         with open(args.expected, "r") as expected_file:
+    #             for line in expected_file:
+    #                 expected_intent = Recognition.fromdict(json.loads(line))
+    #                 wav_name = expected_intent["wav_name"]
+    #                 expected[wav_name] = expected_intent
 
-#     # Load actual results
-#     if args.actual is None:
-#         # Do transcription/recognition
-#         examples_dir = (
-#             Path(args.directory) if args.directory is not None else Path.cwd()
-#         )
-#         _LOGGER.debug("Looking for examples in %s", examples_dir)
+    if not expected:
+        _LOGGER.fatal("No expected examples provided")
+        sys.exit(1)
 
-#         class TestWorker:
-#             def __init__(self, core, open_transcription=False, debug=False):
-#                 self.core = core
-#                 self.open_transcription = open_transcription
-#                 self.debug = debug
-#                 self.transcriber = None
-#                 self.recognizer = None
+    if args.actual:
+        _LOGGER.debug("Loading actual intents from %s", args.actual)
 
-#             def __call__(self, wav_path: Path) -> Recognition:
-#                 if self.transcriber is None:
-#                     self.transcriber = core.get_transcriber(
-#                         open_transcription=self.open_transcription, debug=self.debug
-#                     )
+        # Load actual results from jsonl file
+        with open(args.actual, "r") as actual_file:
+            for line in actual_file:
+                actual_intent = rhasspynlu.intent.Recognition.from_dict(
+                    json.loads(line)
+                )
+                assert actual_intent.wav_name, f"No wav_name for {line}"
+                actual[actual_intent.wav_name] = actual_intent
 
-#                 if self.recognizer is None:
-#                     self.recognizer = core.get_recognizer()
+    if not actual:
+        _LOGGER.fatal("No actual examples provided")
+        sys.exit(1)
 
-#                 _LOGGER.debug("Processing %s", wav_path)
+    #     _LOGGER.debug("Loaded %s expected transcription(s)/intent(s)", len(expected))
 
-#                 # Convert WAV data and transcribe
-#                 wav_data = self.core.maybe_convert_wav(wav_path.read_bytes())
-#                 transcription = self.transcriber.transcribe_wav(wav_data)
+    #     # Load actual results
+    #     if args.actual is None:
+    #         # Do transcription/recognition
+    #         examples_dir = (
+    #             Path(args.directory) if args.directory is not None else Path.cwd()
+    #         )
+    #         _LOGGER.debug("Looking for examples in %s", examples_dir)
 
-#                 # Tokenize and do intent recognition
-#                 tokens = split_whitespace(transcription.text)
-#                 recognition = self.recognizer.recognize(tokens)
+    #         class TestWorker:
+    #             def __init__(self, core, open_transcription=False, debug=False):
+    #                 self.core = core
+    #                 self.open_transcription = open_transcription
+    #                 self.debug = debug
+    #                 self.transcriber = None
+    #                 self.recognizer = None
 
-#                 # Copy transcription fields
-#                 recognition.likelihood = transcription.likelihood
-#                 recognition.wav_seconds = transcription.wav_seconds
-#                 recognition.transcribe_seconds = transcription.transcribe_seconds
+    #             def __call__(self, wav_path: Path) -> Recognition:
+    #                 if self.transcriber is None:
+    #                     self.transcriber = core.get_transcriber(
+    #                         open_transcription=self.open_transcription, debug=self.debug
+    #                     )
 
-#                 return recognition
+    #                 if self.recognizer is None:
+    #                     self.recognizer = core.get_recognizer()
 
-#         workers = [TestWorker(core, args.open, args.debug) for _ in range(args.threads)]
-#         futures = {}
+    #                 _LOGGER.debug("Processing %s", wav_path)
 
-#         with concurrent.futures.ThreadPoolExecutor(
-#             max_workers=args.threads
-#         ) as executor:
-#             for i, wav_path in enumerate(examples_dir.glob("*.wav")):
-#                 future = executor.submit(workers[i % len(workers)], wav_path)
-#                 wav_name = wav_path.name
-#                 futures[wav_name] = future
+    #                 # Convert WAV data and transcribe
+    #                 wav_data = self.core.maybe_convert_wav(wav_path.read_bytes())
+    #                 transcription = self.transcriber.transcribe_wav(wav_data)
 
-#         for wav_name, future in futures.items():
-#             actual[wav_name] = future.result()
-#     else:
-#         _LOGGER.debug("Loading actual intents from %s", args.actual)
+    #                 # Tokenize and do intent recognition
+    #                 tokens = split_whitespace(transcription.text)
+    #                 recognition = self.recognizer.recognize(tokens)
 
-#         # Load actual results from jsonl file
-#         with open(args.actual, "r") as actual_file:
-#             for line in actual_file:
-#                 actual_intent = Recognition.fromdict(json.loads(line))
-#                 wav_name = actual_intent.wav_name
-#                 actual[wav_name] = actual_intent
+    #                 # Copy transcription fields
+    #                 recognition.likelihood = transcription.likelihood
+    #                 recognition.wav_seconds = transcription.wav_seconds
+    #                 recognition.transcribe_seconds = transcription.transcribe_seconds
+
+    #                 return recognition
+
+    #         workers = [TestWorker(core, args.open, args.debug) for _ in range(args.threads)]
+    #         futures = {}
+
+    #         with concurrent.futures.ThreadPoolExecutor(
+    #             max_workers=args.threads
+    #         ) as executor:
+    #             for i, wav_path in enumerate(examples_dir.glob("*.wav")):
+    #                 future = executor.submit(workers[i % len(workers)], wav_path)
+    #                 wav_name = wav_path.name
+    #                 futures[wav_name] = future
+
+    #         for wav_name, future in futures.items():
+    #             actual[wav_name] = future.result()
+    #     else:
+    #         _LOGGER.debug("Loading actual intents from %s", args.actual)
+
+    #         # Load actual results from jsonl file
+    #         with open(args.actual, "r") as actual_file:
+    #             for line in actual_file:
+    #                 actual_intent = Recognition.fromdict(json.loads(line))
+    #                 wav_name = actual_intent.wav_name
+    #                 actual[wav_name] = actual_intent
+
+    report = rhasspynlu.evaluate.evaluate_intents(expected, actual)
+    print_json(dataclasses.asdict(report))
+
 
 #     summary = core.test_examples(expected, actual)
 #     print_json(summary)
