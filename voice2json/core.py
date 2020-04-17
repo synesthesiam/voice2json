@@ -16,10 +16,17 @@ import struct
 import pydash
 
 from rhasspyasr import Transcriber
+from rhasspyasr_deepspeech import DeepSpeechTranscriber
 from rhasspyasr_pocketsphinx import PocketsphinxTranscriber
+from rhasspyasr_kaldi import (
+    KaldiCommandLineTranscriber,
+    train,
+    get_kaldi_dir,
+    KaldiModelType,
+)
 from rhasspysilence import VoiceCommandRecorder, VoiceCommandResult, WebRtcVadRecorder
 
-from voice2json.train import train_profile
+from .train import train_profile, AcousticModelType
 
 # from voice2json.speech.const import KaldiModelType
 # from voice2json.speech import (
@@ -65,26 +72,38 @@ class Voice2JsonCore:
     def get_transcriber(self, open_transcription=False, debug=False) -> Transcriber:
         """Create Transcriber based on profile speech system."""
         # Load settings
-        acoustic_model_type = pydash.get(
-            self.profile, "speech-to-text.acoustic-model-type", "pocketsphinx"
-        ).lower()
+        acoustic_model_type = AcousticModelType(
+            pydash.get(
+                self.profile, "speech-to-text.acoustic-model-type", "pocketsphinx"
+            ).lower()
+        )
 
-        if acoustic_model_type == "kaldi":
+        if acoustic_model_type == AcousticModelType.POCKETSPHINX:
+            # Pocketsphinx
+            return self.get_pocketsphinx_transcriber(
+                open_transcription=open_transcription, debug=debug
+            )
+
+        if acoustic_model_type == AcousticModelType.KALDI:
             # Kaldi
             return self.get_kaldi_transcriber(
                 open_transcription=open_transcription, debug=debug
             )
 
-        if acoustic_model_type == "julius":
+        if acoustic_model_type == AcousticModelType.JULIUS:
             # Julius
             return self.get_julius_transcriber(
                 open_transcription=open_transcription, debug=debug
             )
 
-        # Pocketsphinx (default)
-        return self.get_pocketsphinx_transcriber(
-            open_transcription=open_transcription, debug=debug
-        )
+        if acoustic_model_type == AcousticModelType.DEEPSPEECH:
+            # DeepSpeech
+            return self.get_deepspeech_transcriber(
+                open_transcription=open_transcription, debug=debug
+            )
+
+
+        raise ValueError(f"Unsupported acoustic model type: {acoustic_model_type}")
 
     def get_pocketsphinx_transcriber(
         self, open_transcription=False, debug=False
@@ -123,33 +142,47 @@ class Voice2JsonCore:
             debug=debug,
         )
 
-    # def get_kaldi_transcriber(
-    #     self, open_transcription=False, debug=False
-    # ) -> Union[KaldiExtensionTranscriber, KaldiCommandLineTranscriber]:
-    #     """Create Transcriber for Kaldi."""
-    #     # Load settings
-    #     model_type = pydash.get(self.profile, "speech-to-text.kaldi.model-type", "")
-    #     acoustic_model = self.ppath("speech-to-text.acoustic-model", "acoustic_model")
+    def get_kaldi_transcriber(
+        self, open_transcription=False, debug=False
+    ) -> KaldiCommandLineTranscriber:
+        """Create Transcriber for Kaldi."""
+        # Load settings
+        model_type = KaldiModelType(
+            pydash.get(self.profile, "speech-to-text.kaldi.model-type")
+        )
+        acoustic_model = self.ppath("speech-to-text.acoustic-model", "acoustic_model")
 
-    #     if open_transcription:
-    #         # Use base graph
-    #         graph_dir = self.ppath("speech-to-text.kaldi.base-graph-directory") or (
-    #             acoustic_model / "model" / "graph"
-    #         )
-    #     else:
-    #         # Use custom graph
-    #         graph_dir = self.ppath("speech-to-text.kaldi.graph-directory") or (
-    #             acoustic_model / "graph"
-    #         )
+        if open_transcription:
+            # Use base graph
+            graph_dir = self.ppath("speech-to-text.kaldi.base-graph-directory") or (
+                acoustic_model / "model" / "graph"
+            )
+        else:
+            # Use custom graph
+            graph_dir = self.ppath("speech-to-text.kaldi.graph-directory") or (
+                acoustic_model / "graph"
+            )
 
-    #     if model_type == KaldiModelType.NNET3:
-    #         _LOGGER.debug("Loading Kaldi nnet3 Python extension")
+        # Use kaldi-decode script
+        return KaldiCommandLineTranscriber(model_type, acoustic_model, graph_dir)
 
-    #         # Use Python extension
-    #         return KaldiExtensionTranscriber(acoustic_model, graph_dir)
+    def get_deepspeech_transcriber(
+        self, open_transcription=False, debug=False
+    ) -> DeepSpeechTranscriber:
+        """Create Transcriber for DeepSpeech."""
+        # Load settings
+        acoustic_model = self.ppath("speech-to-text.acoustic-model", "model/output_graph.pbmm")
 
-    #     # Use kaldi-decode script
-    #     return KaldiCommandLineTranscriber(model_type, acoustic_model, graph_dir)
+        if open_transcription:
+            # Use base model
+            language_model = self.ppath("speech-to-text.deepspeech.base-language-model", "model/lm.binary")
+            trie = self.ppath("speech-to-text.deepspeech.base-trie", "model/trie")
+        else:
+            # Use custom model
+            language_model = self.ppath("speech-to-text.language-model", "lm.binary")
+            trie = self.ppath("speech-to-text.deepspeech.trie", "trie")
+
+        return DeepSpeechTranscriber(acoustic_model, language_model, trie)
 
     # def get_julius_transcriber(
     #     self, open_transcription=False, debug=False

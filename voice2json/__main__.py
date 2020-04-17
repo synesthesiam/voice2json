@@ -34,9 +34,10 @@ import jsonlines
 import pydash
 import yaml
 import networkx as nx
+import rhasspyasr
 import rhasspynlu
 
-from voice2json.core import Voice2JsonCore
+from .core import Voice2JsonCore
 
 from voice2json.utils import (
     numbers_to_words,
@@ -468,7 +469,10 @@ async def transcribe(args: argparse.Namespace, core: Voice2JsonCore) -> None:
                 wav_data = core.maybe_convert_wav(wav_path.read_bytes())
 
                 # Transcribe
-                transcription = transcriber.transcribe_wav(wav_data)
+                transcription = (
+                    transcriber.transcribe_wav(wav_data)
+                    or rhasspyasr.Transcription.empty()
+                )
                 result = dataclasses.asdict(transcription)
 
                 if relative_dir is None:
@@ -498,7 +502,10 @@ async def transcribe(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 
                     # Transcribe
                     wav_data = core.maybe_convert_wav(wav_data)
-                    transcription = transcriber.transcribe_wav(wav_data)
+                    transcription = (
+                        transcriber.transcribe_wav(wav_data)
+                        or rhasspyasr.Transcription.empty()
+                    )
                     result = dataclasses.asdict(transcription)
 
                     print_json(result)
@@ -514,7 +521,10 @@ async def transcribe(args: argparse.Namespace, core: Voice2JsonCore) -> None:
                 wav_data = core.maybe_convert_wav(sys.stdin.buffer.read())
 
                 # Transcribe
-                transcription = transcriber.transcribe_wav(wav_data)
+                transcription = (
+                    transcriber.transcribe_wav(wav_data)
+                    or rhasspyasr.Transcription.empty()
+                )
                 result = dataclasses.asdict(transcription)
 
                 print_json(result)

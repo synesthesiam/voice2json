@@ -51,8 +51,10 @@ def train_profile(profile_dir: Path, profile: typing.Dict[str, typing.Any]) -> N
     custom_words = ppath("training.custom-words-file", "custom_words.txt")
 
     acoustic_model = ppath("training.acoustic-model", "acoustic_model")
-    acoustic_model_type = pydash.get(
-        profile, "training.acoustic-model-type", AcousticModelType.POCKETSPHINX
+    acoustic_model_type = AcousticModelType(
+        pydash.get(
+            profile, "training.acoustic-model-type", AcousticModelType.POCKETSPHINX
+        )
     )
 
     # Replace numbers with words
@@ -212,6 +214,7 @@ def train_profile(profile_dir: Path, profile: typing.Dict[str, typing.Any]) -> N
         g2p_word_transform = str.lower
 
     if acoustic_model_type == AcousticModelType.POCKETSPHINX:
+        # Pocketsphinx
         import rhasspyasr_pocketsphinx
 
         load_pronunciations()
@@ -224,4 +227,35 @@ def train_profile(profile_dir: Path, profile: typing.Dict[str, typing.Any]) -> N
             g2p_model=g2p_model,
             g2p_word_transform=g2p_word_transform,
             missing_words_path=unknown_words_path,
+        )
+    elif acoustic_model_type == AcousticModelType.KALDI:
+        # Kaldi
+        import rhasspyasr_kaldi
+
+        graph_dir = ppath("training.kaldi.graph-directory") or (
+            acoustic_model / "graph"
+        )
+
+        load_pronunciations()
+        rhasspyasr_kaldi.train(
+            intent_graph,
+            pronunciations,
+            acoustic_model,
+            graph_dir,
+            dictionary_path,
+            language_model_path,
+            dictionary_word_transform=word_transform,
+            g2p_model=g2p_model,
+            g2p_word_transform=g2p_word_transform,
+            missing_words_path=unknown_words_path,
+        )
+    elif acoustic_model_type == AcousticModelType.DEEPSPEECH:
+        # DeepSpeech
+        import rhasspyasr_deepspeech
+
+        trie_path = ppath("training.deepspeech.trie", "trie")
+        alphabet_path = ppath("training.deepspeech.alphabet", "model/alphabet.txt")
+
+        rhasspyasr_deepspeech.train(
+            intent_graph, language_model_path, trie_path, alphabet_path
         )
