@@ -578,7 +578,9 @@ async def recognize(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     if args.sentence:
         sentences = args.sentence
     else:
-        _LOGGER.debug("Reading sentences from stdin")
+        if os.isatty(sys.stdin.fileno()):
+            print("Reading sentences from stdin", file=sys.stderr)
+
         sentences = sys.stdin
 
     # Process sentences
