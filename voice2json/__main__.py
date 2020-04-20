@@ -15,6 +15,7 @@ import json
 import logging
 import os
 import platform
+import random
 import re
 import shlex
 import shutil
@@ -238,22 +239,22 @@ def get_args() -> argparse.Namespace:
     # )
     # pronounce_parser.set_defaults(func=pronounce)
 
-    # # generate-examples
-    # generate_parser = sub_parsers.add_parser(
-    #     "generate-examples", help="Randomly generate example intents from profile"
-    # )
-    # generate_parser.add_argument(
-    #     "--number", "-n", type=int, required=True, help="Number of examples to generate"
-    # )
-    # generate_parser.add_argument(
-    #     "--raw-symbols",
-    #     action="store_true",
-    #     help="Output symbols directly from finite state transducer",
-    # )
-    # generate_parser.add_argument(
-    #     "--iob", action="store_true", help="Output IOB format instead of JSON"
-    # )
-    # generate_parser.set_defaults(func=generate)
+    # generate-examples
+    generate_parser = sub_parsers.add_parser(
+        "generate-examples", help="Randomly generate example intents from profile"
+    )
+    generate_parser.add_argument(
+        "--number", "-n", type=int, required=True, help="Number of examples to generate"
+    )
+    generate_parser.add_argument(
+        "--raw-symbols",
+        action="store_true",
+        help="Output symbols directly from finite state transducer",
+    )
+    generate_parser.add_argument(
+        "--iob", action="store_true", help="Output IOB format instead of JSON"
+    )
+    generate_parser.set_defaults(func=generate)
 
     # # record-examples
     # record_examples_parser = sub_parsers.add_parser(
@@ -1024,82 +1025,101 @@ async def recognize(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 # # -----------------------------------------------------------------------------
 
 
-# def generate(
-#     args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]
-# ) -> None:
-#     import pywrapfst as fst
-#     from voice2json.train.jsgf2fst import fstprintall, symbols2intent
+async def generate(args: argparse.Namespace, core: Voice2JsonCore) -> None:
+    """Generate examples from intent graph."""
+    # Make sure profile has been trained
+    check_trained(core)
 
-#     # Make sure profile has been trained
-#     check_trained(profile, profile_dir)
+    # Load settings
+    intent_graph_path = core.ppath(
+        "intent-recognition.intent-graph", "intent.pickle.gz"
+    )
 
-#     # Load settings
-#     intent_fst_path = ppath(
-#         profile, profile_dir, "intent-recognition.intent-fst", "intent.fst"
-#     )
+    # Load intent graph
+    _LOGGER.debug("Loading %s", intent_graph_path)
+    with gzip.GzipFile(intent_graph_path, mode="rb") as graph_gzip:
+        intent_graph = nx.readwrite.gpickle.read_gpickle(graph_gzip)
 
-#     # Load intent finite state transducer
-#     intent_fst = fst.Fst.read(str(intent_fst_path))
+    start_node, end_node = rhasspynlu.jsgf_graph.get_start_end_nodes(intent_graph)
+    assert (start_node is not None) and (
+        end_node is not None
+    ), "Missing start/end node(s)"
 
-#     if args.number <= 0:
-#         # Generatel all possible examples
-#         rand_fst = intent_fst
-#     else:
-#         # Generate samples
-#         rand_fst = fst.randgen(intent_fst, npath=args.number)
+    paths_left = None
+    if args.number > 0:
+        paths_left = args.number
 
-#     # Convert to words/tokens
-#     for symbols in fstprintall(rand_fst, exclude_meta=False):
-#         if args.raw_symbols:
-#             print(" ".join(symbols))
-#             continue
+    # Iterate through all paths
+    for path in nx.all_simple_paths(intent_graph, start_node, end_node):
+        if paths_left is not None:
+            paths_left -= 1
+            if paths_left < 0:
+                # Stop iterating
+                break
 
-#         # Convert to intent
-#         intent = symbols2intent(symbols)
+        if args.raw_symbols:
+            # Output labels directly from intent graph
+            symbols = []
+            for from_node, to_node in rhasspynlu.utils.pairwise(path):
+                edge_data = intent_graph.edges[(from_node, to_node)]
+                olabel = edge_data.get("olabel")
+                if olabel:
+                    symbols.append(olabel)
 
-#         # Add slots
-#         intent["slots"] = {}
-#         for ev in intent["entities"]:
-#             intent["slots"][ev["entity"]] = ev["value"]
+            print(" ".join(symbols))
+            continue
 
-#         if args.iob:
-#             # IOB format
-#             token_idx = 0
-#             entity_start = {ev["start"]: ev for ev in intent["entities"]}
-#             entity_end = {ev["end"]: ev for ev in intent["entities"]}
-#             entity = None
+        # Convert to intent
+        _, recognition = rhasspynlu.fsticuffs.path_to_recognition(path, intent_graph)
+        if not recognition:
+            _LOGGER.warning("Recognition failed for path: %s", path)
+            continue
 
-#             word_tags = []
-#             for word in intent["tokens"]:
-#                 # Determine tag label
-#                 tag = "O" if not entity else f"I-{entity}"
-#                 if token_idx in entity_start:
-#                     entity = entity_start[token_idx]["entity"]
-#                     tag = f"B-{entity}"
+        intent = dataclasses.asdict(recognition)
 
-#                 word_tags.append((word, tag))
+        # Add slots
+        intent["slots"] = {}
+        for ev in intent["entities"]:
+            intent["slots"][ev["entity"]] = ev["value"]
 
-#                 # word ner
-#                 token_idx += len(word) + 1
+        if args.iob:
+            # IOB format
+            token_idx = 0
+            entity_start = {ev["start"]: ev for ev in intent["entities"]}
+            entity_end = {ev["end"]: ev for ev in intent["entities"]}
+            entity = None
 
-#                 if (token_idx - 1) in entity_end:
-#                     entity = None
+            word_tags = []
+            for word in intent["tokens"]:
+                # Determine tag label
+                tag = "O" if not entity else f"I-{entity}"
+                if token_idx in entity_start:
+                    entity = entity_start[token_idx]["entity"]
+                    tag = f"B-{entity}"
 
-#             print("BS", end=" ")
-#             for wt in word_tags:
-#                 print(wt[0], end=" ")
-#             print("ES", end="\t")
+                word_tags.append((word, tag))
 
-#             print("O", end=" ")  # BS
-#             for wt in word_tags:
-#                 print(wt[1], end=" ")
-#             print("O", end="\t")  # ES
+                # word ner
+                token_idx += len(word) + 1
 
-#             # Intent name last
-#             print(intent["intent"]["name"])
-#         else:
-#             # Write as jsonl
-#             print_json(intent)
+                if (token_idx - 1) in entity_end:
+                    entity = None
+
+            print("BS", end=" ")
+            for wt in word_tags:
+                print(wt[0], end=" ")
+            print("ES", end="\t")
+
+            print("O", end=" ")  # BS
+            for wt in word_tags:
+                print(wt[1], end=" ")
+            print("O", end="\t")  # ES
+
+            # Intent name last
+            print(intent["intent"]["name"])
+        else:
+            # Write as jsonl
+            print_json(intent)
 
 
 # # -----------------------------------------------------------------------------
@@ -1498,24 +1518,20 @@ def env_constructor(loader, node):
 
 def check_trained(core: Voice2JsonCore) -> None:
     """Check important files to see if profile is not trained. Exits if it isn't."""
-    # # Load settings
-    # dictionary_path = core.ppath("speech-to-text.dictionary", "dictionary.txt")
+    # Load settings
+    intent_graph_path = core.ppath(
+        "intent-recognition.intent-graph", "intent.pickle.gz"
+    )
 
-    # language_model_path = core.ppath(
-    #     "speech-to-text.language-model", "language_model.txt"
-    # )
+    missing = False
+    for path in [intent_graph_path]:
+        if not path.exists():
+            _LOGGER.fatal("Missing %s. Did you forget to run train-profile?", path)
+            missing = True
 
-    # intent_fst_path = core.ppath("intent-recognition.intent-fst", "intent.fst")
-
-    # missing = False
-    # for path in [dictionary_path, language_model_path, intent_fst_path]:
-    #     if not path.exists():
-    #         _LOGGER.fatal("Missing %s. Did you forget to run train-profile?", path)
-    #         missing = True
-
-    # if missing:
-    #     # Automatically exit
-    #     sys.exit(1)
+    if missing:
+        # Automatically exit
+        sys.exit(1)
 
 
 # # -----------------------------------------------------------------------------
