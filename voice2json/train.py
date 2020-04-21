@@ -1,5 +1,6 @@
 import logging
 import subprocess
+import tempfile
 import typing
 from collections import defaultdict
 from enum import Enum
@@ -63,6 +64,14 @@ def train_profile(profile_dir: Path, profile: typing.Dict[str, typing.Any]) -> N
     # ignore/upper/lower
     word_casing = pydash.get(profile, "training.word-casing", WordCasing.IGNORE)
 
+    # Large pre-built language model
+    base_language_model_fst = ppath(
+        "training.base-language-model-fst", "base_language_model.fst"
+    )
+    base_language_model_weight = float(
+        pydash.get(profile, "training.base-language-model-weight", 0)
+    )
+
     # -------------------
     # Grapheme to phoneme
     # -------------------
@@ -76,6 +85,10 @@ def train_profile(profile_dir: Path, profile: typing.Dict[str, typing.Any]) -> N
     # -------
     dictionary_path = ppath("training.dictionary", "dictionary.txt")
     language_model_path = ppath("training.language-model", "language_model.txt")
+    language_model_fst_path = ppath("training.language-model-fst", "language_model.fst")
+    mixed_language_model_fst_path = ppath(
+        "training.mixed-language-model-fst", "mixed_language_model.fst"
+    )
     intent_graph_path = ppath("training.intent-graph", "intent.pickle.gz")
     vocab_path = ppath("training.vocabulary-file", "vocab.txt")
     unknown_words_path = ppath("training.unknown-words-file", "unknown_words.txt")
@@ -227,6 +240,10 @@ def train_profile(profile_dir: Path, profile: typing.Dict[str, typing.Any]) -> N
             g2p_model=g2p_model,
             g2p_word_transform=g2p_word_transform,
             missing_words_path=unknown_words_path,
+            language_model_fst=language_model_fst_path,
+            base_language_model_fst=base_language_model_fst,
+            base_language_model_weight=base_language_model_weight,
+            mixed_language_model_fst=mixed_language_model_fst_path,
         )
     elif acoustic_model_type == AcousticModelType.KALDI:
         # Kaldi
@@ -248,6 +265,10 @@ def train_profile(profile_dir: Path, profile: typing.Dict[str, typing.Any]) -> N
             g2p_model=g2p_model,
             g2p_word_transform=g2p_word_transform,
             missing_words_path=unknown_words_path,
+            language_model_fst=language_model_fst_path,
+            base_language_model_fst=base_language_model_fst,
+            base_language_model_weight=base_language_model_weight,
+            mixed_language_model_fst=mixed_language_model_fst_path,
         )
     elif acoustic_model_type == AcousticModelType.DEEPSPEECH:
         # DeepSpeech
@@ -257,5 +278,48 @@ def train_profile(profile_dir: Path, profile: typing.Dict[str, typing.Any]) -> N
         alphabet_path = ppath("training.deepspeech.alphabet", "model/alphabet.txt")
 
         rhasspyasr_deepspeech.train(
-            intent_graph, language_model_path, trie_path, alphabet_path
+            intent_graph,
+            language_model_path,
+            trie_path,
+            alphabet_path,
+            language_model_fst=language_model_fst_path,
+            base_language_model_fst=base_language_model_fst,
+            base_language_model_weight=base_language_model_weight,
+            mixed_language_model_fst=mixed_language_model_fst_path,
         )
+
+
+# -----------------------------------------------------------------------------
+
+
+def mix_language_models(
+    small_arpa_path: typing.Union[str, Path],
+    large_fst_path: typing.Union[str, Path],
+    mix_weight: float,
+    mixed_arpa_path: typing.Union[str, Path],
+):
+    """Mix a large pre-built FST language model with a small ARPA model."""
+    with tempfile.NamedTemporaryFile(suffix=".fst", mode="w+") as small_fst:
+        # Convert small ARPA to FST
+        subprocess.check_call(
+            ["ngramread", "--ARPA", str(small_arpa_path), small_fst.name]
+        )
+
+        with tempfile.NamedTemporaryFile(suffix=".fst", mode="w+") as mixed_fst:
+            # Merge ngram FSTs
+            small_fst.seek(0)
+            subprocess.check_call(
+                [
+                    "ngrammerge",
+                    f"--alpha={mix_weight}",
+                    str(large_fst_path),
+                    small_fst.name,
+                    mixed_fst.name,
+                ]
+            )
+
+            # Write to final ARPA
+            mixed_fst.seek(0)
+            subprocess.check_call(
+                ["ngramprint", "--ARPA", mixed_fst.name, str(mixed_arpa_path)]
+            )

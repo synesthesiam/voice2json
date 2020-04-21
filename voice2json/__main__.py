@@ -165,11 +165,11 @@ def get_args() -> argparse.Namespace:
         action="store_true",
         help="Replace numbers with words in input sentence",
     )
-    # recognize_parser.add_argument(
-    #     "--perplexity",
-    #     action="store_true",
-    #     help="Compute perplexity of input text relative to language model",
-    # )
+    recognize_parser.add_argument(
+        "--perplexity",
+        action="append",
+        help="Compute perplexity of input text relative to language model FST",
+    )
 
     # --------------
     # record-command
@@ -633,6 +633,20 @@ async def recognize(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 
             # Keep text from transcription
             sentence_object["raw_text"] = text
+
+            if args.perplexity:
+                # Compute perplexity of input text for one or more language
+                # models (stored in FST binary format).
+                perplexity = {}
+                for lm_fst_path in args.perplexity:
+                    try:
+                        perplexity[lm_fst_path] = rhasspynlu.arpa_lm.get_perplexity(
+                            text, lm_fst_path, debug=args.debug
+                        )
+                    except Exception:
+                        _LOGGER.exception(lm_fst_path)
+
+                sentence_object["perplexity"] = perplexity
 
             print_json(sentence_object)
     except KeyboardInterrupt:
