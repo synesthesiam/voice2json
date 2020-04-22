@@ -4,6 +4,8 @@ import asyncio
 import io
 import logging
 import shlex
+import sys
+import time
 import typing
 from xml.etree import ElementTree as etree
 
@@ -12,6 +14,155 @@ import pydash
 from .core import Voice2JsonCore
 
 _LOGGER = logging.getLogger("voice2json.pronounce")
+
+# -----------------------------------------------------------------------------
+
+
+async def pronounce(args: argparse.Namespace, core: Voice2JsonCore) -> None:
+    """Pronounce one or more words from a dictionary or by guessing."""
+    import rhasspynlu
+
+    # Make sure profile has been trained
+    assert core.check_trained(), "Not trained"
+
+    base_dictionary_path = core.ppath("training.base_dictionary", "base_dictionary.txt")
+    dictionary_path = core.ppath("training.dictionary", "dictionary.txt")
+    custom_words_path = core.ppath("training.custom-words-file", "custom_words.txt")
+    g2p_path = core.ppath("training.g2p-model", "g2p.fst")
+    g2p_exists = g2p_path and g2p_path.exists()
+
+    play_command = shlex.split(pydash.get(core.profile, "audio.play-command"))
+
+    word_casing = pydash.get(core.profile, "training.word-casing", "ignore").lower()
+
+    # True if audio will go to stdout.
+    # In this case, printing will go to stderr.
+    wav_stdout = args.wav_sink == "-"
+
+    print_file = sys.stderr if wav_stdout else sys.stdout
+
+    # Load dictionaries
+    dictionary_paths = [dictionary_path, base_dictionary_path]
+
+    if custom_words_path and custom_words_path.exists():
+        dictionary_paths.insert(0, custom_words_path)
+
+    pronunciations: rhasspynlu.g2p.PronunciationsType = {}
+
+    for dict_path in dictionary_paths:
+        if dict_path and dict_path.exists():
+            _LOGGER.debug("Loading pronunciation dictionary from %s", dict_path)
+            with open(dict_path, "r") as dict_file:
+                pronunciations = rhasspynlu.g2p.read_pronunciations(
+                    dict_file, pronunciations
+                )
+
+    # Load text to speech system
+    marytts_voice = pydash.get(core.profile, "text-to-speech.marytts.voice")
+
+    if not args.quiet:
+        if args.espeak or (marytts_voice is None):
+            # Use eSpeak
+            do_pronounce = get_pronounce_espeak(args, core)
+        else:
+            # Use MaryTTS
+            do_pronounce = get_pronounce_marytts(args, core, marytts_voice)
+    else:
+        # Quiet
+        async def do_pronounce(word: str, dict_phonemes: typing.Iterable[str]) -> bytes:
+            return bytes()
+
+    # -------------------------------------------------------------------------
+
+    if args.word:
+        words = args.word
+    else:
+        words = sys.stdin
+
+    # Process words
+    try:
+        for word in words:
+            word_parts = word.strip().split()
+            word = word_parts[0]
+            dict_phonemes = []
+
+            if word_casing == "upper":
+                word = word.upper()
+            elif word_casing == "lower":
+                word = word.lower()
+
+            if len(word_parts) > 1:
+                # Pronunciation provided
+                dict_phonemes.append(word_parts[1:])
+
+            if word in pronunciations:
+                # Use pronunciations from dictionary
+                dict_phonemes.extend(phonemes for phonemes in pronunciations[word])
+            elif g2p_exists:
+                # Don't guess if a pronunciation was provided
+                if not dict_phonemes:
+                    # Guess pronunciation with phonetisaurus
+                    _LOGGER.debug("Guessing pronunciation for %s", word)
+                    assert g2p_path, "No g2p path"
+
+                    guesses = rhasspynlu.g2p.guess_pronunciations(
+                        [word], g2p_path, num_guesses=args.nbest
+                    )
+                    for _, phonemes in guesses:
+                        dict_phonemes.append(phonemes)
+            else:
+                _LOGGER.warning("No pronunciation for %s", word)
+
+            # Avoid duplicate pronunciations
+            used_pronunciations: typing.Set[str] = set()
+
+            for phonemes in dict_phonemes:
+                phoneme_str = " ".join(phonemes)
+                if phoneme_str in used_pronunciations:
+                    continue
+
+                print(word, phoneme_str, file=print_file)
+                print_file.flush()
+
+                used_pronunciations.add(phoneme_str)
+
+                if not args.quiet:
+                    # Speak with espeak or MaryTTS
+                    wav_data = await do_pronounce(word, phonemes)
+
+                    if args.wav_sink is not None:
+                        # Write WAV output somewhere
+                        if args.wav_sink == "-":
+                            # STDOUT
+                            wav_sink = sys.stdout.buffer
+                        else:
+                            # File output
+                            wav_sink = open(args.wav_sink, "wb")
+
+                        wav_sink.write(wav_data)
+                        wav_sink.flush()
+                    else:
+                        # Play audio directly
+                        _LOGGER.debug(play_command)
+                        play_process = await asyncio.create_subprocess_exec(
+                            play_command[0],
+                            *play_command[1:],
+                            stdin=asyncio.subprocess.PIPE,
+                        )
+                        await play_process.communicate(input=wav_data)
+
+                    # Delay before next word
+                    time.sleep(args.delay)
+
+            if args.newline:
+                print("", file=print_file)
+                print_file.flush()
+
+    except KeyboardInterrupt:
+        pass
+
+
+# -----------------------------------------------------------------------------
 
 
 def get_pronounce_espeak(
@@ -59,6 +210,9 @@ def get_pronounce_espeak(
         return stdout
 
     return do_pronounce
+
+
+# -----------------------------------------------------------------------------
 
 
 def get_pronounce_marytts(

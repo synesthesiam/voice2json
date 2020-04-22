@@ -2,10 +2,13 @@
 import collections
 import io
 import logging
+import os
+import sys
 import typing
 import wave
 from pathlib import Path
 
+import jsonlines
 import pydash
 
 _LOGGER = logging.getLogger("voice2json.utils")
@@ -52,3 +55,23 @@ def recursive_update(
             recursive_update(base_dict[k], v)
         else:
             base_dict[k] = v
+
+
+# -----------------------------------------------------------------------------
+
+
+def print_json(value: typing.Any, out_file=sys.stdout) -> None:
+    """Print a single line of JSON to stdout."""
+    with jsonlines.Writer(out_file) as out:
+        # pylint: disable=E1101
+        out.write(value)
+
+    out_file.flush()
+
+
+# -----------------------------------------------------------------------------
+
+
+def env_constructor(loader, node):
+    """Expand !env STRING to replace environment variables in STRING."""
+    return os.path.expandvars(node.value)

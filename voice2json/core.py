@@ -448,3 +448,21 @@ class Voice2JsonCore:
         if self._http_session:
             await self._http_session.close()
             self._http_session = None
+
+    # -------------------------------------------------------------------------
+
+    def check_trained(self) -> bool:
+        """True if profile is trained."""
+        # Load settings
+        intent_graph_path = self.ppath(
+            "intent-recognition.intent-graph", "intent.pickle.gz"
+        )
+
+        missing = False
+        for path in [intent_graph_path]:
+            if not (path and path.exists()):
+                _LOGGER.fatal("Missing %s. Did you forget to run train-profile?", path)
+                missing = True
+                break
+
+        return not missing
