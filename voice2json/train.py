@@ -1,6 +1,6 @@
+"""Methods to train a voice2json profile."""
+import asyncio
 import logging
-import subprocess
-import tempfile
 import typing
 from collections import defaultdict
 from enum import Enum
@@ -8,15 +8,20 @@ from pathlib import Path
 
 import pydash
 import rhasspynlu
-from rhasspynlu.jsgf import Expression, Word
 from rhasspynlu.g2p import PronunciationsType
+from rhasspynlu.jsgf import Expression, Word
 
-from .utils import ppath as utils_ppath, read_dict
+from .utils import ppath as utils_ppath
 
 _LOGGER = logging.getLogger("voice2json.train")
 
+# -----------------------------------------------------------------------------
+
 
 class AcousticModelType(str, Enum):
+    """Support speech to text systems."""
+
+    DUMMY = "dummy"
     POCKETSPHINX = "pocketsphinx"
     KALDI = "kaldi"
     JULIUS = "julius"
@@ -24,13 +29,21 @@ class AcousticModelType(str, Enum):
 
 
 class WordCasing(str, Enum):
+    """Word casing transformation types."""
+
     DEFAULT = "default"
     UPPER = "upper"
     LOWER = "lower"
     IGNORE = "ignore"
 
 
-def train_profile(profile_dir: Path, profile: typing.Dict[str, typing.Any]) -> None:
+# -----------------------------------------------------------------------------
+
+
+async def train_profile(
+    profile_dir: Path, profile: typing.Dict[str, typing.Any]
+) -> None:
+    """Re-generate speech/intent artifacts for profile."""
 
     # Compact
     def ppath(query, default=None):
@@ -53,9 +66,7 @@ def train_profile(profile_dir: Path, profile: typing.Dict[str, typing.Any]) -> N
 
     acoustic_model = ppath("training.acoustic-model", "acoustic_model")
     acoustic_model_type = AcousticModelType(
-        pydash.get(
-            profile, "training.acoustic-model-type", AcousticModelType.POCKETSPHINX
-        )
+        pydash.get(profile, "training.acoustic-model-type", AcousticModelType.DUMMY)
     )
 
     # Replace numbers with words
@@ -93,6 +104,11 @@ def train_profile(profile_dir: Path, profile: typing.Dict[str, typing.Any]) -> N
     vocab_path = ppath("training.vocabulary-file", "vocab.txt")
     unknown_words_path = ppath("training.unknown-words-file", "unknown_words.txt")
 
+    async def run(command: typing.List[str], **kwargs):
+        """Run a command asynchronously."""
+        process = await asyncio.create_subprocess_exec(*command, **kwargs)
+        await process.wait()
+
     # -------------------------------------------------------------------------
     # 1. Reassemble large files
     # -------------------------------------------------------------------------
@@ -106,7 +122,7 @@ def train_profile(profile_dir: Path, profile: typing.Dict[str, typing.Any]) -> N
             _LOGGER.debug(cat_command)
 
             with open(gzip_path, "wb") as gzip_file:
-                subprocess.run(cat_command, check=True, stdout=gzip_file)
+                await run(cat_command, check=True, stdout=gzip_file)
 
         if gzip_path.is_file():
             # Unzip single file
@@ -114,7 +130,7 @@ def train_profile(profile_dir: Path, profile: typing.Dict[str, typing.Any]) -> N
             _LOGGER.debug(unzip_command)
 
             with open(target_path, "wb") as target_file:
-                subprocess.run(unzip_command, check=True, stdout=target_file)
+                await run(unzip_command, check=True, stdout=target_file)
 
             # Delete zip file
             gzip_path.unlink()
@@ -214,7 +230,7 @@ def train_profile(profile_dir: Path, profile: typing.Dict[str, typing.Any]) -> N
 
     pronunciations: PronunciationsType = defaultdict(list)
 
-    def load_pronunciations() -> PronunciationsType:
+    def load_pronunciations():
         for dict_path in [base_dictionary, custom_words]:
             _LOGGER.debug("Loading base dictionary from %s", dict_path)
             with open(dict_path, "r") as dict_file:
@@ -240,6 +256,7 @@ def train_profile(profile_dir: Path, profile: typing.Dict[str, typing.Any]) -> N
             g2p_model=g2p_model,
             g2p_word_transform=g2p_word_transform,
             missing_words_path=unknown_words_path,
+            vocab_path=vocab_path,
             language_model_fst=language_model_fst_path,
             base_language_model_fst=base_language_model_fst,
             base_language_model_weight=base_language_model_weight,
@@ -265,6 +282,7 @@ def train_profile(profile_dir: Path, profile: typing.Dict[str, typing.Any]) -> N
             g2p_model=g2p_model,
             g2p_word_transform=g2p_word_transform,
             missing_words_path=unknown_words_path,
+            vocab_path=vocab_path,
             language_model_fst=language_model_fst_path,
             base_language_model_fst=base_language_model_fst,
             base_language_model_weight=base_language_model_weight,
@@ -282,44 +300,11 @@ def train_profile(profile_dir: Path, profile: typing.Dict[str, typing.Any]) -> N
             language_model_path,
             trie_path,
             alphabet_path,
+            vocab_path=vocab_path,
             language_model_fst=language_model_fst_path,
             base_language_model_fst=base_language_model_fst,
             base_language_model_weight=base_language_model_weight,
             mixed_language_model_fst=mixed_language_model_fst_path,
         )
-
-
-# -----------------------------------------------------------------------------
-
-
-def mix_language_models(
-    small_arpa_path: typing.Union[str, Path],
-    large_fst_path: typing.Union[str, Path],
-    mix_weight: float,
-    mixed_arpa_path: typing.Union[str, Path],
-):
-    """Mix a large pre-built FST language model with a small ARPA model."""
-    with tempfile.NamedTemporaryFile(suffix=".fst", mode="w+") as small_fst:
-        # Convert small ARPA to FST
-        subprocess.check_call(
-            ["ngramread", "--ARPA", str(small_arpa_path), small_fst.name]
-        )
-
-        with tempfile.NamedTemporaryFile(suffix=".fst", mode="w+") as mixed_fst:
-            # Merge ngram FSTs
-            small_fst.seek(0)
-            subprocess.check_call(
-                [
-                    "ngrammerge",
-                    f"--alpha={mix_weight}",
-                    str(large_fst_path),
-                    small_fst.name,
-                    mixed_fst.name,
-                ]
-            )
-
-            # Write to final ARPA
-            mixed_fst.seek(0)
-            subprocess.check_call(
-                ["ngramprint", "--ARPA", mixed_fst.name, str(mixed_arpa_path)]
-            )
+    else:
+        _LOGGER.warning("Not training speech to text system (%s)", acoustic_model_type)

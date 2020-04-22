@@ -3,9 +3,11 @@ import sys
 import json
 import time
 
+
 def parse_time_string(time_str):
     """Parse a string like '30 2' and return the integer 32."""
     return sum(int(n) for n in time_str.split(" "))
+
 
 for line in sys.stdin:
     intent = json.loads(line)

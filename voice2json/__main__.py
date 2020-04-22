@@ -6,46 +6,27 @@ For more details, see https://voice2json.org
 
 import argparse
 import asyncio
-import concurrent.futures
 import dataclasses
 import gzip
-import io
 import itertools
 import json
 import logging
 import os
 import platform
-import random
-import re
 import shlex
-import shutil
-import subprocess
 import sys
-import tempfile
-import threading
 import time
-import http.server
-import socketserver
-from collections import defaultdict
+import typing
 from pathlib import Path
-from typing import Any, BinaryIO, Dict, List, Optional, Set, Tuple
-from xml.etree import ElementTree as etree
 
+import aiofiles
 import jsonlines
 import pydash
 import yaml
-import networkx as nx
-import rhasspyasr
-import rhasspynlu
+
+from voice2json.utils import recursive_update
 
 from .core import Voice2JsonCore
-
-from voice2json.utils import (
-    numbers_to_words,
-    recursive_update,
-    maybe_convert_wav,
-    split_whitespace,
-)
 
 _LOGGER = logging.getLogger("voice2json")
 
@@ -72,7 +53,10 @@ async def main():
     core = get_core(args)
 
     # Call sub-commmand
-    await args.func(args, core)
+    try:
+        await args.func(args, core)
+    finally:
+        await core.stop()
 
 
 # -----------------------------------------------------------------------------
@@ -174,21 +158,29 @@ def get_args() -> argparse.Namespace:
     # --------------
     # record-command
     # --------------
-    # command_parser = sub_parsers.add_parser(
-    #     "record-command", help="Record voice command and write WAV to stdout"
-    # )
-    # command_parser.add_argument(
-    #     "--audio-source", "-a", help="File to read raw 16-bit 16Khz mono audio from"
-    # )
-    # command_parser.add_argument(
-    #     "--wav-sink", "-w", help="File to write WAV data to instead of stdout"
-    # )
-    # command_parser.add_argument(
-    #     "--output-size",
-    #     action="store_true",
-    #     help="Write line with output byte count before output",
-    # )
-    # command_parser.set_defaults(func=record_command)
+    command_parser = sub_parsers.add_parser(
+        "record-command", help="Record voice command and write WAV to stdout"
+    )
+    command_parser.add_argument(
+        "--audio-source",
+        "-a",
+        help="File to read raw 16-bit 16Khz mono audio from (use '-' for stdin)",
+    )
+    command_parser.add_argument(
+        "--wav-sink", "-w", help="File to write WAV data to instead of stdout"
+    )
+    command_parser.add_argument(
+        "--output-size",
+        action="store_true",
+        help="Write line with output byte count before output",
+    )
+    command_parser.add_argument(
+        "--chunk-size",
+        type=int,
+        default=1024,
+        help="Number of bytes to read at a time from audio source",
+    )
+    command_parser.set_defaults(func=record_command)
 
     # ---------
     # wait-wake
@@ -207,39 +199,43 @@ def get_args() -> argparse.Namespace:
     # )
     # wake_parser.set_defaults(func=wake)
 
-    # # pronounce-word
-    # pronounce_parser = sub_parsers.add_parser(
-    #     "pronounce-word", help="Speak a word phonetically"
-    # )
-    # pronounce_parser.add_argument("word", nargs="*", help="Word(s) to prononunce")
-    # pronounce_parser.add_argument(
-    #     "--quiet",
-    #     "-q",
-    #     action="store_true",
-    #     help="Don't speak word; only print phonemes",
-    # )
-    # pronounce_parser.add_argument(
-    #     "--delay", "-d", type=float, default=0, help="Seconds to wait between words"
-    # )
-    # pronounce_parser.add_argument(
-    #     "--nbest",
-    #     "-n",
-    #     type=int,
-    #     default=5,
-    #     help="Number of pronunciations to generate for unknown words",
-    # )
-    # pronounce_parser.add_argument(
-    #     "--espeak", action="store_true", help="Use eSpeak even if MaryTTS is available"
-    # )
-    # pronounce_parser.add_argument("--wav-sink", "-w", help="File to write WAV data to")
-    # pronounce_parser.add_argument(
-    #     "--newline",
-    #     action="store_true",
-    #     help="Print a blank line after the end of each word's pronunciations",
-    # )
-    # pronounce_parser.set_defaults(func=pronounce)
+    # --------------
+    # pronounce-word
+    # --------------
+    pronounce_parser = sub_parsers.add_parser(
+        "pronounce-word", help="Speak a word phonetically"
+    )
+    pronounce_parser.add_argument("word", nargs="*", help="Word(s) to prononunce")
+    pronounce_parser.add_argument(
+        "--quiet",
+        "-q",
+        action="store_true",
+        help="Don't speak word; only print phonemes",
+    )
+    pronounce_parser.add_argument(
+        "--delay", "-d", type=float, default=0, help="Seconds to wait between words"
+    )
+    pronounce_parser.add_argument(
+        "--nbest",
+        "-n",
+        type=int,
+        default=5,
+        help="Number of pronunciations to generate for unknown words",
+    )
+    pronounce_parser.add_argument(
+        "--espeak", action="store_true", help="Use eSpeak even if MaryTTS is available"
+    )
+    pronounce_parser.add_argument("--wav-sink", "-w", help="File to write WAV data to")
+    pronounce_parser.add_argument(
+        "--newline",
+        action="store_true",
+        help="Print a blank line after the end of each word's pronunciations",
+    )
+    pronounce_parser.set_defaults(func=pronounce)
 
+    # -----------------
     # generate-examples
+    # -----------------
     generate_parser = sub_parsers.add_parser(
         "generate-examples", help="Randomly generate example intents from profile"
     )
@@ -309,15 +305,6 @@ def get_args() -> argparse.Namespace:
     # )
     test_examples_parser.set_defaults(func=test_examples)
 
-    # # tune-examples
-    # tune_examples_parser = sub_parsers.add_parser(
-    #     "tune-examples", help="Tune speech recognizer with previously recorded examples"
-    # )
-    # tune_examples_parser.add_argument(
-    #     "--directory", "-d", help="Directory with recorded examples"
-    # )
-    # tune_examples_parser.set_defaults(func=tune_examples)
-
     # ------------------
     # show-documentation
     # ------------------
@@ -332,16 +319,16 @@ def get_args() -> argparse.Namespace:
     )
     show_documentation_parser.set_defaults(func=show_documentation)
 
-    # # speak-sentence
-    # speak_parser = sub_parsers.add_parser(
-    #     "speak-sentence", help="Speak a sentence using MaryTTS"
-    # )
-    # speak_parser.add_argument("sentence", nargs="*", help="Sentence(s) to speak")
-    # speak_parser.add_argument("--wav-sink", "-w", help="File to write WAV data to")
-    # speak_parser.add_argument(
-    #     "--espeak", action="store_true", help="Use eSpeak even if MaryTTS is available"
-    # )
-    # speak_parser.set_defaults(func=speak)
+    # speak-sentence
+    speak_parser = sub_parsers.add_parser(
+        "speak-sentence", help="Speak a sentence using MaryTTS"
+    )
+    speak_parser.add_argument("sentence", nargs="*", help="Sentence(s) to speak")
+    speak_parser.add_argument("--wav-sink", "-w", help="File to write WAV data to")
+    speak_parser.add_argument(
+        "--espeak", action="store_true", help="Use eSpeak even if MaryTTS is available"
+    )
+    speak_parser.set_defaults(func=speak)
 
     return parser.parse_args()
 
@@ -349,10 +336,10 @@ def get_args() -> argparse.Namespace:
 # -----------------------------------------------------------------------------
 
 
-def get_core(args: argparse.Namespace):
+def get_core(args: argparse.Namespace) -> Voice2JsonCore:
     """Load profile and create voice2json core."""
     # Load profile (YAML)
-    profile_yaml: Optional[Path] = None
+    profile_yaml: typing.Optional[Path] = None
 
     if args.profile is None:
         # Guess profile location in $HOME/.config/voice2json
@@ -432,7 +419,11 @@ async def print_profile(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 
 async def train(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     """Create speech/intent artifacts for a profile."""
-    core.train_profile()
+    start_time = time.perf_counter()
+    await core.train_profile()
+    end_time = time.perf_counter()
+
+    print("Training completed in", end_time - start_time, "second(s)")
 
 
 # -----------------------------------------------------------------------------
@@ -440,6 +431,7 @@ async def train(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 
 async def transcribe(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     """Speech to text from WAV file(s)."""
+    from rhasspyasr import Transcription
 
     # Make sure profile has been trained
     check_trained(core)
@@ -467,12 +459,11 @@ async def transcribe(args: argparse.Namespace, core: Voice2JsonCore) -> None:
                 wav_path = Path(wav_path_str)
                 _LOGGER.debug("Transcribing %s", wav_path)
 
-                wav_data = core.maybe_convert_wav(wav_path.read_bytes())
+                wav_data = await core.maybe_convert_wav(wav_path.read_bytes())
 
                 # Transcribe
                 transcription = (
-                    transcriber.transcribe_wav(wav_data)
-                    or rhasspyasr.Transcription.empty()
+                    transcriber.transcribe_wav(wav_data) or Transcription.empty()
                 )
                 result = dataclasses.asdict(transcription)
 
@@ -502,10 +493,9 @@ async def transcribe(args: argparse.Namespace, core: Voice2JsonCore) -> None:
                         wav_data = sys.stdin.buffer.read(num_bytes - len(wav_data))
 
                     # Transcribe
-                    wav_data = core.maybe_convert_wav(wav_data)
+                    wav_data = await core.maybe_convert_wav(wav_data)
                     transcription = (
-                        transcriber.transcribe_wav(wav_data)
-                        or rhasspyasr.Transcription.empty()
+                        transcriber.transcribe_wav(wav_data) or Transcription.empty()
                     )
                     result = dataclasses.asdict(transcription)
 
@@ -519,12 +509,11 @@ async def transcribe(args: argparse.Namespace, core: Voice2JsonCore) -> None:
                     num_bytes = int(line)
             else:
                 # Load and convert entire input
-                wav_data = core.maybe_convert_wav(sys.stdin.buffer.read())
+                wav_data = await core.maybe_convert_wav(sys.stdin.buffer.read())
 
                 # Transcribe
                 transcription = (
-                    transcriber.transcribe_wav(wav_data)
-                    or rhasspyasr.Transcription.empty()
+                    transcriber.transcribe_wav(wav_data) or Transcription.empty()
                 )
                 result = dataclasses.asdict(transcription)
 
@@ -540,39 +529,27 @@ async def transcribe(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 
 async def recognize(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     """Recognize intent from sentence(s)."""
+    import networkx as nx
+    import rhasspynlu
+    from .train import WordCasing
+
     # Make sure profile has been trained
     check_trained(core)
 
     # Load settings
     language_code = pydash.get(core.profile, "language.code", "en-US")
-    word_casing = pydash.get(core.profile, "training.word-casing", "ignore").lower()
-    # skip_unknown = pydash.get(core.profile, "intent-recognition.skip_unknown", True)
+    word_casing = WordCasing(
+        pydash.get(core.profile, "training.word-casing", "ignore").lower()
+    )
     intent_graph_path = core.ppath("training.intent-graph", "intent.pickle.gz")
     # stop_words_path = core.ppath("intent-recognition.stop-words", "stop_words.txt")
     fuzzy = pydash.get(core.profile, "intent-recognition.fuzzy", True)
 
-    # Load intent graph
-    _LOGGER.debug("Loading %s", intent_graph_path)
-    with gzip.GzipFile(intent_graph_path, mode="rb") as graph_gzip:
-        intent_graph = nx.readwrite.gpickle.read_gpickle(graph_gzip)
-
-    # Ignore words outside of input symbol table
-    # known_tokens: Optional[Set[str]] = None
-    # if skip_unknown:
-    #     known_tokens = set()
-    #     in_symbols = recognizer.intent_fst.input_symbols()
-    #     for i in range(in_symbols.num_symbols()):
-    #         key = in_symbols.get_nth_key(i)
-    #         token = in_symbols.find(i).decode()
-
-    #         # Exclude meta tokens and <eps>
-    #         if not (token.startswith("__") or token.startswith("<")):
-    #             known_tokens.add(token)
-
+    # Case transformation for input words
     word_transform = None
-    if word_casing == "upper":
+    if word_casing == WordCasing.UPPER:
         word_transform = str.upper
-    elif word_casing == "lower":
+    elif word_casing == WordCasing.LOWER:
         word_transform = str.lower
 
     if args.sentence:
@@ -582,6 +559,11 @@ async def recognize(args: argparse.Namespace, core: Voice2JsonCore) -> None:
             print("Reading sentences from stdin", file=sys.stderr)
 
         sentences = sys.stdin
+
+    # Load intent graph
+    _LOGGER.debug("Loading %s", intent_graph_path)
+    with gzip.GzipFile(intent_graph_path, mode="rb") as graph_gzip:
+        intent_graph = nx.readwrite.gpickle.read_gpickle(graph_gzip)
 
     # Process sentences
     try:
@@ -597,11 +579,7 @@ async def recognize(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 
             # Tokenize
             text = text.strip()
-            tokens = split_whitespace(text)
-
-            # if known_tokens is not None:
-            #     # Filter tokens
-            #     known_tokens = [t for t in tokens if t in known_tokens]
+            tokens = text.split()
 
             if args.replace_numbers:
                 tokens = rhasspynlu.replace_numbers(tokens, language=language_code)
@@ -656,73 +634,95 @@ async def recognize(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 # # -----------------------------------------------------------------------------
 
 
-# async def record_command(args: argparse.Namespace, core: Voice2JsonCore) -> None:
-#     """Segment audio by speech and silence."""
-#     # Make sure profile has been trained
-#     check_trained(core)
+async def record_command(args: argparse.Namespace, core: Voice2JsonCore) -> None:
+    """Segment audio by speech and silence."""
+    import rhasspysilence
 
-#     # Expecting raw 16-bit, 16Khz mono audio
-#     if args.audio_source is None:
-#         audio_source = core.get_audio_source()
-#         _LOGGER.debug("Recording raw 16-bit 16Khz mono audio")
-#     elif args.audio_source == "-":
-#         # Avoid crash when stdin is closed/read in daemon thread
-#         class FakeStdin:
-#             def __init__(self):
-#                 self.done = False
+    # Make sure profile has been trained
+    check_trained(core)
 
-#             def read(self, n):
-#                 if self.done:
-#                     return None
+    # Expecting raw 16-bit, 16Khz mono audio
+    if args.audio_source is None:
+        audio_source = await core.get_audio_source()
+        _LOGGER.debug("Recording raw 16-bit 16Khz mono audio")
+    elif args.audio_source == "-":
 
-#                 return sys.stdin.buffer.read(n)
+        class FakeStdin:
+            """Avoid crash when stdin is closed/read in daemon thread"""
 
-#             def close(self):
-#                 self.done = True
+            def __init__(self):
+                self.done = False
 
-#         audio_source = FakeStdin()
-#         _LOGGER.debug("Recording raw 16-bit 16Khz mono audio from stdin")
-#     else:
-#         audio_source: BinaryIO = open(args.audio_source, "rb")
-#         _LOGGER.debug(
-#             "Recording raw 16-bit 16Khz mono audio from %s", args.audio_source
-#         )
+            async def read(self, n):
+                """Read n bytes from stdin."""
+                if self.done:
+                    return None
 
-#     # JSON events are not printed by default
-#     json_file = None
-#     wav_sink = sys.stdout.buffer
+                return sys.stdin.buffer.read(n)
 
-#     if (args.wav_sink is not None) and (args.wav_sink != "-"):
-#         wav_sink = open(args.wav_sink, "wb")
+            async def close(self):
+                """Set done flag."""
+                self.done = True
 
-#         # Print JSON to stdout
-#         json_file = sys.stdout
+        audio_source = FakeStdin()
 
-#     # Record command
-#     try:
-#         recorder = core.get_command_recorder()
-#         result = await recorder.record(audio_source)
+        if os.isatty(sys.stdin.fileno()):
+            print("Recording raw 16-bit 16Khz mono audio from stdin", file=sys.stderr)
+    else:
+        audio_source = await aiofiles.open(args.audio_source, "rb")
+        _LOGGER.debug(
+            "Recording raw 16-bit 16Khz mono audio from %s", args.audio_source
+        )
 
-#         try:
-#             audio_source.close()
-#         except Exception:
-#             _LOGGER.exception("close audio")
+    # JSON events are not printed by default
+    json_file = None
+    wav_sink = sys.stdout.buffer
 
-#         # Output WAV data
-#         wav_bytes = core.buffer_to_wav(result.audio_data)
+    if (args.wav_sink is not None) and (args.wav_sink != "-"):
+        wav_sink = open(args.wav_sink, "wb")
 
-#         if args.output_size:
-#             # Write size first on a separate line
-#             size_str = str(len(wav_bytes)) + "\n"
-#             wav_sink.write(size_str.encode())
+        # Print JSON to stdout
+        json_file = sys.stdout
 
-#         wav_sink.write(wav_bytes)
+    # Record command
+    try:
+        recorder = core.get_command_recorder()
+        recorder.start()
 
-#         if json_file:
-#             for event in result.events:
-#                 print_json(attr.asdict(event), out_file=json_file)
-#     except KeyboardInterrupt:
-#         pass  # expected
+        result: typing.Optional[rhasspysilence.VoiceCommand] = None
+
+        # Read raw audio chunks
+        chunk = await audio_source.read(args.chunk_size)
+        while chunk:
+            result = recorder.process_chunk(chunk)
+            if result:
+                # Voice command finished
+                break
+
+            chunk = await audio_source.read(args.chunk_size)
+
+        try:
+            await audio_source.close()
+        except Exception:
+            _LOGGER.exception("close audio")
+
+        # Output WAV data
+        if result:
+            result.audio_data = result.audio_data or bytes()
+            wav_bytes = core.buffer_to_wav(result.audio_data)
+
+            if args.output_size:
+                # Write size first on a separate line
+                size_str = str(len(wav_bytes)) + "\n"
+                wav_sink.write(size_str.encode())
+
+            wav_sink.write(wav_bytes)
+
+            if json_file:
+                for event in result.events:
+                    print_json(dataclasses.asdict(event), out_file=json_file)
+    except KeyboardInterrupt:
+        pass  # expected
 
 
 # # -----------------------------------------------------------------------------
@@ -738,7 +738,7 @@ async def recognize(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 #         audio_source = sys.stdin.buffer
 #         _LOGGER.debug("Recording raw 16-bit 16Khz mono audio from stdin")
 #     else:
-#         audio_source: BinaryIO = open(args.audio_source, "rb")
+#         audio_source: typing.BinaryIO = open(args.audio_source, "rb")
 #         _LOGGER.debug(
 #             "Recording raw 16-bit 16Khz mono audio from %s", args.audio_source
 #         )
@@ -761,288 +761,162 @@ async def recognize(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 # # -----------------------------------------------------------------------------
 
 
-# def pronounce(
-#     args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]
-# ) -> None:
-#     from voice2json.utils import read_dict
+async def pronounce(args: argparse.Namespace, core: Voice2JsonCore) -> None:
+    """Pronounce one or more words from a dictionary or by guessing."""
+    import rhasspynlu
 
-#     # Make sure profile has been trained
-#     check_trained(profile, profile_dir)
+    # Make sure profile has been trained
+    check_trained(core)
 
-#     base_dictionary_path = ppath(
-#         profile, profile_dir, "training.base_dictionary", "base_dictionary.txt"
-#     )
-#     dictionary_path = ppath(
-#         profile, profile_dir, "training.dictionary", "dictionary.txt"
-#     )
-#     custom_words_path = ppath(
-#         profile, profile_dir, "training.custom-words-file", "custom_words.txt"
-#     )
-#     g2p_path = ppath(profile, profile_dir, "training.g2p-model", "g2p.fst")
-#     g2p_exists = g2p_path.exists()
+    base_dictionary_path = core.ppath("training.base_dictionary", "base_dictionary.txt")
+    dictionary_path = core.ppath("training.dictionary", "dictionary.txt")
+    custom_words_path = core.ppath("training.custom-words-file", "custom_words.txt")
+    g2p_path = core.ppath("training.g2p-model", "g2p.fst")
+    g2p_exists = g2p_path and g2p_path.exists()
 
-#     play_command = shlex.split(pydash.get(profile, "audio.play-command"))
+    play_command = shlex.split(pydash.get(core.profile, "audio.play-command"))
 
-#     word_casing = pydash.get(profile, "training.word-casing", "ignore").lower()
+    word_casing = pydash.get(core.profile, "training.word-casing", "ignore").lower()
 
-#     # True if audio will go to stdout.
-#     # In this case, printing will go to stderr.
-#     wav_stdout = args.wav_sink == "-"
+    # True if audio will go to stdout.
+    # In this case, printing will go to stderr.
+    wav_stdout = args.wav_sink == "-"
 
-#     print_file = sys.stderr if wav_stdout else sys.stdout
+    print_file = sys.stderr if wav_stdout else sys.stdout
 
-#     # Load dictionaries
-#     dictionary_paths = [dictionary_path, base_dictionary_path]
+    # Load dictionaries
+    dictionary_paths = [dictionary_path, base_dictionary_path]
 
-#     if custom_words_path.exists():
-#         dictionary_paths.insert(0, custom_words_path)
+    if custom_words_path and custom_words_path.exists():
+        dictionary_paths.insert(0, custom_words_path)
 
-#     pronunciations: Dict[str, List[str]] = defaultdict(list)
+    pronunciations: rhasspynlu.g2p.PronunciationsType = {}
 
-#     for dict_path in dictionary_paths:
-#         if dict_path.exists():
-#             with open(dict_path, "r") as dict_file:
-#                 read_dict(dict_file, pronunciations)
+    for dict_path in dictionary_paths:
+        if dict_path and dict_path.exists():
+            _LOGGER.debug("Loading pronunciation dictionary from %s", dict_path)
+            with open(dict_path, "r") as dict_file:
+                pronunciations = rhasspynlu.g2p.read_pronunciations(
+                    dict_file, pronunciations
+                )
 
-#     # Load text to speech system
-#     marytts_voice = pydash.get(profile, "text-to-speech.marytts.voice")
-#     marytts_proc = None
+    # Load text to speech system
+    marytts_voice = pydash.get(core.profile, "text-to-speech.marytts.voice")
 
-#     if not args.quiet:
-#         if args.espeak or (marytts_voice is None):
-#             # Use eSpeak
-#             espeak_voice = pydash.get(profile, "text-to-speech.espeak.voice")
-#             espeak_map_path = ppath(
-#                 profile,
-#                 profile_dir,
-#                 "text-to-speech.espeak.phoneme-map",
-#                 "espeak_phonemes.txt",
-#             )
+    if not args.quiet:
+        if args.espeak or (marytts_voice is None):
+            # Use eSpeak
+            from .pronounce import get_pronounce_espeak
 
-#             if not espeak_map_path.exists():
-#                 _LOGGER.fatal(
-#                     f"Missing eSpeak phoneme map (expected at {espeak_map_path})"
-#                 )
-#                 sys.exit(1)
+            do_pronounce = get_pronounce_espeak(args, core)
+        else:
+            # Use MaryTTS
+            from .pronounce import get_pronounce_marytts
 
-#             espeak_phoneme_map = dict(
-#                 re.split(r"\s+", line.strip(), maxsplit=1)
-#                 for line in espeak_map_path.read_text().splitlines()
-#             )
+            do_pronounce = get_pronounce_marytts(args, core, marytts_voice)
+    else:
+        # Quiet
+        async def do_pronounce(word: str, dict_phonemes: typing.Iterable[str]) -> bytes:
+            return bytes()
 
-#             espeak_cmd_format = pydash.get(
-#                 profile, "text-to-speech.espeak.pronounce-command"
-#             )
+    # -------------------------------------------------------------------------
 
-#             def do_pronounce(word, dict_phonemes):
-#                 espeak_phonemes = [espeak_phoneme_map[p] for p in dict_phonemes]
-#                 espeak_str = "".join(espeak_phonemes)
-#                 espeak_cmd = shlex.split(espeak_cmd_format.format(phonemes=espeak_str))
+    if args.word:
+        words = args.word
+    else:
+        words = sys.stdin
 
-#                 if espeak_voice is not None:
-#                     espeak_cmd.extend(["-v", str(espeak_voice)])
+    # Process words
+    try:
+        for word in words:
+            word_parts = word.strip().split()
+            word = word_parts[0]
+            dict_phonemes = []
 
-#                 _LOGGER.debug(espeak_cmd)
-#                 return subprocess.check_output(espeak_cmd)
+            if word_casing == "upper":
+                word = word.upper()
+            elif word_casing == "lower":
+                word = word.lower()
 
-#         else:
-#             # Use MaryTTS
-#             marytts_map_path = ppath(
-#                 profile,
-#                 profile_dir,
-#                 "text-to-speech.marytts.phoneme-map",
-#                 "marytts_phonemes.txt",
-#             )
+            if len(word_parts) > 1:
+                # Pronunciation provided
+                dict_phonemes.append(word_parts[1:])
 
-#             if not marytts_map_path.exists():
-#                 _LOGGER.fatal(
-#                     f"Missing MaryTTS phoneme map (expected at {marytts_map_path})"
-#                 )
-#                 sys.exit(1)
+            if word in pronunciations:
+                # Use pronunciations from dictionary
+                dict_phonemes.extend(phonemes for phonemes in pronunciations[word])
+            elif g2p_exists:
+                # Don't guess if a pronunciation was provided
+                if not dict_phonemes:
+                    # Guess pronunciation with phonetisaurus
+                    _LOGGER.debug("Guessing pronunciation for %s", word)
+                    assert g2p_path, "No g2p path"
 
-#             marytts_phoneme_map = dict(
-#                 re.split(r"\s+", line.strip(), maxsplit=1)
-#                 for line in marytts_map_path.read_text().splitlines()
-#             )
+                    guesses = rhasspynlu.g2p.guess_pronunciations(
+                        [word], g2p_path, num_guesses=args.nbest
+                    )
+                    for _, phonemes in guesses:
+                        dict_phonemes.append(phonemes)
+            else:
+                _LOGGER.warning("No pronunciation for %s", word)
 
-#             # End of sentence token
-#             sentence_end = pydash.get(
-#                 profile, "text-to-speech.marytts.sentence-end", ""
-#             )
+            # Avoid duplicate pronunciations
+            used_pronunciations: typing.Set[str] = set()
 
-#             # Rate of pronunciation
-#             pronounce_rate = str(
-#                 pydash.get(profile, "text-to-speech.marytts.pronounce-rate", "5%")
-#             )
+            for phonemes in dict_phonemes:
+                phoneme_str = " ".join(phonemes)
+                if phoneme_str in used_pronunciations:
+                    continue
 
-#             # Start MaryTTS server
-#             marytts_proc, url, params = start_marytts(
-#                 args, profile_dir, profile, marytts_voice
-#             )
+                print(word, phoneme_str, file=print_file)
+                print_file.flush()
 
-#             def do_pronounce(word, dict_phonemes):
-#                 marytts_phonemes = [marytts_phoneme_map[p] for p in dict_phonemes]
-#                 phoneme_str = " ".join(marytts_phonemes)
-#                 _LOGGER.debug(phoneme_str)
+                used_pronunciations.add(phoneme_str)
 
-#                 # Construct MaryXML input
-#                 params["INPUT_TYPE"] = "RAWMARYXML"
-#                 mary_xml = etree.fromstring(
-#                     """<?xml version="1.0" encoding="UTF-8"?>
-#                 <maryxml version="0.5" xml:lang="en-US">
-#                 <p><prosody rate="100%"><s><phrase></phrase></s></prosody></p>
-#                 </maryxml>"""
-#                 )
+                if not args.quiet:
+                    # Speak with espeak or MaryTTS
+                    wav_data = await do_pronounce(word, phonemes)
 
-#                 s = mary_xml.getchildren()[0]
-#                 p = s.getchildren()[0]
-#                 p.attrib["rate"] = pronounce_rate
+                    if args.wav_sink is not None:
+                        # Write WAV output somewhere
+                        if args.wav_sink == "-":
+                            # STDOUT
+                            wav_sink = sys.stdout.buffer
+                        else:
+                            # File output
+                            wav_sink = open(args.wav_sink, "wb")
 
-#                 phrase = p.getchildren()[0]
-#                 t = etree.SubElement(phrase, "t", attrib={"ph": phoneme_str})
-#                 t.text = word
+                        wav_sink.write(wav_data)
+                        wav_sink.flush()
+                    else:
+                        # Play audio directly
+                        _LOGGER.debug(play_command)
+                        play_process = await asyncio.create_subprocess_exec(
+                            play_command[0],
+                            *play_command[1:],
+                            stdin=asyncio.subprocess.PIPE,
+                        )
+                        await play_process.communicate(input=wav_data)
 
-#                 if len(sentence_end) > 0:
-#                     # Add end of sentence token
-#                     eos = etree.SubElement(phrase, "t", attrib={"pos": "."})
-#                     eos.text = sentence_end
+                    # Delay before next word
+                    time.sleep(args.delay)
 
-#                 # Serialize XML
-#                 with io.BytesIO() as xml_file:
-#                     etree.ElementTree(mary_xml).write(
-#                         xml_file, encoding="utf-8", xml_declaration=True
-#                     )
+            if args.newline:
+                print("", file=print_file)
+                print_file.flush()
 
-#                     xml_data = xml_file.getvalue()
-#                     _LOGGER.debug(xml_data)
-#                     params["INPUT_TEXT"] = xml_data
-
-#                 result = requests.get(url, params=params)
-#                 _LOGGER.debug(result)
-
-#                 if result.ok:
-#                     return result.content
-#                 else:
-#                     # Not sure what to do here
-#                     return bytes()
-
-#     else:
-#         # Quiet
-#         def do_pronounce(word, dict_phonemes):
-#             pass
-
-#     # -------------------------------------------------------------------------
-
-#     if len(args.word) > 0:
-#         words = args.word
-#     else:
-#         words = sys.stdin
-
-#     # Process words
-#     try:
-#         for word in words:
-#             word_parts = re.split(r"\s+", word.strip())
-#             word = word_parts[0]
-#             dict_phonemes = []
-
-#             if word_casing == "upper":
-#                 word = word.upper()
-#             elif word_casing == "lower":
-#                 word = word.lower()
-
-#             if len(word_parts) > 1:
-#                 # Pronunciation provided
-#                 dict_phonemes.append(word_parts[1:])
-
-#             if word in pronunciations:
-#                 # Use pronunciations from dictionary
-#                 dict_phonemes.extend(re.split(r"\s+", p) for p in pronunciations[word])
-#             elif g2p_exists:
-#                 # Don't guess if a pronunciation was provided
-#                 if len(dict_phonemes) == 0:
-#                     # Guess pronunciation with phonetisaurus
-#                     _LOGGER.debug("Guessing pronunciation for %s", word)
-
-#                     with tempfile.NamedTemporaryFile(mode="w") as word_file:
-#                         print(word, file=word_file)
-#                         word_file.seek(0)
-
-#                         phonetisaurus_cmd = [
-#                             "phonetisaurus-apply",
-#                             "--model",
-#                             str(g2p_path),
-#                             "--word_list",
-#                             word_file.name,
-#                             "--nbest",
-#                             str(args.nbest),
-#                         ]
-
-#                         _LOGGER.debug(phonetisaurus_cmd)
-#                         output_lines = (
-#                             subprocess.check_output(phonetisaurus_cmd)
-#                             .decode()
-#                             .splitlines()
-#                         )
-#                         dict_phonemes.extend(
-#                             re.split(r"\s+", line.strip())[1:] for line in output_lines
-#                         )
-#             else:
-#                 _LOGGER.warn(f"No pronunciation for {word}")
-
-#             # Avoid duplicate pronunciations
-#             used_pronunciations: Set[str] = set()
-
-#             for phonemes in dict_phonemes:
-#                 phoneme_str = " ".join(phonemes)
-#                 if phoneme_str in used_pronunciations:
-#                     continue
-
-#                 print(word, phoneme_str, file=print_file)
-#                 print_file.flush()
-
-#                 used_pronunciations.add(phoneme_str)
-
-#                 if not args.quiet:
-#                     # Speak with espeak or MaryTTS
-#                     wav_data = do_pronounce(word, phonemes)
-
-#                     if args.wav_sink is not None:
-#                         # Write WAV output somewhere
-#                         if args.wav_sink == "-":
-#                             # STDOUT
-#                             wav_sink = sys.stdout.buffer
-#                         else:
-#                             # File output
-#                             wav_sink = open(args.wav_sink, "wb")
-
-#                         wav_sink.write(wav_data)
-#                         wav_sink.flush()
-#                     else:
-#                         # Play audio directly
-#                         _LOGGER.debug(play_command)
-#                         subprocess.run(play_command, input=wav_data, check=True)
-
-#                     # Delay before next word
-#                     time.sleep(args.delay)
-
-#             if args.newline:
-#                 print("", file=print_file)
-#                 print_file.flush()
-
-#     except KeyboardInterrupt:
-#         pass
-#     finally:
-#         if marytts_proc is not None:
-#             # Stop MaryTTS server
-#             marytts_proc.terminate()
-#             marytts_proc.wait()
+    except KeyboardInterrupt:
+        pass
 
 
-# # -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 async def generate(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     """Generate examples from intent graph."""
+    import networkx as nx
+    import rhasspynlu
+
     # Make sure profile has been trained
     check_trained(core)
 
@@ -1142,7 +1016,7 @@ async def generate(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 
 
 # def record_examples(
-#     args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]
+#     args: argparse.Namespace, profile_dir: Path, profile: typing.Dict[str, typing.Any]
 # ) -> None:
 #     import pywrapfst as fst
 #     from voice2json.utils import buffer_to_wav, get_audio_source
@@ -1163,7 +1037,7 @@ async def generate(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 #     # Load intent finite state transducer
 #     intent_fst = fst.Fst.read(str(intent_fst_path))
 
-#     def generate_intent() -> Dict[str, Any]:
+#     def generate_intent() -> typing.Dict[str, typing.Any]:
 #         # Generate sample sentence
 #         rand_fst = fst.randgen(intent_fst, npath=1)
 
@@ -1186,7 +1060,7 @@ async def generate(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 #         audio_source = sys.stdin.buffer
 #         _LOGGER.debug("Recording raw 16-bit 16Khz mono audio from stdin")
 #     else:
-#         audio_source: BinaryIO = open(args.audio_source, "rb")
+#         audio_source: typing.BinaryIO = open(args.audio_source, "rb")
 #         _LOGGER.debug("Recording raw 16-bit 16Khz mono audio from %s", args.audio_source)
 
 #     # Recording thread
@@ -1262,7 +1136,7 @@ async def generate(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 
 
 # def _get_actual_results(
-#     args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]
+#     args: argparse.Namespace, profile_dir: Path, profile: typing.Dict[str, typing.Any]
 # ):
 #     from voice2json import get_transcriber, get_recognizer
 
@@ -1278,7 +1152,7 @@ async def generate(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 #     recognizer = get_recognizer(profile_dir, profile)
 
 #     # Process examples
-#     actual: Dict[str, Dict[str, Any]] = {}
+#     actual: typing.Dict[str, typing.Dict[str, typing.Any]] = {}
 #     try:
 #         for wav_path in examples_dir.glob("*.wav"):
 #             _LOGGER.debug("Processing %s", wav_path)
@@ -1315,16 +1189,19 @@ async def generate(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 
 async def test_examples(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     """Test speech/intent recognition against a directory of expected results."""
+    from rhasspynlu.evaluate import evaluate_intents
+    from rhasspynlu.intent import Recognition
+
     # Make sure profile has been trained
     check_trained(core)
 
-    results_dir = None
-    if args.results is not None:
-        results_dir = Path(args.results)
+    # results_dir = None
+    # if args.results is not None:
+    #     results_dir = Path(args.results)
 
     # Expected/actual intents
-    expected: Dict[str, Recognition] = {}
-    actual: Dict[str, Recognition] = {}
+    expected: typing.Dict[str, Recognition] = {}
+    actual: typing.Dict[str, Recognition] = {}
 
     if args.expected:
         _LOGGER.debug("Loading expected intents from %s", args.expected)
@@ -1333,9 +1210,7 @@ async def test_examples(args: argparse.Namespace, core: Voice2JsonCore) -> None:
         # Each line is an intent with a wav_name key.
         with open(args.expected, "r") as expected_file:
             for line in expected_file:
-                expected_intent = rhasspynlu.intent.Recognition.from_dict(
-                    json.loads(line)
-                )
+                expected_intent = Recognition.from_dict(json.loads(line))
                 assert expected_intent.wav_name, f"No wav_name for {line}"
                 expected[expected_intent.wav_name] = expected_intent
 
@@ -1390,9 +1265,7 @@ async def test_examples(args: argparse.Namespace, core: Voice2JsonCore) -> None:
         # Load actual results from jsonl file
         with open(args.actual, "r") as actual_file:
             for line in actual_file:
-                actual_intent = rhasspynlu.intent.Recognition.from_dict(
-                    json.loads(line)
-                )
+                actual_intent = Recognition.from_dict(json.loads(line))
                 assert actual_intent.wav_name, f"No wav_name for {line}"
                 actual[actual_intent.wav_name] = actual_intent
 
@@ -1430,7 +1303,7 @@ async def test_examples(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     #                 _LOGGER.debug("Processing %s", wav_path)
 
     #                 # Convert WAV data and transcribe
-    #                 wav_data = self.core.maybe_convert_wav(wav_path.read_bytes())
+    #                 wav_data = await self.core.maybe_convert_wav(wav_path.read_bytes())
     #                 transcription = self.transcriber.transcribe_wav(wav_data)
 
     #                 # Tokenize and do intent recognition
@@ -1467,7 +1340,7 @@ async def test_examples(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     #                 wav_name = actual_intent.wav_name
     #                 actual[wav_name] = actual_intent
 
-    report = rhasspynlu.evaluate.evaluate_intents(expected, actual)
+    report = evaluate_intents(expected, actual)
     print_json(dataclasses.asdict(report))
 
 
@@ -1479,7 +1352,7 @@ async def test_examples(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 
 
 # def tune_examples(
-#     args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]
+#     args: argparse.Namespace, profile_dir: Path, profile: typing.Dict[str, typing.Any]
 # ) -> None:
 #     from voice2json import get_tuner
 
@@ -1495,11 +1368,14 @@ async def test_examples(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 #     print("Tuning completed in", end_time - start_time, "second(s)")
 
 
-# # -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 async def show_documentation(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     """Run basic web server with documentation."""
+    import http.server
+    import socketserver
+
     voice2json_dir = Path(os.environ.get("voice2json_dir", os.getcwd()))
     site_dir = voice2json_dir / "site"
 
@@ -1515,13 +1391,28 @@ async def show_documentation(args: argparse.Namespace, core: Voice2JsonCore) -> 
 
 
 # -----------------------------------------------------------------------------
+
+
+async def speak(args: argparse.Namespace, core: Voice2JsonCore) -> None:
+    """Speak one or more sentences using text to speech."""
+    from .tts import speak_espeak, speak_marytts
+
+    marytts_voice = pydash.get(core.profile, "text-to-speech.marytts.voice")
+    if args.espeak or (marytts_voice is None):
+        await speak_espeak(args, core)
+    else:
+        await speak_marytts(args, core, marytts_voice)
+
+
+# -----------------------------------------------------------------------------
 # Utilities
 # -----------------------------------------------------------------------------
 
 
-def print_json(value: Any, out_file=sys.stdout) -> None:
+def print_json(value: typing.Any, out_file=sys.stdout) -> None:
     """Print a single line of JSON to stdout."""
     with jsonlines.Writer(out_file) as out:
+        # pylint: disable=E1101
         out.write(value)
 
     out_file.flush()
@@ -1541,7 +1432,7 @@ def check_trained(core: Voice2JsonCore) -> None:
 
     missing = False
     for path in [intent_graph_path]:
-        if not path.exists():
+        if not (path and path.exists()):
             _LOGGER.fatal("Missing %s. Did you forget to run train-profile?", path)
             missing = True
 
@@ -1550,183 +1441,7 @@ def check_trained(core: Voice2JsonCore) -> None:
         sys.exit(1)
 
 
-# # -----------------------------------------------------------------------------
-
-
-# def speak(args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]) -> None:
-#     marytts_voice = pydash.get(profile, "text-to-speech.marytts.voice")
-#     if args.espeak or (marytts_voice is None):
-#         speak_espeak(args, profile_dir, profile)
-#     else:
-#         speak_marytts(args, profile_dir, profile, marytts_voice)
-
-
-# def speak_espeak(
-#     args: argparse.Namespace, profile_dir: Path, profile: Dict[str, Any]
-# ) -> None:
-#     voice = pydash.get(profile, "text-to-speech.espeak.voice")
-#     espeak_cmd_format = pydash.get(profile, "text-to-speech.espeak.speak-command")
-#     play_command = shlex.split(pydash.get(profile, "audio.play-command"))
-
-#     # Process sentence(s)
-#     if len(args.sentence) > 0:
-#         sentences = args.sentence
-#     else:
-#         sentences = sys.stdin
-
-#     for sentence in sentences:
-#         sentence = sentence.strip()
-#         espeak_cmd = shlex.split(espeak_cmd_format.format(sentence=sentence))
-#         espeak_cmd.append("--stdout")
-
-#         if voice is not None:
-#             espeak_cmd.extend(["-v", str(voice)])
-
-#         _LOGGER.debug(espeak_cmd)
-#         wav_data = subprocess.check_output(espeak_cmd)
-
-#         if args.wav_sink is not None:
-#             # Write WAV output somewhere
-#             if args.wav_sink == "-":
-#                 # STDOUT
-#                 wav_sink = sys.stdout.buffer
-#             else:
-#                 # File output
-#                 wav_sink = open(args.wav_sink, "wb")
-
-#             wav_sink.write(wav_data)
-#             wav_sink.flush()
-#         else:
-#             _LOGGER.debug(play_command)
-
-#             # Speak sentence
-#             print(sentence)
-#             subprocess.run(play_command, input=wav_data, check=True)
-
-
-# def start_marytts(
-#     args: argparse.Namespace,
-#     profile_dir: Path,
-#     profile: Dict[str, Any],
-#     marytts_voice: str,
-# ):
-#     max_retries = int(pydash.get(profile, "text-to-speech.marytts.max-retries", 15))
-#     retry_seconds = float(
-#         pydash.get(profile, "text-to-speech.marytts.retry-seconds", 0.5)
-#     )
-#     marytts_locale = pydash.get(
-#         profile, "text-to-speech.marytts.locale", pydash.get(profile, "language.code")
-#     )
-#     server_command = shlex.split(
-#         pydash.get(profile, "text-to-speech.marytts.server-command")
-#     )
-
-#     _LOGGER.debug(server_command)
-
-#     # Re-direct stderr output
-#     kwargs = {}
-#     if not args.debug:
-#         kwargs["stderr"] = subprocess.DEVNULL
-
-#     marytts_proc = subprocess.Popen(server_command, universal_newlines=True, **kwargs)
-
-#     url = str(
-#         pydash.get(
-#             profile,
-#             "text-to-speech.marytts.process-url",
-#             "http://localhost:59125/process",
-#         )
-#     )
-
-#     try:
-#         # Check connection
-#         connected = False
-#         for i in range(max_retries):
-#             try:
-#                 requests.get(url)
-#                 connected = True
-#                 break
-#             except Exception:
-#                 time.sleep(retry_seconds)
-
-#         if not connected:
-#             _LOGGER.fatal(f"Failed to connect to MaryTTS server at {url}")
-#             sys.exit(1)
-
-#         # Set up default params
-#         params = {
-#             "INPUT_TEXT": "",
-#             "INPUT_TYPE": "TEXT",
-#             "AUDIO": "WAVE",
-#             "OUTPUT_TYPE": "AUDIO",
-#             "VOICE": marytts_voice,
-#         }
-
-#         if marytts_locale is not None:
-#             params["LOCALE"] = marytts_locale
-
-#     except Exception:
-#         _LOGGER.exception("start_marytts")
-
-#         # Stop MaryTTS server
-#         marytts_proc.terminate()
-#         marytts_proc.wait()
-
-#         sys.exit(1)
-
-#     return marytts_proc, url, params
-
-
-# def speak_marytts(
-#     args: argparse.Namespace,
-#     profile_dir: Path,
-#     profile: Dict[str, Any],
-#     marytts_voice: str,
-# ) -> None:
-#     play_command = shlex.split(pydash.get(profile, "audio.play-command"))
-
-#     marytts_proc, url, params = start_marytts(args, profile_dir, profile, marytts_voice)
-
-#     try:
-#         # Process sentence(s)
-#         if len(args.sentence) > 0:
-#             sentences = args.sentence
-#         else:
-#             sentences = sys.stdin
-
-#         for sentence in sentences:
-#             sentence = sentence.strip()
-#             params["INPUT_TEXT"] = sentence
-#             _LOGGER.debug(params)
-
-#             # Do GET requests
-#             result = requests.get(url, params=params)
-#             if result.ok:
-#                 if args.wav_sink is not None:
-#                     # Write WAV output somewhere
-#                     if args.wav_sink == "-":
-#                         # STDOUT
-#                         wav_sink = sys.stdout.buffer
-#                     else:
-#                         # File output
-#                         wav_sink = open(args.wav_sink, "wb")
-
-#                     wav_sink.write(result.content)
-#                     wav_sink.flush()
-#                 else:
-#                     _LOGGER.debug(play_command)
-
-#                     # Speak sentence
-#                     print(sentence)
-#                     subprocess.run(play_command, input=result.content, check=True)
-#     finally:
-#         # Stop MaryTTS server
-#         marytts_proc.terminate()
-#         marytts_proc.wait()
-
-
 # -----------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
+    asyncio.run(main())

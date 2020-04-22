@@ -33,20 +33,21 @@ class Porcupine(object):
     _PICOVOICE_STATUS_TO_EXCEPTION = {
         PicovoiceStatuses.OUT_OF_MEMORY: MemoryError,
         PicovoiceStatuses.IO_ERROR: IOError,
-        PicovoiceStatuses.INVALID_ARGUMENT: ValueError
+        PicovoiceStatuses.INVALID_ARGUMENT: ValueError,
     }
 
     class CPorcupine(Structure):
         pass
 
     def __init__(
-            self,
-            library_path,
-            model_file_path,
-            keyword_file_path=None,
-            sensitivity=None,
-            keyword_file_paths=None,
-            sensitivities=None):
+        self,
+        library_path,
+        model_file_path,
+        keyword_file_path=None,
+        sensitivity=None,
+        keyword_file_paths=None,
+        sensitivities=None,
+    ):
         """
         Loads Porcupine's shared library and creates an instance of wake word detection object.
 
@@ -77,11 +78,13 @@ class Porcupine(object):
             keyword_file_paths = [keyword_file_path]
 
             if not (0 <= sensitivity <= 1):
-                raise ValueError('Sensitivity should be within [0, 1]')
+                raise ValueError("Sensitivity should be within [0, 1]")
             sensitivities = [sensitivity]
         elif sensitivities is not None and keyword_file_paths is not None:
             if len(keyword_file_paths) != len(sensitivities):
-                raise ValueError("Different number of sensitivity and keyword file path parameters are provided.")
+                raise ValueError(
+                    "Different number of sensitivity and keyword file path parameters are provided."
+                )
 
             for x in keyword_file_paths:
                 if not os.path.exists(os.path.expanduser(x)):
@@ -89,7 +92,7 @@ class Porcupine(object):
 
             for x in sensitivities:
                 if not (0 <= x <= 1):
-                    raise ValueError('Sensitivity should be within [0, 1]')
+                    raise ValueError("Sensitivity should be within [0, 1]")
         else:
             raise ValueError("Sensitivity and/or keyword file path is missing")
 
@@ -101,7 +104,8 @@ class Porcupine(object):
             c_int,
             POINTER(c_char_p),
             POINTER(c_float),
-            POINTER(POINTER(self.CPorcupine))]
+            POINTER(POINTER(self.CPorcupine)),
+        ]
         init_func.restype = self.PicovoiceStatuses
 
         self._handle = POINTER(self.CPorcupine)()
@@ -109,14 +113,21 @@ class Porcupine(object):
         status = init_func(
             model_file_path.encode(),
             self._num_keywords,
-            (c_char_p * self._num_keywords)(*[os.path.expanduser(x).encode() for x in keyword_file_paths]),
+            (c_char_p * self._num_keywords)(
+                *[os.path.expanduser(x).encode() for x in keyword_file_paths]
+            ),
             (c_float * self._num_keywords)(*sensitivities),
-            byref(self._handle))
+            byref(self._handle),
+        )
         if status is not self.PicovoiceStatuses.SUCCESS:
-            raise self._PICOVOICE_STATUS_TO_EXCEPTION[status]('Initialization failed')
+            raise self._PICOVOICE_STATUS_TO_EXCEPTION[status]("Initialization failed")
 
         self.process_func = library.pv_porcupine_multiple_keywords_process
-        self.process_func.argtypes = [POINTER(self.CPorcupine), POINTER(c_short), POINTER(c_int)]
+        self.process_func.argtypes = [
+            POINTER(self.CPorcupine),
+            POINTER(c_short),
+            POINTER(c_int),
+        ]
         self.process_func.restype = self.PicovoiceStatuses
 
         self._delete_func = library.pv_porcupine_delete
@@ -151,9 +162,11 @@ class Porcupine(object):
         """
 
         result = c_int()
-        status = self.process_func(self._handle, (c_short * len(pcm))(*pcm), byref(result))
+        status = self.process_func(
+            self._handle, (c_short * len(pcm))(*pcm), byref(result)
+        )
         if status is not self.PicovoiceStatuses.SUCCESS:
-            raise self._PICOVOICE_STATUS_TO_EXCEPTION[status]('Processing failed')
+            raise self._PICOVOICE_STATUS_TO_EXCEPTION[status]("Processing failed")
 
         keyword_index = result.value
 

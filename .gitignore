@@ -1,6 +1,7 @@
 .venv*/
 build_*/
 __pycache__/
+.mypy_cache/
 download/
 dist_*/
 .doit.db*

@@ -1,5 +1,0 @@
-paho-mqtt
-jsonlines
-pydash
-quart==0.6.12
-pyyaml
