@@ -2,7 +2,8 @@
 import argparse
 import asyncio
 import dataclasses
-# import gzip
+import gzip
+import itertools
 import logging
 import os
 import re
@@ -15,7 +16,7 @@ import aiofiles
 import jsonlines
 
 from .core import Voice2JsonCore
-from .utils import print_json
+from .utils import dag_paths_random, itershuffle, print_json
 
 _LOGGER = logging.getLogger("voice2json.record")
 
@@ -88,7 +89,8 @@ async def record_command(args: argparse.Namespace, core: Voice2JsonCore) -> None
 
 async def record_examples(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     """Record example voice commands."""
-    # import networkx as nx
+    import networkx as nx
+    import rhasspynlu
 
     # Make sure profile has been trained
     assert core.check_trained(), "Not trained"
@@ -105,18 +107,31 @@ async def record_examples(args: argparse.Namespace, core: Voice2JsonCore) -> Non
     examples_dir.mkdir(parents=True, exist_ok=True)
 
     # Load settings
-    # intent_graph_path = core.ppath(
-    #     "intent-recognition.intent-graph", "intent.pickle.gz"
-    # )
+    intent_graph_path = core.ppath(
+        "intent-recognition.intent-graph", "intent.pickle.gz"
+    )
 
     # Load intent graph
-    # _LOGGER.debug("Loading %s", intent_graph_path)
-    # with gzip.GzipFile(intent_graph_path, mode="rb") as graph_gzip:
-    #     intent_graph = nx.readwrite.gpickle.read_gpickle(graph_gzip)
+    _LOGGER.debug("Loading %s", intent_graph_path)
+    with gzip.GzipFile(intent_graph_path, mode="rb") as graph_gzip:
+        intent_graph = nx.readwrite.gpickle.read_gpickle(graph_gzip)
+
+    start_node, end_node = rhasspynlu.jsgf_graph.get_start_end_nodes(intent_graph)
+    assert (start_node is not None) and (
+        end_node is not None
+    ), "Missing start/end node(s)"
+
+    # Iterable that yields random paths through the graph forever
+    random_paths = itertools.cycle(
+        itershuffle(dag_paths_random(intent_graph, start_node, end_node))
+    )
 
     def generate_intent() -> typing.Dict[str, typing.Any]:
-        # Generate sample sentence
-        return {"text": "this is a test"}
+        # Generate sample intent
+        path = next(random_paths)
+        _, recognition = rhasspynlu.fsticuffs.path_to_recognition(path, intent_graph)
+        assert recognition, "Path to recognition failed"
+        return dataclasses.asdict(recognition)
 
     def get_wav_path(text: str, count: int) -> Path:
         # /dir/the_transcription_text-000.wav

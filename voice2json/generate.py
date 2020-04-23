@@ -5,7 +5,7 @@ import gzip
 import logging
 
 from .core import Voice2JsonCore
-from .utils import print_json
+from .utils import dag_paths_random, itershuffle, print_json
 
 _LOGGER = logging.getLogger("voice2json.generate")
 
@@ -13,7 +13,7 @@ _LOGGER = logging.getLogger("voice2json.generate")
 
 
 async def generate(args: argparse.Namespace, core: Voice2JsonCore) -> None:
-    """Generate examples from intent graph."""
+    """Generate randomish examples from intent graph."""
     import networkx as nx
     import rhasspynlu
 
@@ -40,7 +40,7 @@ async def generate(args: argparse.Namespace, core: Voice2JsonCore) -> None:
         paths_left = args.number
 
     # Iterate through all paths
-    for path in nx.all_simple_paths(intent_graph, start_node, end_node):
+    for path in itershuffle(dag_paths_random(intent_graph, start_node, end_node)):
         if paths_left is not None:
             paths_left -= 1
             if paths_left < 0:
