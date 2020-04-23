@@ -16,6 +16,10 @@ if [[ -d "${venv}" ]]; then
         if [[ -d "${KALDI_DIR}" ]]; then
             export KALDI_DIR
         fi
+
+        if [[ -d "${venv}/tools/precise-engine" ]]; then
+            export PATH="${venv}/tools/precise-engine:${PATH}"
+        fi
     fi
 fi
 

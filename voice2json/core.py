@@ -4,12 +4,15 @@ Core voice2json command support.
 import asyncio
 import io
 import logging
+import os
 import shlex
 import ssl
+import sys
 import typing
 import wave
 from pathlib import Path
 
+import aiofiles
 import aiohttp
 import pydash
 from rhasspyasr import Transcriber
@@ -466,3 +469,43 @@ class Voice2JsonCore:
                 break
 
         return not missing
+
+    # -------------------------------------------------------------------------
+
+    async def make_audio_source(self, audio_source: str) -> typing.Any:
+        """Create an async audio source from command-line argument."""
+        if audio_source is None:
+            _LOGGER.debug("Recording raw 16-bit 16Khz mono audio")
+            return await self.get_audio_source()
+
+        if audio_source == "-":
+            if os.isatty(sys.stdin.fileno()):
+                print(
+                    "Recording raw 16-bit 16Khz mono audio from stdin", file=sys.stderr
+                )
+
+            return FakeStdin()
+
+        _LOGGER.debug("Recording raw 16-bit 16Khz mono audio from %s", audio_source)
+        return await aiofiles.open(audio_source, "rb")
+
+
+# -----------------------------------------------------------------------------
+
+
+class FakeStdin:
+    """Avoid crash when stdin is closed/read in daemon thread"""
+
+    def __init__(self):
+        self.done = False
+
+    async def read(self, n):
+        """Read n bytes from stdin."""
+        if self.done:
+            return None
+
+        return sys.stdin.buffer.read(n)
+
+    async def close(self):
+        """Set done flag."""
+        self.done = True

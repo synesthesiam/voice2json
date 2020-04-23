@@ -193,6 +193,12 @@ def get_args() -> argparse.Namespace:
         "--audio-source", "-a", help="File to read raw 16-bit 16Khz mono audio from"
     )
     wake_parser.add_argument(
+        "--chunk-size",
+        type=int,
+        default=1024,
+        help="Number of bytes to read at a time from audio source",
+    )
+    wake_parser.add_argument(
         "--exit-count",
         "-c",
         type=int,

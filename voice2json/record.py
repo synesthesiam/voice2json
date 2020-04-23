@@ -12,7 +12,6 @@ import typing
 from pathlib import Path
 
 import aioconsole
-import aiofiles
 import jsonlines
 
 from .core import Voice2JsonCore
@@ -31,7 +30,7 @@ async def record_command(args: argparse.Namespace, core: Voice2JsonCore) -> None
     assert core.check_trained(), "Not trained"
 
     # Expecting raw 16-bit, 16Khz mono audio
-    audio_source = await make_audio_source(args.audio_source, core)
+    audio_source = await core.make_audio_source(args.audio_source)
 
     # JSON events are not printed by default
     json_file = None
@@ -139,7 +138,7 @@ async def record_examples(args: argparse.Namespace, core: Voice2JsonCore) -> Non
         return examples_dir / f"{text}-{count:03d}.wav"
 
     # Expecting raw 16-bit, 16Khz mono audio
-    audio_source = await make_audio_source(args.audio_source, core)
+    audio_source = await core.make_audio_source(args.audio_source)
 
     # Recording task method
     audio_data = bytes()
@@ -216,40 +215,3 @@ async def record_examples(args: argparse.Namespace, core: Voice2JsonCore) -> Non
             await audio_source.close()
         except Exception:
             pass
-
-
-# -----------------------------------------------------------------------------
-
-
-class FakeStdin:
-    """Avoid crash when stdin is closed/read in daemon thread"""
-
-    def __init__(self):
-        self.done = False
-
-    async def read(self, n):
-        """Read n bytes from stdin."""
-        if self.done:
-            return None
-
-        return sys.stdin.buffer.read(n)
-
-    async def close(self):
-        """Set done flag."""
-        self.done = True
-
-
-async def make_audio_source(audio_source: str, core: Voice2JsonCore) -> typing.Any:
-    """Create an async audio source from command-line argument."""
-    if audio_source is None:
-        _LOGGER.debug("Recording raw 16-bit 16Khz mono audio")
-        return await core.get_audio_source()
-
-    if audio_source == "-":
-        if os.isatty(sys.stdin.fileno()):
-            print("Recording raw 16-bit 16Khz mono audio from stdin", file=sys.stderr)
-
-        return FakeStdin()
-
-    _LOGGER.debug("Recording raw 16-bit 16Khz mono audio from %s", audio_source)
-    return await aiofiles.open(audio_source, "rb")
