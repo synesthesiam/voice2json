@@ -53,7 +53,7 @@ async def train_profile(
 
     sentences_ini = ppath("training.sentences-file", "sentences.ini")
     slots_dir = ppath("training.slots-directory", "slots")
-    slot_programs = ppath("training.slots-directory", "slot_programs")
+    slot_programs = ppath("training.slot-programs-directory", "slot_programs")
 
     # Profile files that are split into parts and gzipped
     large_paths = [Path(p) for p in pydash.get(profile, "training.large-files", [])]

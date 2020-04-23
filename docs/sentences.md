@@ -256,7 +256,6 @@ You can also use substitution to add words that are not present in the speech:
 
 will accept the spoken sentence "turn on the light", but emit "please turn on the light" in the recognized intent.
 
-
 ## Slot References
 
 In the `SetLightColor` example above, the color names are stored in `sentences.ini` as a rule:
@@ -310,9 +309,71 @@ will generate JSON events like:
 
 If you update the `movies` file, make sure to [re-train `voice2json`](commands.md#train-profile) in order to pick up the new movie names. Only intent grammars that reference `$movies` will be re-built.
 
+### Slot Programs
+
+Slot lists are great if your slot values always stay the same and are easily written out by hand. If you have slot values that you need to be generated *each time voice2json is trained*, you can use slot programs.
+
+Create a directory named `slot_programs` in your profile (e.g., `$HOME/.config/voice2json/slot_programs`):
+
+```bash
+slot_programs="${HOME}/.config/voice2json/slot_programs"
+mkdir -p "${slot_programs}"
+```
+
+Add a file in the `slot_programs` directory with the name of your slot, e.g. `colors`. Write a program in this file, such as a bash script. Make sure to include the [shebang](https://en.wikipedia.org/wiki/Shebang_(Unix)) and mark the file as executable:
+
+```bash
+cat <<EOF > "${slot_programs}/colors"
+#!/usr/bin/env bash
+echo 'red'
+echo 'green'
+echo 'blue'
+EOF
+
+chmod +x "${slot_programs}/colors"
+```
+
+Now, when you reference `$colors` in your `sentences.ini`, `voice2json` will run the program you wrote and collect the slot values from each line. Note that you can output all the same things as regular [slots lists](#slots-lists), including optional words, alternatives, etc.
+
+You can pass **arguments** to your program using the syntax `$name,arg1,arg2,...` in `sentences.ini` (no spaces). Arguments will be pass on the command-line, so `arg1` and `arg2` will be `$1` and `$2` in a bash script. 
+
+Like regular slots lists, slot programs can also be put in sub-directories under `slot_programs`. A program in `slot_programs/foo/bar` should be referenced in `sentences.ini` as `$foo/bar`.
+
+## Converters
+
+By default, all named entity values in a recognized intent's JSON are strings. If you need a different data type, such as an integer or float, or want to do some kind of complex *conversion*, use a converter:
+
+```
+[SetBrightness]
+set brightness to (low:0 | medium:0.5 | high:1){brightness!float}
+```
+
+The `!name` syntax calls a converter by name. `voice2json` includes several built-in converters:
+
+* int - convert to integer
+* float - convert to real
+* bool - convert to boolean
+* lower - lower-case
+* upper - upper-case
+
+You can define your own converters by placing a file in the `converters` directory of your profile. Like [slot programs](#slot-programs), this file should contain a [shebang](https://en.wikipedia.org/wiki/Shebang_(Unix)) and be marked as executable (`chmod +x`). A file named `converters/foo/bar` should be referenced as `!foo/bar` in `sentences.ini`.
+
+Your custom converter will receive the value to convert on standard in (`stdin`) encoded as JSON. You should print a converted JSON value to standard out `stdout`. The example below demonstrates converting a string value into an integer:
+
+```python
+#!/usr/bin/env python3
+import sys
+import json
+
+value = json.load(sys.stdin)
+print(int(value))
+```
+
+Converters can be *chained*, so `!foo!bar` will call the `foo` converter and then pass the result to `bar`.
+
 ## Number Replacement
 
-For most of the supported languages, `voice2json` can automaticaly replace numbers (e.g., "75") with words ("seventy five"). If you have `training.replace-numbers` set to `true` in [your profile](profiles.md), you can freely include numbers in your sentences. Through [substitution](#wordtag-substitutions), the original numbers will show up in your recognized intent.
+`voice2json` supports using number literals (`75`) and number ranges (`1..10`) directly in your sentence templates. During training, the [num2words](https://pypi.org/project/num2words) package is used to generate words that the speech recognizer can handle ("seventy five").
 
 For example:
 
@@ -328,7 +389,25 @@ will be translated to:
 set the temperature to seventy: five:75
 ```
 
-During [intent recognition](commands.md#recognize-intent), "seventy five" will be replaced with "75".
+During [intent recognition](commands.md#recognize-intent), "seventy five" will be replaced with the integer 75.
+
+### Number Ranges
+
+A number range example:
+
+```
+[SetBrightness]
+set brightness to (0..100){brightness}
+```
+
+The `brightness` property of the recognized `SetBrightness` intent will automatically be [converted](#converters) to an integer for you. You can optionally add a step to the integer range:
+
+```
+evens = 0..100,2
+odds = 1..100,2
+```
+
+Under the hood, number ranges are actually references a [slot program](#slot-programs).
 
 ## Escaping
 

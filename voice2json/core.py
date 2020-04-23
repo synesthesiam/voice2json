@@ -28,13 +28,14 @@ class Voice2JsonCore:
 
     def __init__(
         self,
-        profile_dir: Path,
+        profile_file: Path,
         profile: typing.Dict[str, typing.Any],
         certfile: typing.Optional[str] = None,
         keyfile: typing.Optional[str] = None,
     ):
         """Initialize voice2json."""
-        self.profile_dir = profile_dir
+        self.profile_file = profile_file
+        self.profile_dir = profile_file.parent
         self.profile = profile
 
         # Shared aiohttp client session (enable SSL)

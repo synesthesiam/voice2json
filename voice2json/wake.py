@@ -20,13 +20,13 @@ async def wake(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     from precise_runner import PreciseEngine, PreciseRunner, ReadWriteStream
 
     # Load settings
-    engine_path = pydash.get(core.profile, "wake.precise.engine-path")
+    engine_path = pydash.get(core.profile, "wake-word.precise.engine-executable")
     if not engine_path:
         engine_path = shutil.which("precise-engine")
 
-    model_path = core.ppath("wake.precise.model-path", "precise/hey-mycroft-2.pb")
-    sensitivity = float(pydash.get(core.profile, "wake.precise.sensitivity", 0.5))
-    trigger_level = int(pydash.get(core.profile, "wake.precise.trigger-level", 3))
+    model_path = core.ppath("wake-word.precise.model-file", "precise/hey-mycroft-2.pb")
+    sensitivity = float(pydash.get(core.profile, "wake-word.sensitivity", 0.5))
+    trigger_level = int(pydash.get(core.profile, "wake-word.precise.trigger-level", 3))
 
     # Load Precise engine
     assert engine_path and model_path, "Missing engine or model path"

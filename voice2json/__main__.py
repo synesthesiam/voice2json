@@ -304,12 +304,12 @@ def get_args() -> argparse.Namespace:
         action="store_true",
         help="Use large pre-built model for transcription",
     )
-    # test_examples_parser.add_argument(
-    #     "--threads",
-    #     type=int,
-    #     default=1,
-    #     help="Maximum number of threads to use (default=1)",
-    # )
+    test_examples_parser.add_argument(
+        "--threads",
+        type=int,
+        default=1,
+        help="Maximum number of threads to use (default=1)",
+    )
     test_examples_parser.set_defaults(func=test_examples)
 
     # ------------------
@@ -410,7 +410,7 @@ def get_core(args: argparse.Namespace) -> Voice2JsonCore:
         pydash.set_(profile, setting_path, setting_value)
 
     # Create core
-    return Voice2JsonCore(profile_dir, profile)
+    return Voice2JsonCore(profile_yaml, profile)
 
 
 # -----------------------------------------------------------------------------

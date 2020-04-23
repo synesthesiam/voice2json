@@ -1,7 +1,7 @@
 SHELL := bash
 PYTHON_FILES = voice2json/*.py
 
-.PHONY: venv downloads
+.PHONY: venv downloads check reformat docs
 
 version := $(shell cat VERSION)
 architecture := $(shell bash architecture.sh)
@@ -21,6 +21,9 @@ check:
 
 reformat:
 	scripts/format-code.sh $(PYTHON_FILES)
+
+docs:
+	scripts/build-docs.sh
 
 # test:
 # 	bash test.sh

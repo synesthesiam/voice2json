@@ -3,7 +3,7 @@
 # Command-Line Tools
 
 ```bash
-$ voice2json [--debug] [--profile <PROFILE_DIR>] <COMMAND> [<COMMAND_ARG>...]
+voice2json [--debug] [--profile <PROFILE_DIR>] <COMMAND> [<COMMAND_ARG>...]
 ```
 
 The [profile](profiles.md) directory can be given with `--profile`. If not provided, a profile is expected in `$XDG_CONFIG_HOME/voice2json`, which is typically `$HOME/.config/voice2json`.
@@ -21,7 +21,6 @@ The following commands are available:
 * [generate-examples](#generate-examples) - Generate random intents
 * [record-examples](#record-examples) - Generate and record speech examples
 * [test-examples](#test-examples) - Test recorded speech examples
-* [tune-examples](#tune-examples) - Tune acoustic model using recorded speech examples
 * [show-documentation](#show-documentation) - Run HTTP server locally with documentation
     
 ---
@@ -31,7 +30,7 @@ The following commands are available:
 Prints all profile settings as JSON to the console. This is a combination of the [default settings](profiles.md#default-settings) and what's provided in [profile.yml](profiles.md#profileyml).
 
 ```bash
-$ voice2json print-profile | jq .
+voice2json print-profile | jq .
 ```
 
 Output:
@@ -75,33 +74,14 @@ Output:
 Generates all necessary artifacts in a [profile](profiles.md) for speech/intent recognition.
 
 ```bash
-$ voice2json train-profile
+voice2json train-profile
 ```
 
 Output:
 
 ```
-. grammars
-. grammar_dependencies:GetTemperature_dependencies
-. grammar_dependencies:ChangeLightColor_dependencies
-. grammar_dependencies:GetGarageState_dependencies
-. grammar_dependencies:GetTime_dependencies
-. grammar_dependencies:ChangeLightState_dependencies
-. grammar_fsts:GetTemperature_fst
-. grammar_fsts:GetGarageState_fst
-. grammar_fsts:GetTime_fst
-. grammar_fsts:slot_fsts
-. grammar_fsts:ChangeLightColor_fst
-. grammar_fsts:ChangeLightState_fst
-. intent_fst
-. language_model:intent_counts
-. language_model:intent_model
-. language_model:intent_arpa
-. vocab
-. vocab_dict
+Training completed in 0.9538522080001712 second(s)
 ```
-
-`voice2json` uses [doit](https://pydoit.org) to orchestrate the generation of profile artifacts. Doit is similar to `make`, so only those artifacts that have changed are rebuilt.
 
 Settings that control where generated artifacts are saved are in the `training` section of your [profile](profiles.md).
 
@@ -109,17 +89,21 @@ Settings that control where generated artifacts are saved are in the `training` 
 
 If your [sentences.ini](sentences.md) file contains [slot references](sentences.md#slot-references), `voice2json` will look for text files in a directory named `slots` in your profile (set `training.slots-directory` to change). If you reference `$movies`, then `slots/movies` should exist with one item per line. When these files change, you should [re-train](#train-profile).
 
+### Slot Programs
+
+If a slot cannot be found in your `training.slots-directory`, then `voice2json` will search for [a program](sentences.md#slot-programs) in `training.slot-programs-directory` (`slot_programs` by default). If you refererence `$movies` in your [sentences.ini](sentences.md), then `slot_programs/movies` should be an executable program that will output values, one per line. These programs are executed **every** time you [re-train](#train-profile).
+
 ### Intent Whitelist
 
 If a file named `intent_whitelist` exists in your profile (set `training.intent-whitelist` to change), then `voice2json` will only consider the intents listed in it (one per line). If this file is missing (the default), then all intents from [sentences.ini](sentences.md) are considered. When this file changes, you should [re-train](#train-profile).
 
 ### Language Model Mixing
 
-`voice2json` is designed to only recognize the voice commands you specify in [sentences.ini](sentences.md). Both the [pocketsphinx](https://github.com/cmusphinx/pocketsphinx) and [Kaldi](https://kaldi-asr.org) speech systems are capable of transcribing [open-ended speech](#open-transcription), however. But what if you want to recognize *sort of* open-ended speech that's still focused on [your voice commands](sentences.md)?
+`voice2json` is designed to only recognize the voice commands you specify in [sentences.ini](sentences.md). All of the supported speech systems are capable of transcribing [open-ended speech](#open-transcription), however. But what if you want to recognize *sort of* open-ended speech that's still focused on [your voice commands](sentences.md)?
 
-In every [profile](profiles.md), `voice2json` includes a `base_dictionary.txt` and `base_language_model.txt` file. The former is a dictionary containing the pronunciations all possible words. The latter is a large language model trained on *very* large corpus of text in the profile's language (usually books and web pages).
+In every [profile](profiles.md), `voice2json` includes a "base" dictionary and language model. The former contains the pronunciations all possible words. The latter is a large language model trained on *very* large corpus of text in the profile's language (usually books and web pages).
 
-During training, `voice2json` can **mix** the large, open ended language model in `base_language_model.txt` with the one generated specifically for your voice commands. You specify a **mixture weight**, which controls how much of an influence the large language model has (see `training.base-language-model-weight`). A mixture weight of 0 makes `voice2json` sensitive *only* to your voice commands, which is the default. A mixture weight of 0.05, on the other hand, adds a 5% influence from the large language model.
+During training, `voice2json` can **mix** the large, open ended language model with the one generated specifically for your voice commands. You specify a **mixture weight**, which controls how much of an influence the large language model has (see `training.base-language-model-weight`). A mixture weight of 0 makes `voice2json` sensitive *only* to your voice commands, which is the default. A mixture weight of 0.05, on the other hand, adds a 5% influence from the large language model.
 
 ![Diagram of training process](img/training.svg)
 
@@ -133,11 +117,11 @@ turn (on){state} the living room lamp
 This will only allow `voice2json` to recognize the voice command "turn on the living room lamp". If we train `voice2json` and [transcribe](#transcribe-wav) a WAV file with this command, the output is no surprise:
 
 ```bash
-$ time voice2json train-profile
+time voice2json train-profile
 ...
 real	0m0.688s
 
-$ voice2json transcribe-wav \
+voice2json transcribe-wav \
     turn_on_living_room_lamp.wav | \
     jq -r .text
 
@@ -147,7 +131,7 @@ turn on the living room lamp
 Now let's do speech to text on a variation of the command, a WAV file with the speech "would you please turn on the living room lamp":
 
 ```bash
-$ voice2json transcribe-wav \
+voice2json transcribe-wav \
     would_you_please_turn_on_living_room_lamp.wav | \
     jq -r .text
     
@@ -157,7 +141,7 @@ turn the turn on the living room lamp
 The word salad here is because we're trying to recognize a voice command that was not present in `sentences.ini` (technically, it's because [n-gram models are kind of dumb](whitepaper.md#sentences)). We could always add it to `sentences.ini`, of course. There may be cases, however, where we cannot anticipate *all* of the variations of a voice command. For these cases, you should increase the `training.base-language-model-weight` in your [profile](profiles.md) to something above 0. Let's set it to 0.05 (5% mixture) and re-train:
 
 ```bash
-$ time voice2json train-profile
+time voice2json train-profile
 ...
 real	1m3.221s
 ```
@@ -165,13 +149,13 @@ real	1m3.221s
 Note that training took **significantly** longer (a full minute!) because of the size of the base langauge model. Now, let's test our two WAV files again:
 
 ```bash
-$ voice2json transcribe-wav \
+voice2json transcribe-wav \
     turn_on_living_room_lamp.wav | \
     jq -r .text
     
 turn on the living room lamp
 
-$ voice2json transcribe-wav \
+voice2json transcribe-wav \
     would_you_please_turn_on_living_room_lamp.wav | \
     jq -r .text
     
@@ -187,9 +171,9 @@ This isn't the end of the story for open-ended speech recognition in `voice2json
 In our `ChangeLightState` example above, we're fortunate that everything still works as expected:
 
 ```bash
-$ voice2json recognize-intent -t \
+voice2json recognize-intent -t \
     'would you please turn on the living room lamp' | \
-    jq . \
+    jq .
 ```
 
 outputs:
@@ -197,16 +181,23 @@ outputs:
 ```json
 {
   "text": "turn on the living room lamp",
+  "raw_text": "would you please turn on the living room lamp",
   "intent": {
     "name": "ChangeLightState",
-    "confidence": 1
+    "confidence": 0.5
   },
   "entities": [
     {
       "entity": "state",
       "value": "on",
       "start": 5,
-      "end": 7,
+      "end": 7
+    },
+    {
+      "entity": "name",
+      "value": "living room lamp",
+      "start": 12,
+      "end": 28
     }
   ],
   "tokens": [
@@ -218,7 +209,8 @@ outputs:
     "lamp"
   ],
   "slots": {
-    "state": "on"
+    "state": "on",
+    "name": "living room lamp"
   }
 }
 ```
@@ -236,7 +228,7 @@ Transcribes WAV file(s) or raw audio data. Outputs a single line of [jsonl](http
 Reads a WAV file from standard in and transcribes it.
 
 ```bash
-$ voice2json transcribe-wav < turn-on-the-light.wav
+voice2json transcribe-wav < turn-on-the-light.wav
 ```
 
 Output:
@@ -253,7 +245,7 @@ Output:
 Reads one or more WAV files and transcribes each of them in turn.
 
 ```bash
-$ voice2json transcribe-wav \
+voice2json transcribe-wav \
       turn-on-the-light.wav \
       what-time-is-it.wav
 ```
@@ -271,7 +263,8 @@ Output:
 Reads one or more WAV file paths from standard in and transcribes each of them in turn. If arguments are also provided, they will be processed **first**.
 
 ```bash
-$ voice2json transcribe-wav --stdin-files
+voice2json transcribe-wav --stdin-files
+...
 turn-on-the-light.wav
 what-time-is-it.wav
 <CTRL-D>
@@ -330,7 +323,7 @@ Output:
 
 ### Number Replacement
 
-For most profile languages, `voice2json` supports replacing numbers (e.g., "75") with words ("seventy five"). You can enable this sentences given to `recognize-intent` by adding the `--replace-numbers` argument:
+For most profile languages, `voice2json` supports replacing numbers in the input text (e.g., "75") with words ("seventy five"). You can enable this sentences given to `recognize-intent` by adding the `--replace-numbers` argument:
 
 ```bash
 voice2json recognize-intent --replace-numbers --text-input 'set the temperature to 75'
@@ -342,23 +335,23 @@ For English, this will perform intent recognition on the sentence "set the tempe
 
 ## wait-wake
 
-Listens to a live audio stream for a wake word (default is "[porcupine](https://github.com/Picovoice/Porcupine)"). Outputs a single line of [jsonl](http://jsonlines.org) each time the wake word is detected.
+Listens to a live audio stream for a wake word using [Mycroft Precise](https://github.com/MycroftAI/mycroft-precise) (default phrase is "hey mycroft"). Outputs a single line of [jsonl](http://jsonlines.org) each time the wake word is detected.
 
 ```bash
-$ voice2json wait-wake
+voice2json wait-wake
 ```
 
 Once the wake word is spoken, `voice2json` will output:
 
 ```json
-{ "keyword": "/path/to/keyword.ppn", "detect_seconds": 1.2345 }
+{ "keyword": "/path/to/model_file.pb", "detect_seconds": 1.2345 }
 ```
 
 where `keyword` is the path to the detected keyword file and `detect_seconds` is the time of detection relative to when `voice2json` was started.
 
 ### Custom Wake Word
 
-You can [train your own wake word](https://github.com/Picovoice/Porcupine#picovoice-console) or use [one of the pre-trained keyword files](https://github.com/Picovoice/porcupine/tree/master/resources/keyword_files) from [Picovoice](https://picovoice.ai/).
+You can [train your own wake word](https://github.com/MycroftAI/mycroft-precise/wiki/Training-your-own-wake-word) or use [one of the pre-trained model files](https://github.com/MycroftAI/Precise-Community-Data) from [Mycroft AI](https://mycroft.ai/).
 
 ### Exit Count
 
@@ -376,7 +369,7 @@ By default, the [wait-wake](#wait-wake), [record-command](#record-command), and 
 Records from a live audio stream until a voice command has been spoken. Outputs WAV audio data containing just the voice command.
 
 ```bash
-$ voice2json record-command > my-voice-command.wav
+voice2json record-command > my-voice-command.wav
 ```
 
 `record-command` uses the [webrtcvad](https://github.com/wiseman/py-webrtcvad) library to detect live speech. Once speech has been detected, `voice2json` begins recording until there is silence. If speech goes on too long, a timeout is reached and recording stops. The [profile settings](profiles.md) under the `voice-command` section control exactly how many seconds of speech and silence are needed to segment live audio.
@@ -388,7 +381,7 @@ See [audio sources](#audio-sources) for a description of how `record-command` ge
 The `--wav-sink` argument lets you change where `record-command`, `pronounce-word`, and `speak-sentence` write their output WAV data. When this is set to something other than "-" (standard out), `record-command` will output lines of JSON to standard out that describe events in the live speech.
 
 ```bash
-$ voice2json record-command \
+voice2json record-command \
       --audio-source <(sox turn-on-the-living-room-lamp.wav -t raw -) \
       --wav-sink /dev/null
 ```
@@ -417,7 +410,7 @@ Words can be provided either as arguments **or** lines via standard in. You can 
 Assuming you're using the [en-us_pocketsphinx-cmu](https://github.com/synesthesiam/en-us_pocketsphinx-cmu) profile:
 
 ```bash
-voice2json pronounce-word hello
+voice2json pronounce-word --espeak hello
 ```
 
 Output:
@@ -430,12 +423,14 @@ hello HH EH L OW
 
 In addition to text output, you should have heard both pronunciations of "hello". These came the `base_dictionary.txt` included in the profile.
 
+If you leave off the `--espeak` argument, make sure you have a [MaryTTS](http://mary.dfki.de/) server running locally on port 59125.
+
 ### Unknown Words
 
 The same `pronounce-word` command works for words that are hopefully **not** in the U.S. English dictionary:
 
 ```bash
-voice2json pronounce-word raxacoricofallipatorius
+voice2json pronounce-word --espeak raxacoricofallipatorius
 ```
 
 Output:
@@ -453,7 +448,7 @@ This produced 5 pronunciation guesses using [phonetisaurus](https://github.com/A
 If you want to hear a specific pronunciation, just provide it with the word:
 
 ```bash
-voice2json pronounce-word 'moogle M UW G AH L' 
+voice2json pronounce-word --espeak 'moogle M UW G AH L' 
 ```
 
 You can save these pronunciations in the `custom_words.txt` file in your [profile](profiles.md). Make sure to [re-train](#train-profile).
@@ -467,10 +462,10 @@ Speaks a full sentence using either [eSpeak](https://github.com/espeak-ng/espeak
 Sentences can be provided either as arguments **or** lines via standard in. You can also [save output to a WAV file](#redirecting-wav-output).
 
 ```bash
-voice2json speak-sentence 'hello world!'
+voice2json speak-sentence --espeak 'hello world!'
 ```
 
-Add an `--espeak` argument if you always want to use [eSpeak](https://github.com/espeak-ng/espeak-ng). Check out the [text to speech server recipe](recipes.md#run-a-text-to-speech-server) if you want to run a MaryTTS server.
+If you leave off the `--espeak` argument, make sure you have a [MaryTTS](http://mary.dfki.de/) server running locally on port 59125.
 
 ### MaryTTS User Dictionaries
 
@@ -483,7 +478,7 @@ If you've added custom words to your profile (in `custom_words.txt`), `voice2jso
 Generates random intents and slots from your [profile](profiles.md). Outputs a single line of [jsonl](http://jsonlines.org) for each intent line ([format description](formats.md#intents)).
 
 ```bash
-$ voice2json generate-examples --count 1 | jq .
+voice2json generate-examples --number 1 | jq .
 ```
 
 Output (formatted with [jq](https://stedolan.github.io/jq/)):
@@ -524,7 +519,7 @@ If the `--iob` argument is given, `generate-examples` will output examples in an
 3. The intent name
 
 ```bash
-$ voice2json generate-examples --count 1 --iob
+voice2json generate-examples --number 1 --iob
 ```
 
 Output:
@@ -545,12 +540,12 @@ See the [Rasa NLU bot recipe](recipes.md#train-a-rasa nlu-bot) for an example of
 Generates random example sentences from [sentences.ini](sentences.md) and prompts you to record them. Saves WAV files, transcriptions, and expected intents (as [JSON events](formats.md#intents)) to a directory.
 
 ```bash
-$ voice2json record-examples --directory /path/to/examples/
+voice2json record-examples --directory /path/to/examples/
 ```
 
 You will be prompted with a random sentence. Once you press ENTER, `voice2json` will [begin recording](#audio-sources). When you press ENTER again, the recorded audio will be saved to a WAV file in the provided `--directory` (default is the current directory). When you're finished recording examples, press CTRL+C to exit.
 
-A directory of recorded examples can be used for [performance testing](#test-examples) or to [tune voice2json](#tune-examples) to better recognize voice commands in your acoustic environment.
+A directory of recorded examples can be used for [performance testing](#test-examples).
 
 ---
 
@@ -559,35 +554,34 @@ A directory of recorded examples can be used for [performance testing](#test-exa
 Transcribes and performs intent recognition on all WAV files in a directory (usually recorded with [record-examples](#record-examples)). Outputs a JSON report with speech/intent recognition details and accuracy statistics (including [word error rate](https://en.wikipedia.org/wiki/Word_error_rate)).
 
 ```bash
-$ voice2json test-examples --directory /path/to/examples/
+voice2json test-examples --directory /path/to/examples/
 ```
 
 outputs something like:
 
 ```json
 {
-  "statistics": {
-    "num_wavs": 1,
-    "num_words": 0,
-    "num_entities": 0,
-    "correct_transcriptions": 0,
-    "correct_intent_names": 0,
-    "correct_words": 0,
-    "correct_entities": 0,
-    "transcription_accuracy": 0.123,
-    "intent_accuracy": 0,
-    "entity_accuracy": 0,
-    "intent_entity_accuracy": 0,
-    "average_transcription_speedup": 1.0
-  },
+  "num_wavs": 1,
+  "num_words": 0,
+  "num_entities": 0,
+  "correct_transcriptions": 0,
+  "correct_intent_names": 0,
+  "correct_words": 0,
+  "correct_entities": 0,
+  "transcription_accuracy": 0.123,
+  "intent_accuracy": 0,
+  "entity_accuracy": 0,
+  "intent_entity_accuracy": 0,
+  "average_transcription_speedup": 1.0
+
   "actual": {
     "example-1.wav": {
       ...
       "word_error": {
-        "expected": "...",
-        "actual": "...",
+        "reference": ["..."],
+        "hypothesis": ["..."],
         "words": 0,
-        "correct": 0,
+        "matches": 0,
         "errors": 0
       }
     },
@@ -600,11 +594,11 @@ outputs something like:
 
 ```
 
-where `statistics` describes the overall accuracy of the examples relative to expectations, `actual` provides details of the transcription/intent recognition of the examples, and `expected` is simply pulled from the provided transcription/intent files.
+where `actual` provides details of the transcription/intent recognition of the examples, and `expected` is simply pulled from the provided transcription/intent files. The remaining properies are statistics that describes the overall accuracy of the examples relative to expectations.
 
 ### Report Format
 
-The `statistics` section of the report contains:
+The statistics of the report contain:
 
 * `num_wavs` - total number of WAV files that were tested (number)
 * `num_words` - total number of expected words across all test WAVs (number)
@@ -620,25 +614,13 @@ The `statistics` section of the report contains:
 
 The `actual` section of the report contains the [recognized intent](formats.md#intents) of each WAV file as well as a `word_error` section with:
 
-* `expected` - text from expected transcription (string, capitalized sections are incorrect)
-* `actual` - text from actual transcription (string, '*' means missing letter)
+* `reference` - words from expected transcription
+* `hypothesis` - words from actual transcription
 * `words` - number of expected words (number)
-* `correct` - number of correct words (number)
+* `matches` - number of correct words (number)
 * `errors` - number of incorrect words (number)
 
 The `expected` section is just the intent or transcription recorded in the examples directory alongside each WAV file. For example, a WAV file named `example-1.wav` should ideally have an `example-1.json` file with an [expected intent](formats.md#intents). Failing that, an `example-1.txt` file with the transcription **must** be present.
-
----
-
-## tune-examples
-
-Tunes the speech model in your profile to your acoustic environment (speaker/microphone/room) using previously recorded examples (usually recorded with [record-examples](#record-examples)). For now, this only works if your profile is based on [pocketsphinx](https://github.com/cmusphinx/pocketsphinx).
-
-```bash
-$ voice2json tune-examples --directory /path/to/examples/
-```
-
-This will use the recorded WAV files and transcriptions to [adapt the sphinx acoustic model](https://cmusphinx.github.io/wiki/tutorialadapt/) with MLLR. When it's finished, `tune-examples` will write an [MLLR matrix](https://cmusphinx.github.io/wiki/tutorialadapt/#creating-a-transformation-with-mllr) to the file path in `speech-to-text.pocketsphinx.mllr-matrix` in your [profile](profiles.md). When `transcibe-wav` runs next, it will use this matrix during transcription.
 
 ---
 
@@ -647,7 +629,7 @@ This will use the recorded WAV files and transcriptions to [adapt the sphinx aco
 Runs a local HTTP server with this documentation. The default port is 8000, which can be changed with `--port`:
 
 ```bash
-$ voice2json show-documentation --port 8000
+voice2json show-documentation --port 8000
 ```
 
 The documentation should now be accessible at [http://localhost:8000](http://localhost:8000)

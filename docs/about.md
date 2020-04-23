@@ -20,7 +20,7 @@ Please see the individual licenses for the [supporting tools](#supporting-tools)
 
 ### MIT License
 
-Copyright 2019 Michael Hansen (hansen.mike@gmail.com)
+Copyright 2019-2020 Michael Hansen (hansen.mike@gmail.com)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -46,23 +46,24 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 The following tools/libraries help to support voice2json:
 
 * [eSpeak](https://github.com/espeak-ng/espeak-ng) (text to speech)
-* [doit](https://pydoit.org) (training)
+* [DeepSpeech](https://github.com/mozilla/DeepSpeech) (speech to text)
 * [jq](https://stedolan.github.io/jq/) (JSON formatting)
 * [Julius](https://github.com/julius-speech/julius) (speech to text)
 * [Kaldi](https://kaldi-asr.org) (speech to text)
+* [KenLM](https://kheafield.com/code/kenlm/) (language modeling)
 * [MaryTTS](http://mary.dfki.de/) (text to speech)
 * [Montreal Forced Aligner](https://montreal-forced-aligner.readthedocs.io/en/latest/) (acoustic models)
+* [Mycroft Precise](https://github.com/MycroftAI/mycroft-precise)
 * [GNU Parallel](http://www.gnu.org/s/parallel) (parallel execution)
 * [Phonetisaurus](https://github.com/AdolfVonKleist/Phonetisaurus) (word pronunciations)
 * [Pocketsphinx](https://github.com/cmusphinx/pocketsphinx) (speech to text)
-* [porcupine](https://github.com/Picovoice/Porcupine) (wake word)
 * [PyInstaller](https://www.pyinstaller.org)
-* [Python 3](https://www.python.org)
+* [Python 3.7](https://www.python.org)
 * [OpenFST](http://www.openfst.org) (speech/intent recognition, g2p)
 * [Opengrm](http://www.opengrm.org/twiki/bin/view/GRM/NGramLibrary) (language modeling)
-* [sphinxtrain](https://github.com/cmusphinx/sphinxtrain) (acoustic model tuning)
 * [Sox](http://sox.sourceforge.net) (WAV conversion)
 * [webrtcvad](https://github.com/wiseman/py-webrtcvad) (voice activity detection)
+* [Zamia Speech](https://github.com/gooofy/zamia-speech) (acoustic models)
 
 ---
 

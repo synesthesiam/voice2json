@@ -1,10 +1,15 @@
 """Methods for testing recorded examples."""
+import asyncio
 import argparse
 import dataclasses
 import json
 import logging
+import shutil
+import shlex
 import sys
+import tempfile
 import typing
+from pathlib import Path
 
 from .core import Voice2JsonCore
 from .utils import print_json
@@ -36,10 +41,24 @@ async def test_examples(args: argparse.Namespace, core: Voice2JsonCore) -> None:
                 expected_intent = Recognition.from_dict(json.loads(line))
                 assert expected_intent.wav_name, f"No wav_name for {line}"
                 expected[expected_intent.wav_name] = expected_intent
+    else:
+        # Load expected results from examples directory
+        assert args.directory, "Examples directory required if no --expected"
+        examples_dir = Path(args.directory)
+        _LOGGER.debug("Loading expected intents from %s", examples_dir)
+        for wav_path in examples_dir.glob("*.wav"):
+            json_path = wav_path.with_suffix(".json")
+            if json_path.is_file():
+                with open(json_path, "r") as json_file:
+                    expected[wav_path.name] = Recognition.from_dict(
+                        json.load(json_file)
+                    )
+            else:
+                _LOGGER.warning("No JSON file for %s", wav_path)
 
     if not expected:
         _LOGGER.fatal("No expected examples provided")
-        sys.exit(1)
+        return
 
     if args.actual:
         _LOGGER.debug("Loading actual intents from %s", args.actual)
@@ -50,10 +69,110 @@ async def test_examples(args: argparse.Namespace, core: Voice2JsonCore) -> None:
                 actual_intent = Recognition.from_dict(json.loads(line))
                 assert actual_intent.wav_name, f"No wav_name for {line}"
                 actual[actual_intent.wav_name] = actual_intent
+    else:
+        # Generate actual results from examples directory
+        assert args.directory, "Examples directory required if no --expected"
+        examples_dir = Path(args.directory)
+        _LOGGER.debug("Generating actual intents from %s", examples_dir)
+
+        # Use voice2json and GNU parallel
+        assert shutil.which("parallel"), "GNU parallel is required"
+        temp_dir = None
+        if args.results:
+            # Save results to user-specified directory
+            results_dir = Path(args.results)
+            results_dir.mkdir(parents=True, exist_ok=True)
+            _LOGGER.debug("Saving results to %s", results_dir)
+        else:
+            # Save resuls to temporary directory
+            temp_dir = tempfile.TemporaryDirectory()
+            results_dir = Path(temp_dir.name)
+            _LOGGER.debug(
+                "Saving results to temporary directory (use --results to specify)"
+            )
+
+        try:
+            # Transcribe WAV files
+            actual_wavs_path = results_dir / "actual_wavs.txt"
+            actual_transcriptions_path = results_dir / "actual_transcriptions.jsonl"
+
+            # Write list of WAV files to a text file
+            with open(actual_wavs_path, "w") as actual_wavs_file:
+                for wav_path in examples_dir.glob("*.wav"):
+                    print(str(wav_path.absolute()), file=actual_wavs_file)
+
+            # Transcribe in parallel
+            transcribe_command = [
+                "parallel",
+                "-k",
+                "--pipe",
+                "-n",
+                str(args.threads),
+                "voice2json",
+                "-p",
+                shlex.quote(str(core.profile_file)),
+                "transcribe-wav",
+                "--stdin-files",
+                "<",
+                str(actual_wavs_path),
+                ">",
+                str(actual_transcriptions_path),
+            ]
+
+            _LOGGER.debug(transcribe_command)
+
+            transcribe_process = await asyncio.create_subprocess_shell(
+                " ".join(transcribe_command)
+            )
+
+            await transcribe_process.wait()
+            assert transcribe_process.returncode == 0, "Transcription failed"
+
+            # Recognize intents from transcriptions in parallel
+            actual_intents_path = results_dir / "actual_intents.jsonl"
+            recognize_command = [
+                "parallel",
+                "-k",
+                "--pipe",
+                "-n",
+                str(args.threads),
+                "voice2json",
+                "-p",
+                shlex.quote(str(core.profile_file)),
+                "recognize-intent",
+                "<",
+                str(actual_transcriptions_path),
+                ">",
+                str(actual_intents_path),
+            ]
+
+            _LOGGER.debug(recognize_command)
+
+            recognize_process = await asyncio.create_subprocess_shell(
+                " ".join(recognize_command)
+            )
+
+            await recognize_process.wait()
+            assert recognize_process.returncode == 0, "Recognition failed"
+
+            # Load actual intents
+            _LOGGER.debug("Loading actual intents from %s", actual_intents_path)
+            with open(actual_intents_path, "r") as actual_intents_file:
+                for line in actual_intents_file:
+                    line = line.strip()
+                    if line:
+                        actual_intent = json.loads(line)
+                        actual[actual_intent["wav_name"]] = Recognition.from_dict(
+                            actual_intent
+                        )
+        finally:
+            # Delete temporary directory
+            if temp_dir:
+                temp_dir.cleanup()
 
     if not actual:
         _LOGGER.fatal("No actual examples provided")
-        sys.exit(1)
+        return
 
     report = evaluate_intents(expected, actual)
     print_json(dataclasses.asdict(report))
