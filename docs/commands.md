@@ -22,6 +22,7 @@ The following commands are available:
 * [record-examples](#record-examples) - Generate and record speech examples
 * [test-examples](#test-examples) - Test recorded speech examples
 * [show-documentation](#show-documentation) - Run HTTP server locally with documentation
+* print-version - Print `voice2json` version and exit
     
 ---
 

@@ -1,7 +1,7 @@
 SHELL := bash
 PYTHON_FILES = voice2json/*.py
 
-.PHONY: venv downloads check reformat docs
+.PHONY: venv downloads check reformat docs docker-test
 
 version := $(shell cat VERSION)
 architecture := $(shell bash architecture.sh)
@@ -26,20 +26,14 @@ docs:
 	scripts/build-docs.sh
 
 # test:
-# 	bash test.sh
+# 	bash scripts/test.sh
 
-# debian: installer
-# 	bash debianize.sh --architecture $(DEBIAN_ARCH)
-
-# installer:
-# 	bash build.sh voice2json.spec
-
-# docker: installer
-# 	bash debianize.sh --nopackage --architecture $(DEBIAN_ARCH)
-# 	docker build . \
-#         --build-arg BUILD_ARCH=$(BUILD_ARCH) \
-#         --build-arg DEBIAN_ARCH=$(DEBIAN_ARCH) \
-#         -t synesthesiam/voice2json:$(DEBIAN_ARCH)
+docker-test: docs
+	docker build . \
+        --build-arg TARGET_ARCH=amd64 \
+        --build-arg TARGET_PLATFORM=linux/amd64 \
+        --build-arg TARGET_VARIANT='' \
+        -t synesthesiam/voice2json:$(version)
 
 # docker-mqtt: installer
 # 	bash debianize.sh --nopackage --architecture $(DEBIAN_ARCH)
