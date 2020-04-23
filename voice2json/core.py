@@ -41,6 +41,7 @@ class Voice2JsonCore:
         # Shared aiohttp client session (enable SSL)
         self.ssl_context = ssl.SSLContext()
         if certfile:
+            _LOGGER.debug("Using SSL certificate %s (keyfile=%s)", certfile, keyfile)
             self.ssl_context.load_cert_chain(certfile, keyfile)
 
         self._http_session: typing.Optional[aiohttp.ClientSession] = None
@@ -90,11 +91,11 @@ class Voice2JsonCore:
                 open_transcription=open_transcription, debug=debug
             )
 
-        # if acoustic_model_type == AcousticModelType.JULIUS:
-        #     # Julius
-        #     return self.get_julius_transcriber(
-        #         open_transcription=open_transcription, debug=debug
-        #     )
+        if acoustic_model_type == AcousticModelType.JULIUS:
+            # Julius
+            return self.get_julius_transcriber(
+                open_transcription=open_transcription, debug=debug
+            )
 
         if acoustic_model_type == AcousticModelType.DEEPSPEECH:
             # DeepSpeech
@@ -202,60 +203,38 @@ class Voice2JsonCore:
 
         return DeepSpeechTranscriber(acoustic_model, language_model, trie)
 
-    # def get_julius_transcriber(
-    #     self, open_transcription=False, debug=False
-    # ) -> JuliusTranscriber:
-    #     """Create Transcriber for Julius."""
-    #     # Load settings
-    #     acoustic_model = self.ppath("speech-to-text.acoustic-model", "acoustic_model")
+    def get_julius_transcriber(
+        self, open_transcription=False, debug=False
+    ) -> Transcriber:
+        """Create Transcriber for Julius."""
+        from .julius import JuliusTranscriber
 
-    #     if open_transcription:
-    #         # Use base dictionary/language model
-    #         dictionary = self.ppath(
-    #             "speech-to-text.base-dictionary", "base_dictionary.txt"
-    #         )
+        # Load settings
+        acoustic_model = self.ppath("speech-to-text.acoustic-model", "acoustic_model")
+        assert acoustic_model, "Missing acoustic model"
 
-    #         language_model = self.ppath(
-    #             "speech-to-text.base-language-model", "base_language_model.bin"
-    #         )
-    #     else:
-    #         # Use custom dictionary/language model
-    #         dictionary = self.ppath("speech-to-text.dictionary", "dictionary.txt")
+        if open_transcription:
+            # Use base dictionary/language model
+            dictionary = self.ppath(
+                "speech-to-text.base-dictionary", "base_dictionary.txt"
+            )
 
-    #         language_model = self.ppath(
-    #             "speech-to-text.language-model", "language_model.txt"
-    #         )
+            language_model = self.ppath(
+                "speech-to-text.base-language-model", "base_language_model.bin"
+            )
+        else:
+            # Use custom dictionary/language model
+            dictionary = self.ppath("speech-to-text.dictionary", "dictionary.txt")
 
-    #     return JuliusTranscriber(
-    #         acoustic_model, dictionary, language_model, debug=debug
-    #     )
+            language_model = self.ppath(
+                "speech-to-text.language-model", "language_model.txt"
+            )
 
-    # -------------------------------------------------------------------------
-    # recognize-intent
-    # -------------------------------------------------------------------------
+        assert dictionary and language_model, "Missing dictionary or language model"
 
-    # def get_recognizer(self) -> Recognizer:
-    #     """Create intent recognizer based on profile settings."""
-    #     # Load settings
-    #     intent_fst_path = self.ppath("intent-recognition.intent-fst", "intent.fst")
-    #     stop_words_path = self.ppath("intent-recognition.stop-words", "stop_words.txt")
-    #     fuzzy = pydash.get(self.profile, "intent-recognition.fuzzy", True)
-
-    #     # Load intent finite state transducer
-    #     intent_fst = fst.Fst.read(str(intent_fst_path))
-
-    #     if fuzzy:
-    #         # Load stop words (common words that can be safely ignored)
-    #         stop_words: Set[str] = set()
-    #         if (stop_words_path is not None) and stop_words_path.exists():
-    #             stop_words.update(
-    #                 w.strip() for w in stop_words_path.read_text().splitlines()
-    #             )
-
-    #         return FuzzyRecognizer(intent_fst, stop_words=stop_words)
-
-    #     # Use strict matching
-    #     return StrictRecognizer(intent_fst)
+        return JuliusTranscriber(
+            self, acoustic_model, dictionary, language_model, debug=debug
+        )
 
     # -------------------------------------------------------------------------
     # record-command

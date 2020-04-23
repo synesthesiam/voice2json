@@ -1,12 +1,11 @@
 """Methods for testing recorded examples."""
-import asyncio
 import argparse
+import asyncio
 import dataclasses
 import json
 import logging
-import shutil
 import shlex
-import sys
+import shutil
 import tempfile
 import typing
 from pathlib import Path
@@ -60,38 +59,29 @@ async def test_examples(args: argparse.Namespace, core: Voice2JsonCore) -> None:
         _LOGGER.fatal("No expected examples provided")
         return
 
-    if args.actual:
-        _LOGGER.debug("Loading actual intents from %s", args.actual)
+    temp_dir = None
+    try:
+        if not args.actual:
+            # Generate actual results from examples directory
+            assert args.directory, "Examples directory required if no --expected"
+            examples_dir = Path(args.directory)
+            _LOGGER.debug("Generating actual intents from %s", examples_dir)
 
-        # Load actual results from jsonl file
-        with open(args.actual, "r") as actual_file:
-            for line in actual_file:
-                actual_intent = Recognition.from_dict(json.loads(line))
-                assert actual_intent.wav_name, f"No wav_name for {line}"
-                actual[actual_intent.wav_name] = actual_intent
-    else:
-        # Generate actual results from examples directory
-        assert args.directory, "Examples directory required if no --expected"
-        examples_dir = Path(args.directory)
-        _LOGGER.debug("Generating actual intents from %s", examples_dir)
+            # Use voice2json and GNU parallel
+            assert shutil.which("parallel"), "GNU parallel is required"
+            if args.results:
+                # Save results to user-specified directory
+                results_dir = Path(args.results)
+                results_dir.mkdir(parents=True, exist_ok=True)
+                _LOGGER.debug("Saving results to %s", results_dir)
+            else:
+                # Save resuls to temporary directory
+                temp_dir = tempfile.TemporaryDirectory()
+                results_dir = Path(temp_dir.name)
+                _LOGGER.debug(
+                    "Saving results to temporary directory (use --results to specify)"
+                )
 
-        # Use voice2json and GNU parallel
-        assert shutil.which("parallel"), "GNU parallel is required"
-        temp_dir = None
-        if args.results:
-            # Save results to user-specified directory
-            results_dir = Path(args.results)
-            results_dir.mkdir(parents=True, exist_ok=True)
-            _LOGGER.debug("Saving results to %s", results_dir)
-        else:
-            # Save resuls to temporary directory
-            temp_dir = tempfile.TemporaryDirectory()
-            results_dir = Path(temp_dir.name)
-            _LOGGER.debug(
-                "Saving results to temporary directory (use --results to specify)"
-            )
-
-        try:
             # Transcribe WAV files
             actual_wavs_path = results_dir / "actual_wavs.txt"
             actual_transcriptions_path = results_dir / "actual_transcriptions.jsonl"
@@ -156,23 +146,25 @@ async def test_examples(args: argparse.Namespace, core: Voice2JsonCore) -> None:
             assert recognize_process.returncode == 0, "Recognition failed"
 
             # Load actual intents
-            _LOGGER.debug("Loading actual intents from %s", actual_intents_path)
-            with open(actual_intents_path, "r") as actual_intents_file:
-                for line in actual_intents_file:
-                    line = line.strip()
-                    if line:
-                        actual_intent = json.loads(line)
-                        actual[actual_intent["wav_name"]] = Recognition.from_dict(
-                            actual_intent
-                        )
-        finally:
-            # Delete temporary directory
-            if temp_dir:
-                temp_dir.cleanup()
+            args.actual = actual_intents_path
 
-    if not actual:
-        _LOGGER.fatal("No actual examples provided")
-        return
+        assert args.actual, "No actual intents to load"
+        _LOGGER.debug("Loading actual intents from %s", args.actual)
 
-    report = evaluate_intents(expected, actual)
-    print_json(dataclasses.asdict(report))
+        # Load actual results from jsonl file
+        with open(args.actual, "r") as actual_file:
+            for line in actual_file:
+                actual_intent = Recognition.from_dict(json.loads(line))
+                assert actual_intent.wav_name, f"No wav_name for {line}"
+                actual[actual_intent.wav_name] = actual_intent
+
+        if not actual:
+            _LOGGER.fatal("No actual examples provided")
+            return
+
+        report = evaluate_intents(expected, actual)
+        print_json(dataclasses.asdict(report))
+    finally:
+        # Delete temporary directory
+        if temp_dir:
+            temp_dir.cleanup()

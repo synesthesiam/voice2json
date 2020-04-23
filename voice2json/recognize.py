@@ -72,7 +72,9 @@ async def recognize(args: argparse.Namespace, core: Voice2JsonCore) -> None:
             tokens = text.split()
 
             if args.replace_numbers:
-                tokens = list(rhasspynlu.replace_numbers(tokens, language=language_code))
+                tokens = list(
+                    rhasspynlu.replace_numbers(tokens, language=language_code)
+                )
 
             # Recognize intent
             recognitions = rhasspynlu.recognize(

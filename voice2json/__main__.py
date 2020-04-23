@@ -67,6 +67,8 @@ def get_args() -> argparse.Namespace:
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(prog="voice2json", description="voice2json")
     parser.add_argument("--profile", "-p", help="Path to profle directory")
+    parser.add_argument("--certfile", help="Path to SSL certificate file")
+    parser.add_argument("--keyfile", help="Path to SSL key file")
     parser.add_argument(
         "--setting",
         "-s",
@@ -84,6 +86,17 @@ def get_args() -> argparse.Namespace:
     sub_parsers.required = True
     sub_parsers.dest = "command"
 
+    # -------------
+    # print-version
+    # -------------
+    version_parser = sub_parsers.add_parser(
+        "print-version", help="Print voice2json version"
+    )
+    version_parser.set_defaults(func=print_version)
+
+    # -------------
+    # print-profile
+    # -------------
     print_parser = sub_parsers.add_parser(
         "print-profile", help="Print profile JSON to stdout"
     )
@@ -410,7 +423,17 @@ def get_core(args: argparse.Namespace) -> Voice2JsonCore:
         pydash.set_(profile, setting_path, setting_value)
 
     # Create core
-    return Voice2JsonCore(profile_yaml, profile)
+    return Voice2JsonCore(
+        profile_yaml, profile, certfile=args.certfile, keyfile=args.keyfile
+    )
+
+
+# -----------------------------------------------------------------------------
+
+
+async def print_version(args: argparse.Namespace, core: Voice2JsonCore) -> None:
+    """Print version."""
+    print(Path("VERSION").read_text().strip())
 
 
 # -----------------------------------------------------------------------------

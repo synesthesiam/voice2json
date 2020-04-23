@@ -9,8 +9,8 @@ if [[ -d "${venv}" ]]; then
     source "${venv}/bin/activate"
 
     if [[ -d "${venv}/tools" ]]; then
-        export LD_LIBRARY_PATH="${venv}/tools:${LD_LIBRARY_PATH}"
-        export PATH="${venv}/tools:${PATH}"
+        export LD_LIBRARY_PATH="${venv}/tools:${venv}/tools/lib:${LD_LIBRARY_PATH}"
+        export PATH="${venv}/tools:${venv}/tools/bin:${PATH}"
 
         KALDI_DIR="${venv}/tools/kaldi"
         if [[ -d "${KALDI_DIR}" ]]; then
@@ -21,11 +21,6 @@ if [[ -d "${venv}" ]]; then
             export PATH="${venv}/tools/precise-engine:${PATH}"
         fi
     fi
-fi
-
-# Check to see if sphinxtrain is installed (pocketsphinx acoustic model tuning)
-if [[ -d '/usr/lib/sphinxtrain' ]]; then
-    export PATH="/usr/lib/sphinxtrain:${PATH}"
 fi
 
 export PYTHONPATH="${this_dir}"

@@ -108,6 +108,7 @@ async def train_profile(
         """Run a command asynchronously."""
         process = await asyncio.create_subprocess_exec(*command, **kwargs)
         await process.wait()
+        assert process.returncode == 0, "Command failed"
 
     # -------------------------------------------------------------------------
     # 1. Reassemble large files
@@ -122,7 +123,7 @@ async def train_profile(
             _LOGGER.debug(cat_command)
 
             with open(gzip_path, "wb") as gzip_file:
-                await run(cat_command, check=True, stdout=gzip_file)
+                await run(cat_command, stdout=gzip_file)
 
         if gzip_path.is_file():
             # Unzip single file
@@ -130,7 +131,7 @@ async def train_profile(
             _LOGGER.debug(unzip_command)
 
             with open(target_path, "wb") as target_file:
-                await run(unzip_command, check=True, stdout=target_file)
+                await run(unzip_command, stdout=target_file)
 
             # Delete zip file
             gzip_path.unlink()
@@ -300,6 +301,27 @@ async def train_profile(
             language_model_path,
             trie_path,
             alphabet_path,
+            vocab_path=vocab_path,
+            language_model_fst=language_model_fst_path,
+            base_language_model_fst=base_language_model_fst,
+            base_language_model_weight=base_language_model_weight,
+            mixed_language_model_fst=mixed_language_model_fst_path,
+        )
+    elif acoustic_model_type == AcousticModelType.JULIUS:
+        # Julius
+        from .julius import train as train_julius
+
+        load_pronunciations()
+        train_julius(
+            intent_graph,
+            dictionary_path,
+            language_model_path,
+            pronunciations,
+            dictionary_word_transform=word_transform,
+            silence_words={"<s>", "</s>"},
+            g2p_model=g2p_model,
+            g2p_word_transform=g2p_word_transform,
+            missing_words_path=unknown_words_path,
             vocab_path=vocab_path,
             language_model_fst=language_model_fst_path,
             base_language_model_fst=base_language_model_fst,
