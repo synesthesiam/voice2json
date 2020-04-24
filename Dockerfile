@@ -54,6 +54,9 @@ RUN if [ "$TARGETARCH" != "arm64" ]; then tar -C ${APP_VENV}/tools -xf /kenlm.ta
 COPY download/julius-4.5_${TARGETARCH}${TARGETVARIANT}.tar.gz /julius.tar.gz
 RUN if [ "$TARGETARCH" != "arm64" ]; then tar -C ${APP_VENV}/tools -xf /julius.tar.gz; fi
 
+# Strip binaries
+RUN for f in $(find ${APP_VENV} -type f -name '*.so*'); do strip --strip-unneeded $f; done
+
 # -----------------------------------------------------------------------------
 # Runtime Image
 # -----------------------------------------------------------------------------
