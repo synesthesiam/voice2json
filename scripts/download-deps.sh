@@ -88,6 +88,17 @@ if [ ! -z "${kenlm_arch}" ] && [ ! -s "${kenlm_file}" ]; then
     curl -sSfL -o "${kenlm_file}" "https://github.com/synesthesiam/docker-kenlm/releases/download/v2020.03.28/kenlm-20200308_${kenlm_arch}.tar.gz"
 fi
 
+# Julius
+declare -A julius_archs
+julius_archs=(['x86_64']='amd64' ['armv7l']='armv7')
+
+julius_arch="${julius_archs[${cpu_arch}]}"
+julius_file="${download}/julius-4.5_${target_arch}.tar.gz"
+if [ ! -z "${julius_arch}" ] && [ ! -s "${julius_file}" ]; then
+    echo "Downloading Julius (${julius_file})"
+    curl -sSfL -o "${julius_file}" "https://github.com/synesthesiam/docker-julius/releases/download/v4.5/julius-4.5_${julius_arch}.tar.gz"
+fi
+
 # -----------------------------------------------------------------------------
 
 echo "OK"

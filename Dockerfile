@@ -24,7 +24,7 @@ COPY download/pocketsphinx-python.tar.gz /
 RUN ${APP_PIP} install /pocketsphinx-python.tar.gz
 
 # Exclude DeepSpeech from arm64
-RUN if [ "$TARGETARCH" = "arm64" ]; then sed -i '/^deepspeech/d' ${APP_DIR}/requirements.txt; fi
+RUN if [ "$TARGETARCH" = "arm64" ]; then sed -i '/deepspeech/d' ${APP_DIR}/requirements.txt; fi
 
 # Runtime Python dependencies
 RUN ${APP_PIP} install -r ${APP_DIR}/requirements.txt

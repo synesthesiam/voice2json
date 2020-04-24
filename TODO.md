@@ -1,6 +1,6 @@
 # TODO
 
-* Julius binaries
+* Julius arm64
 * Kaldi stream decoding
 * stop words for recognize
 * intent whitelist

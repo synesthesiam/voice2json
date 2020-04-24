@@ -1,10 +1,14 @@
 SHELL := bash
 PYTHON_FILES = voice2json/*.py
 
-.PHONY: venv downloads check reformat docs docker-test
+.PHONY: venv downloads check reformat docs docker-test flatpak
 
 version := $(shell cat VERSION)
 architecture := $(shell bash architecture.sh)
+
+APP_ID='org.voice2jon.Voice2json'
+FP_BUILD='.flatpak_build'
+FP_REPO='repo'
 
 all: venv
 
@@ -35,118 +39,29 @@ docker-test: docs
         --build-arg TARGETVARIANT='' \
         -t synesthesiam/voice2json:$(version)
 
-# tar-gz: installer
-# 	bash debianize.sh --nopackage --architecture $(DEBIAN_ARCH)
-# 	tar -C debian/voice2json_1.0_$(DEBIAN_ARCH)/usr -czf dist/voice2json_$(DEBIAN_ARCH).tar.gz bin lib
+flatpak-init:
+	rm -rf $(FP_BUILD) $(FP_REPO)
+	flatpak build-init $(FP_BUILD) $(APP_ID) 'org.freedesktop.Sdk' 'org.freedesktop.Platform//19.08'
 
-# -----------------------------------------------------------------------------
-# Multi-Arch Builds
-# -----------------------------------------------------------------------------
+flatpak-python:
+	flatpak build --bind-mount=/src=$(PWD) $(FP_BUILD) /src/flatpak/01-install-python.sh
 
-# Builds voice2json Docker images for armhf/aarch64
-docker-multiarch: docker-multiarch-armhf docker-multiarch-aarch64
+flatpak-swig:
+	flatpak build --bind-mount=/src=$(PWD) $(FP_BUILD) /src/flatpak/01-install-swig.sh
 
-docker-multiarch-armhf: docker-multiarch-install-armhf
-	docker run -it \
-      -v "$$(pwd):$$(pwd)" -w "$$(pwd)" \
-      -e DEBIAN_ARCH=armhf \
-      voice2json/multi-arch-build:armhf \
-      debianize.sh --nopackage --architecture armhf
-	docker build . \
-        --build-arg BUILD_ARCH=arm32v7 \
-        --build-arg DEBIAN_ARCH=armhf \
-        -t synesthesiam/voice2json:armhf
+flatpak-venv:
+	flatpak build --bind-mount=/src=$(PWD) --share=network $(FP_BUILD) /src/flatpak/02-create-venv.sh
 
-docker-multiarch-aarch64: docker-multiarch-install-aarch64
-	docker run -it \
-      -v "$$(pwd):$$(pwd)" -w "$$(pwd)" \
-      -e DEBIAN_ARCH=aarch64 \
-      voice2json/multi-arch-build:aarch64 \
-      debianize.sh --nopackage --architecture aarch64
-	docker build . \
-        --build-arg BUILD_ARCH=arm64v8 \
-        --build-arg DEBIAN_ARCH=aarch64 \
-        -t synesthesiam/voice2json:aarch64
+flatpak-voice2json:
+	flatpak build --bind-mount=/src=$(PWD) $(FP_BUILD) /src/flatpak/03-install-voice2json.sh
 
-# Installs/builds voice2json in armhf/aarch64 virtual environments
-docker-multiarch-install: docker-multiarch-install-armhf docker-multiarch-install-aarch64
+flatpak-finish:
+	flatpak build-finish $(FP_BUILD) --filesystem=xdg-config/voice2json --command=/app/voice2json.sh
+	flatpak build-export $(FP_REPO) $(FP_BUILD)
 
-docker-multiarch-install-armhf: docker-multiarch-build-armhf
-	docker run -it \
-      -v "$$(pwd):$$(pwd)" -w "$$(pwd)" \
-      -e DEBIAN_ARCH=armhf \
-      voice2json/multi-arch-build:armhf \
-      install.sh --noruntime --nooverwrite
+flatpak-install:
+	flatpak --user remote-add --no-gpg-verify --if-not-exists tutorial-repo $(FP_REPO)
+	flatpak --user install tutorial-repo $(APP_ID)
 
-docker-multiarch-install-aarch64: docker-multiarch-build-aarch64
-	docker run -it \
-      -v "$$(pwd):$$(pwd)" -w "$$(pwd)" \
-      -e DEBIAN_ARCH=aarch64 \
-      voice2json/multi-arch-build:aarch64 \
-      install.sh --noruntime --nooverwrite
-
-# Creates armhf/aarch64 build images with PyInstaller
-docker-multiarch-build: docker-multiarch-build-armhf docker-multiarch-build-aarch64
-
-docker-multiarch-build-armhf:
-	docker build . -f docker/multiarch_build/Dockerfile \
-        --build-arg DEBIAN_ARCH=armhf \
-        --build-arg CPU_ARCH=armv7l \
-        --build-arg BUILD_FROM=arm32v7/ubuntu:bionic \
-        -t voice2json/multi-arch-build:armhf
-
-docker-multiarch-build-aarch64:
-	docker build . -f docker/multiarch_build/Dockerfile \
-        --build-arg DEBIAN_ARCH=aarch64 \
-        --build-arg CPU_ARCH=arm64v8 \
-        --build-arg BUILD_FROM=arm64v8/ubuntu:bionic \
-        -t voice2json/multi-arch-build:aarch64
-
-# Create Debian packages for armhf/aarch64
-docker-multiarch-debian: docker-multiarch-debian-armhf docker-multiarch-debian-aarch64
-
-docker-multiarch-debian-armhf:
-	docker run -it \
-      -u "$$(id -u):$$(id -g)" \
-      -v "$$(pwd):$$(pwd)" -w "$$(pwd)" \
-      -e "HOME=$(HOME)" \
-      -e DEBIAN_ARCH=armhf \
-      --entrypoint make \
-      voice2json/multi-arch-build:armhf \
-      multiarch-debian
-
-docker-multiarch-debian-aarch64:
-	docker run -it \
-      -u "$$(id -u):$$(id -g)" \
-      -v "$$(pwd):$$(pwd)" -w "$$(pwd)" \
-      -e DEBIAN_ARCH=aarch64 \
-      -e "HOME=$(HOME)" \
-      --entrypoint make \
-      voice2json/multi-arch-build:aarch64 \
-      multiarch-debian
-
-# Called from docker-multi-arch-debian within build image
-multiarch-debian:
-	bash build.sh voice2json.spec
-	bash debianize.sh --architecture $(DEBIAN_ARCH)
-
-# Create new docker manifest
-manifest-create:
-	docker manifest create synesthesiam/voice2json:latest \
-        synesthesiam/voice2json:amd64 \
-        synesthesiam/voice2json:armhf \
-        synesthesiam/voice2json:aarch64
-	docker manifest annotate synesthesiam/voice2json:latest synesthesiam/voice2json:armhf --os linux --arch arm
-	docker manifest annotate synesthesiam/voice2json:latest synesthesiam/voice2json:aarch64 --os linux --arch arm64
-	docker manifest push synesthesiam/voice2json:latest
-
-# Amend existing docker manifest
-manifest:
-	docker manifest push --purge synesthesiam/voice2json:latest
-	docker manifest create --amend synesthesiam/voice2json:latest \
-        synesthesiam/voice2json:amd64 \
-        synesthesiam/voice2json:armhf \
-        synesthesiam/voice2json:aarch64
-	docker manifest annotate synesthesiam/voice2json:latest synesthesiam/voice2json:armhf --os linux --arch arm
-	docker manifest annotate synesthesiam/voice2json:latest synesthesiam/voice2json:aarch64 --os linux --arch arm64
-	docker manifest push synesthesiam/voice2json:latest
+flatpak-run:
+	flatpak run $(APP_ID)
