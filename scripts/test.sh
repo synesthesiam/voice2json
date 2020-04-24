@@ -7,6 +7,8 @@ if [[ ! -d "${profiles_dir}" ]]; then
     exit 1
 fi
 
+CPU_ARCH="$(uname --m)"
+
 # -----------------------------------------------------------------------------
 
 # Create temporary directory to hold profiles
