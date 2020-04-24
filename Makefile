@@ -1,10 +1,13 @@
 SHELL := bash
 PYTHON_FILES = voice2json/*.py
 
-.PHONY: venv downloads check reformat docs docker-test
+.PHONY: venv downloads check reformat docs docker docker-test pyinstaller
 
 version := $(shell cat VERSION)
 architecture := $(shell bash architecture.sh)
+
+PLATFORMS = linux/amd64,linux/arm/v7,linux/arm64
+TAG = $(DOCKER_REGISTRY)synesthesiam/voice2json:$(version)
 
 all: venv
 
@@ -27,6 +30,18 @@ docs:
 
 # test:
 # 	bash scripts/test.sh
+
+docker: docs
+	docker buildx build . \
+        --platform "$(PLATFORMS)" \
+        --tag "$(TAG)" \
+        --push
+
+pyinstaller: docker/Dockerfile.pyinstaller
+	docker buildx build -f $< . \
+        --platform "$(PLATFORMS)" \
+        --tag "$(DOCKER_REGISTRY)rhasspy/pyinstaller:3.6" \
+        --push
 
 docker-test: docs
 	docker build . \
