@@ -4,3 +4,5 @@
 !requirements.txt
 !scripts/*.sh
 !voice2json/*.py
+!VERSION
+!voice2json.sh

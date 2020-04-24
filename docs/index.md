@@ -50,11 +50,11 @@ It can be used to:
 * Provide basic [voice assistant functionality](recipes.md#set-and-run-timers) completely offline on modest hardware
 * Bootstrap more [sophisticated speech/intent recognition systems](recipes.md#train-a-rasa-nlu-bot)
 
-Support speech to text systems include:
+Supported speech to text systems include:
 
 * CMU's [pocketsphinx](https://github.com/cmusphinx/pocketsphinx)
 * Dan Povey's [Kaldi](https://kaldi-asr.org)
-* Mozilla's [DeepSpeech](https://github.com/mozilla/DeepSpeech)
+* Mozilla's [DeepSpeech](https://github.com/mozilla/DeepSpeech) 0.6
 * Kyoto University's [Julius](https://github.com/julius-speech/julius)
 
 ---

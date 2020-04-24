@@ -51,7 +51,7 @@ COPY download/kenlm-20200308_${TARGETARCH}${TARGETVARIANT}.tar.gz /kenlm.tar.gz
 RUN if [ "$TARGETARCH" != "arm64" ]; then tar -C ${APP_VENV}/tools -xf /kenlm.tar.gz; fi
 
 # Julius (excludes arm64)
-COPY download/julius_4.5_${TARGETARCH}${TARGETVARIANT}.tar.gz /julius.tar.gz
+COPY download/julius-4.5_${TARGETARCH}${TARGETVARIANT}.tar.gz /julius.tar.gz
 RUN if [ "$TARGETARCH" != "arm64" ]; then tar -C ${APP_VENV}/tools -xf /julius.tar.gz; fi
 
 # -----------------------------------------------------------------------------
@@ -86,4 +86,4 @@ COPY voice2json/ ${APP_DIR}/voice2json
 
 WORKDIR ${APP_DIR}
 
-ENTRYPOINT ["voice2json.sh"]
+ENTRYPOINT ["bash", "voice2json.sh"]

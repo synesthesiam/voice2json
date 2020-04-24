@@ -30,18 +30,10 @@ docs:
 
 docker-test: docs
 	docker build . \
-        --build-arg TARGET_ARCH=amd64 \
-        --build-arg TARGET_PLATFORM=linux/amd64 \
-        --build-arg TARGET_VARIANT='' \
+        --build-arg TARGETARCH=amd64 \
+        --build-arg TARGETPLATFORM=linux/amd64 \
+        --build-arg TARGETVARIANT='' \
         -t synesthesiam/voice2json:$(version)
-
-# docker-mqtt: installer
-# 	bash debianize.sh --nopackage --architecture $(DEBIAN_ARCH)
-# 	docker build . -f Dockerfile.mqtt \
-#         --build-arg BUILD_ARCH=$(BUILD_ARCH) \
-#         --build-arg DEBIAN_ARCH=$(DEBIAN_ARCH) \
-#         --build-arg CPU_ARCH=$(CPU_ARCH) \
-#         -t synesthesiam/voice2json-mqtt:$(DEBIAN_ARCH)
 
 # tar-gz: installer
 # 	bash debianize.sh --nopackage --architecture $(DEBIAN_ARCH)
