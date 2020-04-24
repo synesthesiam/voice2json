@@ -1,6 +1,6 @@
 ![voice2json logo](img/voice2json.svg)
 
-`voice2json` is a collection of [command-line tools](commands.md) for <strong>offline speech/intent recognition</strong> on Linux. It is free, open source, and [supports 16 languages](#supported-languages). 
+`voice2json` is a collection of [command-line tools](commands.md) for <strong>offline speech/intent recognition</strong> on Linux. It is free, open source ([MIT](https://opensource.org/licenses/MIT)), and [supports 16 human languages](#supported-languages). 
 
 * [Getting Started](#getting-started)
 * [Commands](commands.md)
@@ -49,6 +49,13 @@ It can be used to:
 * Add voice commands to [existing applications or Unix-style workflows](recipes.md#create-an-mqtt-transcription-service)
 * Provide basic [voice assistant functionality](recipes.md#set-and-run-timers) completely offline on modest hardware
 * Bootstrap more [sophisticated speech/intent recognition systems](recipes.md#train-a-rasa-nlu-bot)
+
+Support speech to text systems include:
+
+* CMU's [pocketsphinx](https://github.com/cmusphinx/pocketsphinx)
+* Dan Povey's [Kaldi](https://kaldi-asr.org)
+* Mozilla's [DeepSpeech](https://github.com/mozilla/DeepSpeech)
+* Kyoto University's [Julius](https://github.com/julius-speech/julius)
 
 ---
 
@@ -107,11 +114,15 @@ When [trained](commands.md#train-profile), `voice2json` will transform [audio da
 
 ## Why Not That
 
-Why not just use [Google](https://assistant.google.com/), [Dragon](https://www.nuance.com/dragon.html), or even [Snips](https://snips.ai/)?
+Why not just use [Google](https://assistant.google.com/), [Dragon](https://www.nuance.com/dragon.html), or something else?
 
 Cloud-based speech and intent recognition services, such as Google Assistant or Amazon's Alexa, require a constant Internet connection to function. Additionally, they keep a copy of everything you say on their servers. Despite the high accuracy and deep integration with other services, this approach is **too brittle and uncomfortable** for me.
 
-Dragon Naturally Speaking and Snips offer local installations and offline functionality. Great! Unfortunately, Dragon requires Microsoft Windows to function. It is *possible* to use [Dragon in Wine on Linux](http://appdb.winehq.org/objectManager.php?sClass=application&iId=2077) or via a virtual machine, but is difficult to set up and not officially supported by [Nuance](https://www.nuance.com). Snips offers an impressive amount of functionality and is [easy to interoperate with](https://docs.snips.ai/reference/hermes), but [requires an online account](https://console.snips.ai/login) just to create an assistant. Additionally, Snips is not yet fully open source, so any artifacts created for a Snips-based assistant may **not be portable** to another platform in the future.
+Dragon Naturally Speaking offers local installations and offline functionality. Great! Unfortunately, Dragon requires Microsoft Windows to function. It is *possible* to use [Dragon in Wine on Linux](http://appdb.winehq.org/objectManager.php?sClass=application&iId=2077) or via a virtual machine, but is difficult to set up and not officially supported by [Nuance](https://www.nuance.com).
+
+Until recently, [Snips](https://snips.ai) offered an impressive amount of functionality offline and was [easy to interoperate with](https://docs.snips.ai/reference/hermes). Unfortunately, they were [purchased by Sonos](https://investors.sonos.com/news-and-events/investor-news/latest-news/2019/Sonos-Announces-Acquisition-of-Snips/default.aspx) and have since shut down their online services (required to change your Snips assistants). See [Rhasspy](https://github.com/rhasspy) if you are looking for a Snips replacement, and avoid investing time and effort in a platform you cannot control!
+
+If you feel comfortable sending your voice commands through the Internet for someone else to process, or are not comfortable with Linux and the command line, I recommend taking a look at [Mycroft](https://mycroft.ai).
 
 ### No Magic, No Surprises
 
@@ -358,7 +369,7 @@ Community contributions are welcomed! There are many different ways to contribut
     * Translations of the [example voice commands](https://github.com/synesthesiam/en-us_pocketsphinx-cmu/blob/8e6c984183a43de0cc87930efff37b4a5c840a40/sentences.ini)
     * Example WAV files of you speaking with text transcriptions for performance testing
 * [Contributing to Mozilla Common Voice](https://voice.mozilla.org/)
-* Assist other `voice2json` community members
+* Assist other `voice2json` [community members](https://community.rhasspy.org)
 * Implement or critique one of [my crazy ideas](#ideas)
 
 ---
@@ -383,7 +394,7 @@ Here are some ideas I have for making `voice2json` better that I don't have time
 * Able to run on a Raspberry Pi alongside other software (no 100% CPU usage)
 * Can add custom wake words without hours of training
 
-[Mycroft Precise](https://github.com/MycroftAI/mycroft-precise) comes close, but requires a lot of expertise and time to train custom wake words. It's performance is also unfortunately also poorer than porcupine (in my limited experience).
+[Mycroft Precise](https://github.com/MycroftAI/mycroft-precise) comes close, but requires a lot of expertise and time to train custom wake words. It's performance is also unfortunately poorer than porcupine (in my limited experience).
 
 I've wondered if Mycroft Precise's approach ([a GRU](https://github.com/MycroftAI/mycroft-precise#how-it-works)) could be extended to include Pocketsphinx's [keyword search mode](https://cmusphinx.github.io/wiki/tutoriallm/#using-keyword-lists-with-pocketsphinx) as an input feature during training and at runtime. On it's own, Pocketsphinx's performance as a wake word detector [is abysmal](https://github.com/Picovoice/wake-word-benchmark#results). But perhaps as one of several features in a neural network, it could help more than hurt.
 

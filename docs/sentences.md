@@ -407,7 +407,7 @@ evens = 0..100,2
 odds = 1..100,2
 ```
 
-Under the hood, number ranges are actually references a [slot program](#slot-programs).
+Under the hood, number ranges are actually references to a built-in [slot program](#slot-programs).
 
 ## Escaping
 

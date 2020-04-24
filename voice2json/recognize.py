@@ -2,10 +2,14 @@
 import argparse
 import dataclasses
 import gzip
+import io
 import json
 import logging
 import os
+import subprocess
 import sys
+import typing
+from pathlib import Path
 
 import pydash
 
@@ -32,8 +36,14 @@ async def recognize(args: argparse.Namespace, core: Voice2JsonCore) -> None:
         pydash.get(core.profile, "training.word-casing", "ignore").lower()
     )
     intent_graph_path = core.ppath("training.intent-graph", "intent.pickle.gz")
+    converters_dir = core.ppath("training.converters-directory", "converters")
     # stop_words_path = core.ppath("intent-recognition.stop-words", "stop_words.txt")
     fuzzy = pydash.get(core.profile, "intent-recognition.fuzzy", True)
+
+    # Load converters
+    extra_converters: typing.Optional[typing.Dict[str, typing.Any]] = {}
+    if converters_dir:
+        extra_converters = load_converters(converters_dir)
 
     # Case transformation for input words
     word_transform = None
@@ -78,7 +88,11 @@ async def recognize(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 
             # Recognize intent
             recognitions = rhasspynlu.recognize(
-                tokens, intent_graph, fuzzy=fuzzy, word_transform=word_transform
+                tokens,
+                intent_graph,
+                fuzzy=fuzzy,
+                word_transform=word_transform,
+                extra_converters=extra_converters,
             )
 
             if recognitions:
@@ -121,3 +135,63 @@ async def recognize(args: argparse.Namespace, core: Voice2JsonCore) -> None:
             print_json(sentence_object)
     except KeyboardInterrupt:
         pass
+
+
+# -----------------------------------------------------------------------------
+
+
+class CommandLineConverter:
+    """Command-line converter for intent recognition"""
+
+    def __init__(self, name: str, command_path: typing.Union[str, Path]):
+        self.name = name
+        self.command_path = Path(command_path)
+
+    def __call__(self, *args, converter_args=None):
+        """Runs external program to convert JSON values"""
+        converter_args = converter_args or []
+        proc = subprocess.Popen(
+            [str(self.command_path)] + converter_args,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            universal_newlines=True,
+        )
+
+        with io.StringIO() as input_file:
+            for arg in args:
+                json.dump(arg, input_file)
+
+            stdout, _ = proc.communicate(input=input_file.getvalue())
+
+            return [json.loads(line) for line in stdout.splitlines() if line.strip()]
+
+
+def load_converters(
+    converters_dir: typing.Union[str, Path]
+) -> typing.Dict[str, CommandLineConverter]:
+    """Load user-defined converters"""
+    converters: typing.Dict[str, CommandLineConverter] = {}
+    converters_dir = Path(converters_dir)
+
+    if converters_dir.is_dir():
+        _LOGGER.debug("Loading converters from %s", converters_dir)
+        for converter_path in converters_dir.glob("**/*"):
+            if not converter_path.is_file():
+                continue
+
+            # Retain directory structure in name
+            converter_name = str(
+                converter_path.relative_to(converters_dir).with_suffix("")
+            )
+
+            # Run converter as external program.
+            # Input arguments are encoded as JSON on individual lines.
+            # Output values should be encoded as JSON on individual lines.
+            converter = CommandLineConverter(converter_name, converter_path)
+
+            # Key off name without file extension
+            converters[converter_name] = converter
+
+            _LOGGER.debug("Loaded converter %s from %s", converter_name, converter_path)
+
+    return converters

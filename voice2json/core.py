@@ -278,20 +278,6 @@ class Voice2JsonCore:
         )
 
     # -------------------------------------------------------------------------
-    # wait-wake
-    # -------------------------------------------------------------------------
-
-    # def get_wake_detector(self) -> WakeWordDetector:
-    #     """Get wake word detector based on profile settings."""
-    #     # Load settings
-    #     library_path = self.ppath("wake-word.porcupine.library-file")
-    #     params_path = self.ppath("wake-word.porcupine.params-file")
-    #     keyword_path = self.ppath("wake-word.porcupine.keyword-file")
-    #     sensitivity = float(pydash.get(self, "wake-word.sensitivity", 0.5))
-
-    #     return PorcupineDetector(library_path, params_path, keyword_path, sensitivity)
-
-    # -------------------------------------------------------------------------
     # Utilities
     # -------------------------------------------------------------------------
 

@@ -83,6 +83,9 @@ training:
   # Directory containing programs, one for each $slot referenced in sentences.ini
   slot-programs-directory: !env "${profile_dir}/slot_programs"
   
+  # Directory containing programs, one for each !converter referenced in sentences.ini
+  converters-directory: !env "${profile_dir}/converters"
+  
   # Path to write custom intent finite state transducer
   intent-fst: !env "${profile_dir}/intent.fst"
   
@@ -146,7 +149,7 @@ wake-word:
       engine-executable: ""
 
       # Path to model .pb file
-      model-file: !env "${voice2json_dir}/precise/hey-mycroft-2.pb"
+      model-file: !env "${voice2json_dir}/etc/precise/hey-mycroft-2.pb"
 
 # -----------------------------------------------------------------------------
 
@@ -164,7 +167,7 @@ voice-command:
   silence-seconds: 0.5
 
   # Seconds of audio before voice command starts to retain in output
-  before-seconds: 0.25
+  before-seconds: 0.5
 
   # Seconds of audio to ignore before voice command
   skip-seconds: 0.0

@@ -50,6 +50,10 @@ RUN if [ "$TARGETARCH" != "arm64" ]; then tar -C ${APP_VENV}/tools -xf /native_c
 COPY download/kenlm-20200308_${TARGETARCH}${TARGETVARIANT}.tar.gz /kenlm.tar.gz
 RUN if [ "$TARGETARCH" != "arm64" ]; then tar -C ${APP_VENV}/tools -xf /kenlm.tar.gz; fi
 
+# Julius (excludes arm64)
+COPY download/julius_4.5_${TARGETARCH}${TARGETVARIANT}.tar.gz /julius.tar.gz
+RUN if [ "$TARGETARCH" != "arm64" ]; then tar -C ${APP_VENV}/tools -xf /julius.tar.gz; fi
+
 # -----------------------------------------------------------------------------
 # Runtime Image
 # -----------------------------------------------------------------------------

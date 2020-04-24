@@ -104,6 +104,15 @@ if [[ -s "${kenlm_file}" ]]; then
         "${venv}/tools"
 fi
 
+# Julius
+julius_file="${download}/julius-4.5_${target_arch}.tar.gz"
+if [[ -s "${julius_file}" ]]; then
+    echo 'Installing Julius'
+    "${src_dir}/scripts/install-julius.sh" \
+        "${julius_file}" \
+        "${venv}/tools"
+fi
+
 echo 'Installing requirements'
 pip3 ${PIP_INSTALL} -r requirements.txt
 

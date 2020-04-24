@@ -1,6 +1,6 @@
 firefox
-web: browser:firefox
-file: browser:nemo
-text: editor:xed
+(web browser):firefox
+(file browser):nemo
+(text editor):xed
 gimp
 mail:thunderbird
