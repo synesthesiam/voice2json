@@ -24,6 +24,6 @@ recipes/fluent_dataset/wavs/
 recipes/fluent_dataset/results/intents.jsonl
 recipes/fluent_dataset/results/transcriptions.jsonl
 kaldi_speech.egg-info/
-build/
+/build/
 dist/
 log/
