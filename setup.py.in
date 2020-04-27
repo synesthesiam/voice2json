@@ -1,0 +1,60 @@
+"""Setup script for voice2json"""
+import os
+
+import setuptools
+
+this_dir = os.path.abspath(os.path.dirname(__file__))
+
+# -----------------------------------------------------------------------------
+
+with open(os.path.join(this_dir, "README.md"), "r") as readme_file:
+    long_description = readme_file.read()
+
+with open("requirements.txt", "r") as requirements_file:
+    requirements = requirements_file.read().splitlines()
+
+    if "@ENABLE_PRECISE@" != "yes":
+        # Disable Mycroft Precise
+        requirements = [
+            r for r in requirements if not r.startswith("precise-runner")
+        ]
+
+    if "@ENABLE_POCKETSPHINX@" != "yes":
+        # Disable pocketsphinx
+        requirements = [
+            r for r in requirements if not r.startswith("rhasspy-asr-pocketsphinx")
+        ]
+
+    if "@ENABLE_KALDI@" != "yes":
+        # Disable Kaldi
+        requirements = [
+            r for r in requirements if not r.startswith("rhasspy-asr-kaldi")
+        ]
+
+    if "@ENABLE_DEEPSPEECH@" != "yes":
+        # Disable Mozilla's DeepSpeech
+        requirements = [
+            r for r in requirements if not r.startswith("rhasspy-asr-deepspeech")
+        ]
+
+# -----------------------------------------------------------------------------
+
+setuptools.setup(
+    name="@PACKAGE_NAME@",
+    version="@PACKAGE_VERSION@",
+    author="Michael Hansen",
+    author_email="@PACKAGE_BUGREPORT@",
+    url="https://github.com/synesthesiam/voice2json",
+    packages=setuptools.find_packages(),
+    package_data={"@PACKAGE_NAME@": ["py.typed"]},
+    install_requires=requirements,
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "License :: OSI Approved :: MIT License",
+    ],
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    python_requires=">=3.7",
+)

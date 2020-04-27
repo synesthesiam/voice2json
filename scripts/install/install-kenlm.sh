@@ -7,4 +7,5 @@ if [[ -z "${output}" ]]; then
     exit 1
 fi
 
+mkdir -p "${output}"
 tar -C "${output}" -xvf "${kenlm}" build_binary

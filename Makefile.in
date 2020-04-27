@@ -1,0 +1,290 @@
+# Makefile.in
+#
+# Copyright © 2012, 2013 Brandon Invergo <brandon@invergo.net>
+#
+# Copying and distribution of this file, with or without modification,
+# are permitted in any medium without royalty provided the copyright
+# notice and this notice are preserved.  This file is offered as-is,
+# without any warranty.
+
+# List whatever files you want to include in your source distribution here.
+# You can include whole directories but note that *everything* under that
+# directory will be included
+DISTFILES = PKG-INFO Makefile.in configure setup.py install-sh
+
+DESTDIR =
+VPATH = @srcdir@
+PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
+PACKAGE_NAME = @PACKAGE_NAME@
+PACKAGE_STRING = @PACKAGE_STRING@
+PACKAGE_TARNAME = @PACKAGE_TARNAME@
+PACKAGE_DISTNAME = ${PACKAGE_NAME}-${PACKAGE_VERSION}
+PACKAGE_URL = @PACKAGE_URL@
+PACKAGE_VERSION = @PACKAGE_VERSION@
+PATH_SEPARATOR = @PATH_SEPARATOR@
+PYTHON = @PYTHON@
+VIRTUALENV = @VIRTUALENV@
+SPHINXBUILD = @SPHINXBUILD@
+SHELL = @SHELL@
+MKDIR_P = @MKDIR_P@
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_DATA = @INSTALL_DATA@
+INSTALL_SCRIPT = @INSTALL_SCRIPT@
+docdir = @docdir@
+dvidir = @dvidir@
+exec_prefix = @exec_prefix@
+htmldir = @htmldir@
+includedir = @includedir@
+infodir = @infodir@
+prefix = @prefix@
+srcdir = @srcdir@
+datadir = @datadir@
+datarootdir = @datarootdir@
+pythondir = @pythondir@
+pyexecdir = @pyexecdir@
+pkgdatadir = $(datadir)/@PACKAGE_NAME@
+pkgincludedir = $(includedir)/@PACKAGE_NAME@
+pkgpythondir = @pkgpythondir@
+pkgpyexecdir = @pkgpyexecdir@
+PYTHONPATH = $(pythondir)$(PATH_SEPARATOR)$(DESTDIR)$(pythondir)
+
+BUILD_DIR ?= build
+DOWNLOAD_DIR ?= download
+DO_DOWNLOAD ?= curl -sSfL -o
+
+ENABLE_PRECOMPILED_BINARIES = @ENABLE_PRECOMPILED_BINARIES@
+DOCKER_ARCH = @DOCKER_ARCH@
+
+ENABLE_PRECISE = @ENABLE_PRECISE@
+PRECISE_ARCH = @PRECISE_ARCH@
+PRECISE_FILE = $(DOWNLOAD_DIR)/precise-engine_0.3.0_$(DOCKER_ARCH).tar.gz
+
+ENABLE_POCKETSPHINX = @ENABLE_POCKETSPHINX@
+POCKETSPHINX_FILE = $(DOWNLOAD_DIR)/pocketsphinx-python.tar.gz
+
+ENABLE_KALDI = @ENABLE_KALDI@
+KALDI_ARCH = @KALDI_ARCH@
+KALDI_PRE_FILE = $(DOWNLOAD_DIR)/kaldi-2020-$(DOCKER_ARCH).tar.gz
+KALDI_SRC_FILE = $(DOWNLOAD_DIR)/kaldi-2020.tar.gz
+
+ENABLE_JULIUS = @ENABLE_JULIUS@
+JULIUS_ARCH = @JULIUS_ARCH@
+JULIUS_PRE_FILE = $(DOWNLOAD_DIR)/julius-4.5_$(DOCKER_ARCH).tar.gz
+JULIUS_SRC_FILE = $(DOWNLOAD_DIR)/julius-2019.tar.gz
+
+ENABLE_DEEPSPEECH = @ENABLE_DEEPSPEECH@
+HAS_BUILD_BINARY = @HAS_BUILD_BINARY@
+HAS_GENERATE_TRIE = @HAS_GENERATE_TRIE@
+DEEPSPEECH_ARCH = @DEEPSPEECH_ARCH@
+DEEPSPEECH_FILE = $(DOWNLOAD_DIR)/native_client.$(DOCKER_ARCH).cpu.linux.0.6.1.tar.gz
+KENLM_ARCH = @KENLM_ARCH@
+KENLM_PRE_FILE = $(DOWNLOAD_DIR)/kenlm-20200308_$(DOCKER_ARCH).tar.gz
+EIGEN_SRC_FILE = $(DOWNLOAD_DIR)/eigen-3.2.8.tar.bz2
+KENLM_SRC_FILE = $(DOWNLOAD_DIR)/kenlm-20200308.tar.gz
+
+VENV_DIR = $(DESTDIR)$(prefix)
+VENV_PYTHON = $(VENV_DIR)/bin/python
+VENV_PIP = $(VENV_DIR)/bin/pip
+
+all: install
+
+.PHONY: all install uninstall distclean clean dist check installdirs download build
+
+
+# Since installing to a virtualenv is all the rage these days, support it here. If the VIRTUALENV
+# variable is set to anything other than "no", set up a new virtualenv and install there, otherwise
+# install as usual from setup.py
+install: installdirs download build
+	$(NORMAL_INSTALL)
+ifneq ($(VIRTUALENV),no)
+	"$(PYTHON)" -m venv $(VIRTUALENV_FLAGS) "$(VENV_DIR)" || "$(PYTHON)" -m venv "$(VENV_DIR)"
+	"$(VENV_PIP)" install --upgrade pip
+	"$(VENV_PIP)" install setuptools wheel
+ifeq ($(ENABLE_POCKETSPHINX),yes)
+	"$(VENV_PIP)" "$(POCKETSPHINX_FILE)"
+endif # ENABLE_POCKETSPHINX
+	"$(VENV_PYTHON)" $(srcdir)/setup.py install --prefix=$(VENV_DIR)
+else # VIRTUALENV != no
+ifeq ($(ENABLE_POCKETSPHINX),yes)
+	"$(PYTHON)" -m pip "$(POCKETSPHINX_FILE)"
+endif # ENABLE_POCKETSPHINX
+	"$(PYTHON)" $(srcdir)/setup.py install "--prefix=$(DESTDIR)$(prefix)"
+endif # VIRTUALENV != no
+ifeq ($(ENABLE_PRECISE),yes)
+	tar -C "$(DESTDIR)$(prefix)" -xf "$(PRECISE_FILE)"
+endif # ENABLE_PRECISE
+ifeq ($(ENABLE_DEEPSPEECH),yes)
+	scripts/install/install-deepspeech.sh "$(DEEPSPEECH_FILE)" "$(DEST_DIR)$(prefix)/bin"
+ifeq ($(HAS_GENERATE_TRIE),no)
+	scripts/install/install-kenlm.sh "$(KENLM_PRE_FILE)" "$(DEST_DIR)$(prefix)/bin"
+endif # HAS_GENERATE_TRIE
+endif # ENABLE_DEEPSPEECH
+
+download:
+	$(MKDIR_P) "$(DOWNLOAD_DIR)"
+ifeq ($(ENABLE_PRECISE),yes)
+	if [ ! -s "$(PRECISE_FILE)" ]; then \
+		$(DO_DOWNLOAD) "$(PRECISE_FILE)" "https://github.com/MycroftAI/mycroft-precise/releases/download/v0.3.0/precise-engine_0.3.0_$(PRECISE_ARCH).tar.gz" ; \
+	fi
+endif # ENABLE_PRECISE
+ifeq ($(ENABLE_POCKETSPHINX),yes)
+	if [ ! -s "$(POCKETSPHINX_FILE)" ]; then \
+		$(DO_DOWNLOAD) "$(POCKETSPHINX_FILE)" 'https://github.com/synesthesiam/pocketsphinx-python/releases/download/v1.0/pocketsphinx-python.tar.gz' ; \
+	fi
+endif # ENABLE_POCKETSPHINX
+
+ifeq ($(ENABLE_KALDI),yes)
+ifeq ($(ENABLE_PRECOMPILED_BINARIES),yes)
+	if [ ! -s "$(KALDI_PRE_FILE)" ]; then \
+		$(DO_DOWNLOAD) "$(KALDI_PRE_FILE)" "https://github.com/synesthesiam/kaldi-docker/releases/download/v1.0/kaldi_$(KALDI_ARCH).tar.gz" ; \
+	fi
+else # ENABLE_PRECOMPILED_BINARIES
+	if [ ! -s "$(KALDI_SRC_FILE)" ]; then \
+		$(DO_DOWNLOAD) "$(KALDI_SRC_FILE)" 'https://github.com/synesthesiam/docker-kaldi/blob/master/download/kaldi-2020.tar.gz?raw=true' ; \
+	fi
+endif # ENABLE_PRECOMPILED_BINARIES
+endif # ENABLE_KALDI
+
+ifeq ($(ENABLE_JULIUS),yes)
+ifeq ($(ENABLE_PRECOMPILED_BINARIES),yes)
+	if [ ! -s "$(JULIUS_PRE_FILE)" ]; then \
+		$(DO_DOWNLOAD) "$(JULIUS_PRE_FILE)" "https://github.com/synesthesiam/docker-julius/releases/download/v4.5/julius-4.5_$(JULIUS_ARCH).tar.gz" ; \
+	fi
+else # ENABLE_PRECOMPILED_BINARIES
+	if [ ! -s "$(JULIUS_SRC_FILE)" ]; then \
+		$(DO_DOWNLOAD) "$(JULIUS_SRC_FILE)" 'https://github.com/synesthesiam/docker-julius/blob/master/download/julius-2019.tar.gz?raw=true' ; \
+	fi
+endif # ENABLE_PRECOMPILED_BINARIES
+endif # ENABLE_JULIUS
+
+ifeq ($(ENABLE_DEEPSPEECH),yes)
+ifeq ($(HAS_GENERATE_TRIE),no)
+	if [ ! -s "$(DEEPSPEECH_FILE)" ]; then \
+		$(DO_DOWNLOAD) "$(DEEPSPEECH_FILE)" "https://github.com/mozilla/DeepSpeech/releases/download/v0.6.1/native_client.$(DEEPSPEECH_ARCH).cpu.linux.tar.xz" ; \
+	fi
+endif # HAS_GENERATE_TRIE
+ifeq ($(HAS_BUILD_BINARY),no)
+ifeq ($(ENABLE_PRECOMPILED_BINARIES),yes)
+	if [ ! -s "$(KENLM_PRE_FILE)" ]; then \
+		$(DO_DOWNLOAD) "$(KENLM_PRE_FILE)" "https://github.com/synesthesiam/docker-kenlm/releases/download/v2020.03.28/kenlm-20200308_$(KENLM_ARCH).tar.gz" ; \
+	fi
+else # ENABLE_PRECOMPILED_BINARIES
+	if [ ! -s "$(EIGEN_SRC_FILE)" ]; then \
+		$(DO_DOWNLOAD) "$(EIGEN_SRC_FILE)" 'https://github.com/synesthesiam/docker-kenlm/blob/master/download/eigen-3.2.8.tar.bz2?raw=true' ; \
+	fi
+	if [ ! -s "$(KENLM_SRC_FILE)" ]; then \
+		$(DO_DOWNLOAD) "$(KENLM_SRC_FILE)" 'https://github.com/synesthesiam/docker-kenlm/blob/master/download/kenlm-20200308.tar.gz?raw=true' ; \
+	fi
+endif # ENABLE_PRECOMPILED_BINARIES
+endif # HAS_BUILD_BINARY
+endif # ENABLE_DEEPSPEECH
+
+build:
+	$(MKDIR_P) "$(BUILD_DIR)"
+
+ifeq ($(ENABLE_JULIUS),yes)
+	if [ ! -s "$(JULIUS_PRE_FILE)" ]; then \
+		scripts/build/build-julius.sh "$(JULIUS_SRC_FILE)" "$(BUILD_DIR)" "$(JULIUS_PRE_FILE)" ; \
+	fi
+endif # ENABLE_JULIUS
+
+ifeq ($(ENABLE_DEEPSPEECH),yes)
+ifeq ($(HAS_BUILD_BINARY),no)
+	if [ ! -s "$(KENLM_PRE_FILE)" ]; then \
+		scripts/build/build-kenlm.sh "$(KENLM_SRC_FILE)" "$(EIGEN_SRC_FILE)" "$(BUILD_DIR)" "$(KENLM_PRE_FILE)" ; \
+	fi
+endif # HAS_BUILD_BINARY
+endif # ENABLE_DEEPSPEECH
+
+
+# setup.py doesn't (yet) support an uninstall command, so until it does, you
+# must manually remove everything that was installed here. The following example
+# should remove a basic package installed via setup.py, but please double- and
+# triple-check it so that you don't remove something you shouldn't!
+# Be sure to remove any extra files you install, such as binaries or documentation!
+uninstall:
+	rm -rvf $(pkgpythondir)
+	rm -v $(pythondir)/$(PACKAGE_DISTNAME)-*.egg-info
+
+
+# Just use the usual setup.py clean command
+clean:
+	$(PYTHON) setup.py clean
+
+
+# Clean up the output of configure
+distclean:
+	rm -v $(srcdir)/config.log
+	rm -v $(srcdir)/config.status
+	rm -rvf $(srcdir)/autom4te.cache
+	rm -v $(srcdir)/Makefile
+
+# You can either use the setup.py sdist command or you can roll your own here
+dist:
+#	$(PYTHON) setup.py sdist
+	mkdir $(PACKAGE_DISTNAME)
+	cp -r $(DISTFILES) $(PACKAGE_DISTNAME)
+	tar -czf $(PACKAGE_DISTNAME).tar.gz $(PACKAGE_DISTNAME)
+	rm -rf $(PACKAGE_DISTNAME)
+
+# Use the setup.py check command
+check:
+	$(PYTHON) setup.py check
+
+# setup.py might complain if a directory doesn't exist so just in case, make the directory
+# here
+installdirs:
+	$(MKDIR_P) $(DESTDIR)$(pkgpythondir)
+
+
+# The following show how to install documentation. In this example,
+# docs are built from a separate Makefile contained in the docs
+# directory which uses the SPHINXBUILD variable to store the location
+# of the sphinx-build (Python doc tool) binary to use.
+
+# $(DESTDIR)$(infodir)/foo.info: docs/build/texinfo/foo.info
+# 	$(POST_INSTALL)
+# 	$(INSTALL_DATA) @< $(DESTDIR)$@
+# 	if $(SHELL) -c 'install-info --version' >/dev/null 2>&1; then
+# 		install-info --dir-file=$(DESTDIR)$(infodir)/dir \
+# 				$(DESTDIR)$(infodir)/foo.info;
+# 	else true; fi
+#
+# info: docs/build/texinfo/foo.info
+#
+# docs/build/texinfo/foo.info: $(wildcard docs/source/*)
+# ifneq ($(SPHINXBUILD),no)
+# 	$(MAKE) -C docs info SPHINXBUILD=$(SPHINXBUILD)
+# endif
+#
+#
+# install-html: html installdirs
+# 	$(INSTALL_DATA) docs/build/html/* $(DESTDIR)$(htmldir)
+#
+# html: docs/build/html/index.html
+#
+# docs/build/html/index.html: $(wildcard $(srcdir)/docs/source/*)
+# ifneq ($(SPHINXBUILD),no)
+# 	$(MAKE) -C docs html SPHINXBUILD=$(SPHINXBUILD)
+# endif
+#
+#
+# install-pdf: pdf installdirs
+# 	$(INSTALL_DATA) docs/build/latex/foo.pdf $(DESTDIR)$(pdfdir)
+#
+# pdf: docs/build/latex/Foo.pdf
+#
+# docs/build/latex/foo.pdf: $(wildcard $(srcdir)/docs/source/*)
+# ifneq ($(SPHINXBUILD),no)
+# 	$(MAKE) -C docs latexpdf SPHINXBUILD=$(SPHINXBUILD)
+# endif
+#
+#
+# install-dvi:
+#
+# dvi:
+#
+# install-ps:
+#
+# ps:
