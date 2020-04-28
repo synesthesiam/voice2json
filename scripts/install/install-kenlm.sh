@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 kenlm="$1"
 output="$2"
 
@@ -7,5 +8,5 @@ if [[ -z "${output}" ]]; then
     exit 1
 fi
 
-mkdir -p "${output}"
-tar -C "${output}" -xvf "${kenlm}" build_binary
+mkdir -p "${output}/bin"
+tar -C "${output}/bin" -xf "${kenlm}"

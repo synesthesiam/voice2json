@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 phonetisaurus="$1"
 output="$2"
 
@@ -7,16 +8,24 @@ if [[ -z "${output}" ]]; then
     exit 1
 fi
 
-tar -C "${output}" -xvf "${phonetisaurus}" \
-	--strip-components=2 \
-    ./bin/phonetisaurus-apply ./bin/phonetisaurus-g2pfst \
-    ./lib/libfst.so.13.0.0 ./lib/libfstfar.so.13.0.0 ./lib/libfstngram.so.13.0.0
+# -----------------------------------------------------------------------------
 
-patchelf --set-rpath '$ORIGIN' "${output}/phonetisaurus-g2pfst"
+# Create a temporary directory for extraction
+temp_dir="$(mktemp -d)"
 
-# libfst.so.13.0.0 -> libfst.so.13
-for f in libfst.so.13 libfstfar.so.13 libfstngram.so.13
-do
-    mv "${output}/${f}.0.0" "${output}/${f}"
-    patchelf --set-rpath '$ORIGIN' "${output}/${f}"
-done
+function cleanup {
+    rm -rf "${temp_dir}"
+}
+
+trap cleanup EXIT
+
+# -----------------------------------------------------------------------------
+
+tar -C "${temp_dir}" -xf "${phonetisaurus}"
+install -D "--target-directory=${output}/bin" -- "${temp_dir}/bin"/*
+
+mkdir -p "${output}/lib"
+cp -a "${temp_dir}/lib"/*.so* "${output}/lib/"
+
+mkdir -p "${output}/lib/fst"
+cp -a "${temp_dir}/lib/fst"/*.so* "${output}/lib/fst/"

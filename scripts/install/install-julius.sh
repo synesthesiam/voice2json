@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 julius="$1"
 output="$2"
 
@@ -7,4 +8,5 @@ if [[ -z "${output}" ]]; then
     exit 1
 fi
 
-tar -C "${output}" -xvf "${julius}" julius
+mkdir -p "${output}/bin"
+tar -C "${output}/bin" -xf "${julius}"
