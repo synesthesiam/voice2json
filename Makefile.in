@@ -109,7 +109,7 @@ endif # VIRTUALENV == yes
 
 all: download-init build-init opengrm phonetisaurus precise pocketsphinx kaldi julius deepspeech kenlm
 
-.PHONY: install-init install-opengrm install-phonetisaurus install-precise install-pocketsphinx install-kaldi install-julius install-deepspeech install-kenlm
+.PHONY: install-init install-opengrm install-phonetisaurus install-precise install-pocketsphinx install-kaldi install-julius install-deepspeech install-kenlm install-voice2json
 install: installdirs \
          install-init \
          install-opengrm \
@@ -119,10 +119,8 @@ install: installdirs \
          install-kaldi \
          install-julius \
          install-deepspeech \
-         install-kenlm
-	"$(INSTALL_PYTHON)" "$(srcdir)/setup.py" install "--prefix=$(DESTDIR)$(prefix)"
-	chmod +x "${srcdir}/voice2json.sh"
-	install -D "${srcdir}/voice2json.sh" "$(DESTDIR)$(prefix)/bin/voice2json"
+         install-kenlm \
+         install-voice2json
 
 install-init:
 ifeq ($(VIRTUALENV),yes)
@@ -130,6 +128,11 @@ ifeq ($(VIRTUALENV),yes)
 	"$(VENV_PYTHON)" -m pip install --upgrade pip
 	"$(VENV_PYTHON)" -m pip install setuptools wheel
 endif # VIRTUALENV == yes
+
+install-voice2json:
+	"$(INSTALL_PYTHON)" "$(srcdir)/setup.py" install "--prefix=$(DESTDIR)$(prefix)"
+	chmod +x "${srcdir}/voice2json.sh"
+	install -D "${srcdir}/voice2json.sh" "$(DESTDIR)$(prefix)/bin/voice2json"
 
 # -----------------------------------------------------------------------------
 

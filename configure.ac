@@ -158,11 +158,6 @@ AC_ARG_ENABLE([pocketsphinx],
 
 AC_SUBST([ENABLE_POCKETSPHINX], [$enable_pocketsphinx])
 
-AS_IF([test "x$enable_pocketsphinx" != xno], [
-    dnl Check for Swig (TODO: portaudio)
-    AX_PKG_SWIG([3.0.12])
-])
-
 dnl Kaldi
 AC_ARG_ENABLE([kaldi],
     AS_HELP_STRING([--enable-kaldi],
