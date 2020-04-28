@@ -1,6 +1,6 @@
 """Methods for wake word detection."""
-import asyncio
 import argparse
+import asyncio
 import logging
 import shutil
 import time
