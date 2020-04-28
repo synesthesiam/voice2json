@@ -12,11 +12,7 @@ import typing
 import wave
 from pathlib import Path
 
-import aiofiles
-import aiohttp
 import pydash
-from rhasspyasr import Transcriber
-from rhasspysilence import WebRtcVadRecorder
 
 _LOGGER = logging.getLogger("voice2json.core")
 
@@ -44,11 +40,13 @@ class Voice2JsonCore:
             _LOGGER.debug("Using SSL certificate %s (keyfile=%s)", certfile, keyfile)
             self.ssl_context.load_cert_chain(certfile, keyfile)
 
-        self._http_session: typing.Optional[aiohttp.ClientSession] = None
+        self._http_session = None
 
     @property
     def http_session(self):
         """Get or create async HTTP session."""
+        import aiohttp
+
         if not self._http_session:
             self._http_session = aiohttp.ClientSession()
 
@@ -68,7 +66,7 @@ class Voice2JsonCore:
     # transcribe-wav
     # -------------------------------------------------------------------------
 
-    def get_transcriber(self, open_transcription=False, debug=False) -> Transcriber:
+    def get_transcriber(self, open_transcription=False, debug=False):
         """Create Transcriber based on profile speech system."""
         from .train import AcousticModelType
 
@@ -105,9 +103,7 @@ class Voice2JsonCore:
 
         raise ValueError(f"Unsupported acoustic model type: {acoustic_model_type}")
 
-    def get_pocketsphinx_transcriber(
-        self, open_transcription=False, debug=False
-    ) -> Transcriber:
+    def get_pocketsphinx_transcriber(self, open_transcription=False, debug=False):
         """Create Transcriber for Pocketsphinx."""
         from rhasspyasr_pocketsphinx import PocketsphinxTranscriber
 
@@ -147,9 +143,7 @@ class Voice2JsonCore:
             debug=debug,
         )
 
-    def get_kaldi_transcriber(
-        self, open_transcription=False, debug=False
-    ) -> Transcriber:
+    def get_kaldi_transcriber(self, open_transcription=False, debug=False):
         """Create Transcriber for Kaldi."""
         from rhasspyasr_kaldi import KaldiCommandLineTranscriber, KaldiModelType
 
@@ -175,9 +169,7 @@ class Voice2JsonCore:
         # Use kaldi-decode script
         return KaldiCommandLineTranscriber(model_type, acoustic_model, graph_dir)
 
-    def get_deepspeech_transcriber(
-        self, open_transcription=False, debug=False
-    ) -> Transcriber:
+    def get_deepspeech_transcriber(self, open_transcription=False, debug=False):
         """Create Transcriber for DeepSpeech."""
         from rhasspyasr_deepspeech import DeepSpeechTranscriber
 
@@ -203,9 +195,7 @@ class Voice2JsonCore:
 
         return DeepSpeechTranscriber(acoustic_model, language_model, trie)
 
-    def get_julius_transcriber(
-        self, open_transcription=False, debug=False
-    ) -> Transcriber:
+    def get_julius_transcriber(self, open_transcription=False, debug=False):
         """Create Transcriber for Julius."""
         from .julius import JuliusTranscriber
 
@@ -240,8 +230,10 @@ class Voice2JsonCore:
     # record-command
     # -------------------------------------------------------------------------
 
-    def get_command_recorder(self) -> WebRtcVadRecorder:
+    def get_command_recorder(self):
         """Get voice command recorder based on profile settings."""
+        from rhasspysilence import WebRtcVadRecorder
+
         # Load settings
         vad_mode = int(pydash.get(self.profile, "voice-command.vad-mode", 3))
         min_seconds = float(
@@ -440,6 +432,8 @@ class Voice2JsonCore:
 
     async def make_audio_source(self, audio_source: str) -> typing.Any:
         """Create an async audio source from command-line argument."""
+        import aiofiles
+
         if audio_source is None:
             _LOGGER.debug("Recording raw 16-bit 16Khz mono audio")
             return await self.get_audio_source()
