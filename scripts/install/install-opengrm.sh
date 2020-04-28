@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 set -e
-opengrm="$1"
-output="$2"
 
-if [[ -z "${output}" ]]; then
+if [[ -z "$2" ]]; then
     echo "Usage: install-opengrm.sh opengrm.tar.gz output-dir/"
     exit 1
 fi
+
+opengrm="$(realpath "$1")"
+output="$(realpath "$2")"
 
 # -----------------------------------------------------------------------------
 

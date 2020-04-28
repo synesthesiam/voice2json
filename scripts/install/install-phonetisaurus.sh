@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 set -e
-phonetisaurus="$1"
-output="$2"
 
-if [[ -z "${output}" ]]; then
+if [[ -z "$2" ]]; then
     echo "Usage: install-phonetisaurus.sh phonetisaurus.tar.gz output-dir/"
     exit 1
 fi
+
+phonetisaurus="$(realpath "$1")"
+output="$(realpath "$2")"
 
 # -----------------------------------------------------------------------------
 

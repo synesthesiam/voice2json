@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 set -e
-native_client="$1"
-output="$2"
 
-if [[ -z "${output}" ]]; then
+if [[ -z "$2" ]]; then
     echo "Usage: install-deepspeech.sh native_client.tar.xz output-dir/"
     exit 1
 fi
+
+native_client="$(realpath "$1")"
+output="$(realpath "$2")"
 
 # -----------------------------------------------------------------------------
 

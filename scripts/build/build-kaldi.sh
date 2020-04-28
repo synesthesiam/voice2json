@@ -35,18 +35,19 @@ cd "${kaldi_build}/src" && \
 # Create dist
 dist_dir="${kaldi_build}/dist"
 mkdir -p "${dist_dir}/kaldi/egs" && \
-    cp -R "${kaldi_build}/egs/wsj" "${kaldi_dist}/kaldi/egs/" && \
+    cp -R "${kaldi_build}/egs/wsj" "${dist_dir}/kaldi/egs/" && \
     rsync -av --exclude='*.o' --exclude='*.cc' "${kaldi_build}/src/bin/" "${dist_dir}/kaldi/" && \
     cp "${kaldi_build}/src/lib"/*.so* "${dist_dir}/kaldi/" && \
-    rsync -av --include='*.so*' --include='fst' --exclude='*' "${kaldi_build}/tools/openfst/lib/" "${kaldi_dist}/kaldi/" && \
-    cp "${kaldi_build}/tools/openfst/bin/" "${kaldi_dist}/kaldi/"
+    rsync -av --include='*.so*' --include='fst' --exclude='*' "${kaldi_build}/tools/openfst/lib/" "${dist_dir}/kaldi/" && \
+    cp "${kaldi_build}/tools/openfst/bin/" "${dist_dir}/kaldi/"
 
 # Fix rpaths
-find "${kaldi_dist}/kaldi/" -type f -exec patchelf --set-rpath '$ORIGIN' {} \;
+# shellcheck disable=SC2016
+find "${dist_dir}/kaldi/" -type f -exec patchelf --set-rpath '$ORIGIN' {} \;
 
 # Strip binaries
 echo "Tar-ing binary files to ${output_file}"
-cd "${kaldi_dist}" && \
+cd "${dist_dir}" && \
     (strip --strip-unneeded kaldi/* || true) && \
     tar -czf "${output_file}" kaldi
 

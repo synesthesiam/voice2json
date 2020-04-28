@@ -40,6 +40,10 @@ async def main():
     # Expand environment variables in string value
     yaml.SafeLoader.add_constructor("!env", env_constructor)
 
+    if (len(sys.argv) > 1) and (sys.argv[1] == "--version"):
+        # Patch argv to use print-version command
+        sys.argv = [sys.argv[0], "print-version"]
+
     # Parse command-line arguments
     args = get_args()
 
@@ -216,6 +220,12 @@ def get_args() -> argparse.Namespace:
         "-c",
         type=int,
         help="Exit after the wake word has been spoken some number of times",
+    )
+    wake_parser.add_argument(
+        "--exit-timeout",
+        type=float,
+        default=0,
+        help="Seconds to wait for predictions before exiting",
     )
     wake_parser.set_defaults(func=wake)
 

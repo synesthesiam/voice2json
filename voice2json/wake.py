@@ -1,4 +1,5 @@
 """Methods for wake word detection."""
+import asyncio
 import argparse
 import logging
 import shutil
@@ -108,7 +109,16 @@ async def wake(args: argparse.Namespace, core: Voice2JsonCore) -> None:
             if chunk:
                 engine_stream.write(chunk)
             else:
-                _LOGGER.warning("Received empty audio chunk.")
+                _LOGGER.debug(
+                    "Received empty audio chunk (waiting %s second(s)).",
+                    args.exit_timeout,
+                )
+
+                if engine_stream and (args.exit_timeout > 0):
+                    # Wait for Precise engine to finish predictions
+                    await asyncio.sleep(args.exit_timeout)
+
+                break
 
             # Check exit count
             if (args.exit_count is not None) and (activation_count >= args.exit_count):
