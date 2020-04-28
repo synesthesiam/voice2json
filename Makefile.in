@@ -130,7 +130,7 @@ ifeq ($(VIRTUALENV),yes)
 endif # VIRTUALENV == yes
 
 install-voice2json:
-	"$(INSTALL_PYTHON)" "$(srcdir)/setup.py" install "--prefix=$(DESTDIR)$(prefix)"
+	"$(INSTALL_PYTHON)" -m pip install "$(srcdir)"
 	chmod +x "${srcdir}/voice2json.sh"
 	install -D "${srcdir}/voice2json.sh" "$(DESTDIR)$(prefix)/bin/voice2json"
 
