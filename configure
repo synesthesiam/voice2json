@@ -669,6 +669,7 @@ enable_training
 enable_precise
 enable_wake
 enable_speech_to_text
+with_best_for_language
 enable_pocketsphinx
 enable_kaldi
 enable_julius
@@ -1314,8 +1315,7 @@ Optional Features:
   --enable-precise        enable installation of Mycroft Precise wake word
                           system
   --enable-wake           enable installation of all wake word systems
-  --disable-speech-to-text
-                          disable installation of all speech to text systems
+  --enable-speech-to-text enable installation of all speech to text systems
   --enable-pocketsphinx   enable installation of pocketsphinx speech to text
                           system
   --enable-kaldi          enable installation of Kaldi speech to text system
@@ -1327,6 +1327,9 @@ Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-virtualenv       install to a Python virtual environment
+  --with-best-for-language
+                          choose best settings for specific language
+                          (ca,nl,en,fr,de,el,hi,it,kz,zh,pl,pt,es,sv,vi)
 
 Some influential environment variables:
   PYTHON      the Python interpreter
@@ -2269,13 +2272,6 @@ fi
 ENABLE_PRECOMPILED_BINARIES=$enable_precompiled_binaries
 
 
-if test "x$enable_precompiled_binaries" != xno; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: using pre-compiled binaries" >&5
-$as_echo "$as_me: using pre-compiled binaries" >&6;}
-
-fi
-
 
 
 # Check whether --with-virtualenv was given.
@@ -2387,19 +2383,93 @@ fi
 # Check whether --enable-speech_to_text was given.
 if test "${enable_speech_to_text+set}" = set; then :
   enableval=$enable_speech_to_text;
-fi
-
-
-if test "x$enable_speech_to_text" == xno; then :
-
-    enable_pocketsphinx=no
-    enable_kaldi=no
-    enable_deepspeech=no
-    enable_julius=no
-    { $as_echo "$as_me:${as_lineno-$LINENO}: speech to text is disabled" >&5
-$as_echo "$as_me: speech to text is disabled" >&6;}
+        enable_pocketsphinx=$enableval
+        enable_kaldi=$enableval
+        enable_deepspeech=$enableval
+        enable_julius=$enableval
 
 fi
+
+
+
+# Check whether --with-best_for_language was given.
+if test "${with_best_for_language+set}" = set; then :
+  withval=$with_best_for_language;
+        lang=$with_best_for_language
+        best=none
+        case $lang in #(
+  ca) :
+    best=pocketsphinx ;; #(
+  nl) :
+    best=kaldi ;; #(
+  en) :
+    best=kaldi ;; #(
+  fr) :
+    best=kaldi ;; #(
+  de) :
+    best=kaldi ;; #(
+  hi) :
+    best=pocketsphinx ;; #(
+  it) :
+    best=pocketsphinx ;; #(
+  kz) :
+    best=pocketsphinx ;; #(
+  zh) :
+    best=pocketsphinx ;; #(
+  pl) :
+    best=julius ;; #(
+  pt) :
+    best=pocketsphinx ;; #(
+  ru) :
+    best=pocketsphinx ;; #(
+  es) :
+    best=pocketsphinx ;; #(
+  sv) :
+    best=kaldi ;; #(
+  vi) :
+    best=kaldi ;; #(
+  *) :
+    as_fn_error $? "Unsupported language: $lang" "$LINENO" 5 ;;
+esac
+
+        if test "x$best" = xpocketsphinx; then :
+
+            enable_pocketsphinx=yes
+            enable_kaldi=no
+            enable_deepspeech=no
+            enable_julius=no
+
+fi
+
+        if test "x$best" = xkaldi; then :
+
+            enable_pocketsphinx=no
+            enable_kaldi=yes
+            enable_deepspeech=no
+            enable_julius=no
+
+fi
+
+        if test "x$best" = xjulius; then :
+
+            enable_pocketsphinx=no
+            enable_kaldi=no
+            enable_deepspeech=no
+            enable_julius=yes
+
+fi
+
+        if test "x$best" = xdeepspeech; then :
+
+            enable_pocketsphinx=no
+            enable_kaldi=no
+            enable_deepspeech=yes
+            enable_julius=no
+
+fi
+
+fi
+
 
 # Check whether --enable-pocketsphinx was given.
 if test "${enable_pocketsphinx+set}" = set; then :

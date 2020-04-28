@@ -40,10 +40,6 @@ AC_ARG_ENABLE([precompiled-binaries],
 
 AC_SUBST([ENABLE_PRECOMPILED_BINARIES], [$enable_precompiled_binaries])
 
-AS_IF([test "x$enable_precompiled_binaries" != xno], [
-    AC_MSG_NOTICE([using pre-compiled binaries])
-])
-
 dnl ---------------------------------------------------------------------------
 dnl Python virtual environment
 dnl ---------------------------------------------------------------------------
@@ -138,16 +134,71 @@ dnl ---------------------------------------------------------------------------
 
 dnl Speech to text meta
 AC_ARG_ENABLE([speech_to_text],
-    AS_HELP_STRING([--disable-speech-to-text],
-        [disable installation of all speech to text systems]))
+    AS_HELP_STRING([--enable-speech-to-text],
+        [enable installation of all speech to text systems]),
+    [
+        enable_pocketsphinx=$enableval
+        enable_kaldi=$enableval
+        enable_deepspeech=$enableval
+        enable_julius=$enableval
+    ])
 
-AS_IF([test "x$enable_speech_to_text" == xno], [
-    enable_pocketsphinx=no
-    enable_kaldi=no
-    enable_deepspeech=no
-    enable_julius=no
-    AC_MSG_NOTICE([speech to text is disabled])
-])
+AC_ARG_WITH([best_for_language],
+    AS_HELP_STRING([--with-best-for-language],
+        [choose best settings for specific language (ca,nl,en,fr,de,el,hi,it,kz,zh,pl,pt,es,sv,vi)]),
+    [
+        lang=$with_best_for_language
+        best=none
+        AS_CASE([$lang],
+            [ca],[best=pocketsphinx],
+            [nl],[best=kaldi],
+            [en],[best=kaldi],
+            [fr],[best=kaldi],
+            [de],[best=kaldi],
+            [hi],[best=pocketsphinx],
+            [it],[best=pocketsphinx],
+            [kz],[best=pocketsphinx],
+            [zh],[best=pocketsphinx],
+            [pl],[best=julius],
+            [pt],[best=pocketsphinx],
+            [ru],[best=pocketsphinx],
+            [es],[best=pocketsphinx],
+            [sv],[best=kaldi],
+            [vi],[best=kaldi],
+            [AC_MSG_ERROR([Unsupported language: $lang])])
+
+        AS_IF([test "x$best" = xpocketsphinx],
+        [
+            enable_pocketsphinx=yes
+            enable_kaldi=no
+            enable_deepspeech=no
+            enable_julius=no
+        ])
+
+        AS_IF([test "x$best" = xkaldi],
+        [
+            enable_pocketsphinx=no
+            enable_kaldi=yes
+            enable_deepspeech=no
+            enable_julius=no
+        ])
+
+        AS_IF([test "x$best" = xjulius],
+        [
+            enable_pocketsphinx=no
+            enable_kaldi=no
+            enable_deepspeech=no
+            enable_julius=yes
+        ])
+
+        AS_IF([test "x$best" = xdeepspeech],
+        [
+            enable_pocketsphinx=no
+            enable_kaldi=no
+            enable_deepspeech=yes
+            enable_julius=no
+        ])
+    ])
 
 dnl Pocketsphinx
 AC_ARG_ENABLE([pocketsphinx],
