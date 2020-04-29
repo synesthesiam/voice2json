@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-srcdir="@srcdir@"
+srcdir="@abs_srcdir@"
 prefix="@prefix@"
-export voice2json_dir="$(realpath "${srcdir}")"
+export voice2json_dir="${srcdir}"
 
 : "${PYTHON=python3}"
 
@@ -15,4 +15,5 @@ export LD_LIBRARY_PATH="${prefix}/lib:${LD_LIBRARY_PATH}"
 export PATH="${prefix}/bin:${PATH}"
 export KALDI_DIR="${prefix}/lib/kaldi"
 
+export PYTHONPATH="${prefix}:${PYTHONPATH}"
 "${PYTHON}" -m voice2json "$@"

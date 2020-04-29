@@ -734,6 +734,7 @@ enable_kaldi
 enable_julius
 enable_deepspeech
 enable_speech_to_text
+enable_dependency_check
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1395,6 +1396,8 @@ Optional Features:
                           system
   --disable-speech-to-text
                           disable installation of all speech to text systems
+  --disable-dependency-check
+                          disable checking for external dependencies
 
 Some influential environment variables:
   PYTHON      the Python interpreter
@@ -3691,6 +3694,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 is_virtualenv_enabled=yes
+is_dependency_check_enabled=yes
 
 
 is_wake_enabled=yes
@@ -4139,6 +4143,12 @@ case $enable_precompiled_binaries in #(
 esac
 
 
+# Check whether --enable-dependency-check was given.
+if test "${enable_dependency_check+set}" = set; then :
+  enableval=$enable_dependency_check; is_dependency_check_enabled=$enableval
+fi
+
+
 
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -4537,6 +4547,9 @@ fi
 done
 
 
+if test "x$is_dependency_check_enabled" = xyes; then :
+
+
 if test "x$is_precise_enabled" = xyes; then :
 
         ac_fn_c_check_header_mongrel "$LINENO" "portaudio.h" "ac_cv_header_portaudio_h" "$ac_includes_default"
@@ -4761,6 +4774,8 @@ fi
 
 fi
 
+
+fi
 
 summary_prefix=$prefix
 if test "x$summary_prefix" = xNONE; then :

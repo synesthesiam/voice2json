@@ -13,25 +13,29 @@ with open(os.path.join(this_dir, "README.md"), "r") as readme_file:
 with open("requirements.txt", "r") as requirements_file:
     requirements = requirements_file.read().splitlines()
 
-    if "@ENABLE_PRECISE@" != "yes":
+    enable_precise = "@ENABLE_PRECISE@"
+    if enable_precise != "yes":
         # Disable Mycroft Precise
         requirements = [
             r for r in requirements if not r.startswith("precise-runner")
         ]
 
-    if "@ENABLE_POCKETSPHINX@" != "yes":
+    enable_pocketsphinx = "@ENABLE_POCKETSPHINX@"
+    if enable_pocketsphinx != "yes":
         # Disable pocketsphinx
         requirements = [
             r for r in requirements if not r.startswith("rhasspy-asr-pocketsphinx")
         ]
 
-    if "@ENABLE_KALDI@" != "yes":
+    enable_kaldi = "@ENABLE_KALDI@"
+    if enable_kaldi != "yes":
         # Disable Kaldi
         requirements = [
             r for r in requirements if not r.startswith("rhasspy-asr-kaldi")
         ]
 
-    if "@ENABLE_DEEPSPEECH@" != "yes":
+    enable_deepspeech = "@ENABLE_DEEPSPEECH@"
+    if enable_deepspeech != "yes":
         # Disable Mozilla's DeepSpeech
         requirements = [
             r for r in requirements if not r.startswith("rhasspy-asr-deepspeech")

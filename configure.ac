@@ -20,6 +20,7 @@ AC_PROG_CXX
 dnl ---------------------------------------------------------------------------
 
 is_virtualenv_enabled=yes
+is_dependency_check_enabled=yes
 
 dnl -------------------
 dnl Wake Word Detection
@@ -408,6 +409,13 @@ dnl ---------------------------------------------------------------------------
 dnl Extra Dependency Checks
 dnl ---------------------------------------------------------------------------
 
+AC_ARG_ENABLE([dependency-check],
+    AS_HELP_STRING([--disable-dependency-check],
+        [disable checking for external dependencies]),
+    [is_dependency_check_enabled=$enableval])
+
+AS_IF([test "x$is_dependency_check_enabled" = xyes], [
+
 dnl precise-runner depends on PyAudio, which requires portaudio.h
 AS_IF([test "x$is_precise_enabled" = xyes],
     [
@@ -451,6 +459,8 @@ AS_IF([test "x${is_kaldi_enabled}x${kaldi_from}" = xyesxsource],
             AC_MSG_ERROR([C++ compiler is required for Kaldi (build-essential package)])
         ])
     ])
+
+])  dnl is_dependency_check_enabled
 
 dnl ---------------------------------------------------------------------------
 dnl Summary
