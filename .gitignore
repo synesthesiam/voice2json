@@ -17,9 +17,9 @@ __pycache__/
 /log/
 .ipynb_checkpoints/
 
-setup.py
-Makefile
-voice2json.sh
+/setup.py
+/Makefile
+/voice2json.sh
 
 /autom4te.cache/
 /config.log
