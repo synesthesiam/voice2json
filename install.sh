@@ -263,7 +263,7 @@ if [[ ! -d "${phonetisaurus_dir}/build" ]]; then
     phonetisaurus_file="${download_dir}/phonetisaurus-2019.tar.gz"
 
     if [[ ! -f "${phonetisaurus_file}" ]]; then
-        phonetisaurus_url='https://github.com/synesthesiam/phonetisaurus-2019/releases/download/v1.0/phonetisaurus-2019.tar.gz'
+        phonetisaurus_url='https://github.com/synesthesiam/docker-phonetisaurus/raw/master/download/phonetisaurus-2019.tar.gz'
         echo "Downloading phonetisaurus (${phonetisaurus_url})"
         download "${phonetisaurus_url}" "${phonetisaurus_file}"
     fi
