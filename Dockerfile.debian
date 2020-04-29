@@ -1,0 +1,51 @@
+ARG TARGETPLATFORM
+ARG TARGETARCH
+ARG TARGETVARIANT
+FROM $TARGETARCH$TARGETVARIANT/voice2json-build
+ARG TARGETPLATFORM
+ARG TARGETARCH
+ARG TARGETVARIANT
+ARG DEBIANARCH
+ARG VERSION
+
+ENV LANG C.UTF-8
+
+ENV APP_DIR=/usr/lib/voice2json
+ENV PACKAGE_NAME=voice2json_${VERSION}_${DEBIANARCH}
+ENV BUILD_DIR=/build
+ENV DEBIAN_DIR=${BUILD_DIR}/${PACKAGE_NAME}
+
+RUN mkdir -p ${DEBIAN_DIR}/DEBIAN
+COPY debian/control.in /
+
+RUN sed -e "s/@DEBIAN_ARCH@/${DEBIANARCH}/" < /control.in > ${DEBIAN_DIR}/DEBIAN/control
+
+COPY m4/ ${BUILD_DIR}/m4/
+COPY configure config.sub config.guess \
+     install-sh missing aclocal.m4 \
+     Makefile.in setup.py.in voice2json.sh.in ${BUILD_DIR}/
+
+RUN cd ${BUILD_DIR} && \
+    ./configure --prefix=${APP_DIR}
+
+COPY download/ ${BUILD_DIR}/download/
+COPY scripts/install/ ${BUILD_DIR}/scripts/install/
+
+COPY README.md LICENSE VERSION requirements.txt ${BUILD_DIR}/
+COPY voice2json/ ${BUILD_DIR}/voice2json/
+
+RUN cd ${BUILD_DIR} && \
+    make && \
+    make install && \
+    mkdir -p ${DEBIAN_DIR}${APP_DIR} && \
+    mv ${APP_DIR}/* ${DEBIAN_DIR}${APP_DIR}/
+
+RUN mkdir -p ${DEBIAN_DIR}/usr/bin/ && \
+    cp ${DEBIAN_DIR}${APP_DIR}/bin/voice2json ${DEBIAN_DIR}/usr/bin/
+
+# Strip binaries
+RUN strip --strip-unneeded -- ${DEBIAN_DIR}${APP_DIR}/bin/* 2>/dev/null || true
+RUN (find ${DEBIAN_DIR}${APP_DIR}/lib -type f -name '*.so*' -print0 | xargs -0 strip --strip-unneeded -- 2>/dev/null) || true
+
+RUN cd ${BUILD_DIR} && \
+    fakeroot dpkg --build ${PACKAGE_NAME}

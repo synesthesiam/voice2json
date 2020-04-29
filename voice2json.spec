@@ -1,6 +1,6 @@
 # -*- mode: python -*-
 import os
-import platform
+import site
 from pathlib import Path
 
 from PyInstaller.utils.hooks import copy_metadata
@@ -8,50 +8,55 @@ from PyInstaller.utils.hooks import copy_metadata
 block_cipher = None
 
 # Use either virtual environment or lib/bin dirs from environment variables
-venv = Path.cwd() / f".venv_{platform.machine()}"
-bin_dir = Path(os.environ.get("spec_bin_dir", venv / "bin"))
-lib_dir = Path(os.environ.get("spec_lib_dir", venv / "lib"))
+# venv_path = Path.cwd() / ".venv"
+# site_dirs = site.getsitepackages()
+# venv_lib = venv_path / "lib"
+# for venv_python_dir in venv_lib.glob("python*"):
+#     venv_site_dir = venv_python_dir / "site-packages"
+#     if venv_site_dir.is_dir():
+#         site_dirs.append(venv_site_dir)
 
-site_dir = os.environ.get("spec_site_dir", None)
-if site_dir is None:
-    venv_lib = venv / "lib"
-    for dir_path in venv_lib.glob("python*"):
-        if dir_path.is_dir() and (dir_path / "site-packages").exists():
-            site_dir = dir_path / "site-packages"
-            break
+# kaldi_dir = venv_path / "tools" / "kaldi"
+# if kaldi_dir.is_dir():
+#     tools_dir = venv_path / "tools"
+#     for kaldi_file in kaldi_dir.rglob("*"):
+#         if kaldi_file.is_file():
+#             binary_tuples.append(
+#                 (kaldi_file, str(kaldi_file.parent.relative_to(tools_dir)))
+#             )
 
-assert site_dir is not None, "Missing site-packages directory"
-site_dir = Path(site_dir)
-
-# Need to specially handle these snowflakes
-pywrapfst_path = list(site_dir.glob("pywrapfst.*.so"))[0]
-webrtcvad_path = list(site_dir.glob("_webrtcvad.*.so"))[0]
+# Look for compiled artifacts
+# for site_dir in site_dirs:
+#     site_dir = Path(site_dir)
+#     webrtcvad_paths = list(site_dir.glob("_webrtcvad.*.so"))
+#     if webrtcvad_paths:
+#         webrtcvad_path = webrtcvad_paths[0]
+#         break
 
 a = Analysis(
-    [Path.cwd() / "voice2json" / "__main__.py"],
+    [Path.cwd() / "voice2json" "/__main__.py"],
     pathex=["."],
     binaries=[
-        (pywrapfst_path, "."),
-        (webrtcvad_path, "."),
-        (lib_dir / "libfstfarscript.so.13", "."),
-        (lib_dir / "libfstscript.so.13", "."),
-        (lib_dir / "libfstfar.so.13", "."),
-        (lib_dir / "libfst.so.13", "."),
-        (lib_dir / "libngram.so.134", "."),
-        (bin_dir / "ngramread", "."),
-        (bin_dir / "ngramcount", "."),
-        (bin_dir / "ngrammake", "."),
-        (bin_dir / "ngrammerge", "."),
-        (bin_dir / "ngramprint", "."),
-        (bin_dir / "ngramsymbols", "."),
-        (bin_dir / "ngramperplexity", "."),
-        (bin_dir / "farcompilestrings", "."),
-        (bin_dir / "phonetisaurus-apply", "."),
-        (bin_dir / "phonetisaurus-g2pfst", "."),
-        (bin_dir / "julius", "."),
+        # (webrtcvad_path, "."),
+        # (lib_dir / "libfstfarscript.so.13", "."),
+        # (lib_dir / "libfstscript.so.13", "."),
+        # (lib_dir / "libfstfar.so.13", "."),
+        # (lib_dir / "libfst.so.13", "."),
+        # (lib_dir / "libngram.so.134", "."),
+        # (bin_dir / "ngramread", "."),
+        # (bin_dir / "ngramcount", "."),
+        # (bin_dir / "ngrammake", "."),
+        # (bin_dir / "ngrammerge", "."),
+        # (bin_dir / "ngramprint", "."),
+        # (bin_dir / "ngramsymbols", "."),
+        # (bin_dir / "ngramperplexity", "."),
+        # (bin_dir / "farcompilestrings", "."),
+        # (bin_dir / "phonetisaurus-apply", "."),
+        # (bin_dir / "phonetisaurus-g2pfst", "."),
+        # (bin_dir / "julius", "."),
     ],
     datas=copy_metadata("webrtcvad"),
-    hiddenimports=["doit", "dbm.gnu", "networkx", "numbers"],
+    hiddenimports=["networkx"],
     hookspath=[],
     runtime_hooks=[],
     excludes=[],

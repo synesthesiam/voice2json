@@ -10,7 +10,6 @@ import wave
 from collections import deque
 from pathlib import Path
 
-import jsonlines
 import pydash
 
 _LOGGER = logging.getLogger("voice2json.utils")
@@ -65,6 +64,8 @@ def recursive_update(
 
 def print_json(value: typing.Any, out_file=sys.stdout) -> None:
     """Print a single line of JSON to stdout."""
+    import jsonlines
+
     with jsonlines.Writer(out_file) as out:
         # pylint: disable=E1101
         out.write(value)

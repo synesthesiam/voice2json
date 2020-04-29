@@ -208,7 +208,6 @@ async def record_examples(args: argparse.Namespace, core: Voice2JsonCore) -> Non
     except KeyboardInterrupt:
         pass
     finally:
-        # input_event.set()
         record_task.cancel()
 
         try:

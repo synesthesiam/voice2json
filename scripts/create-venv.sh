@@ -16,8 +16,13 @@ if [[ -z "${target_arch}" ]]; then
     target_arch="$(bash "${src_dir}/architecture.sh")"
 fi
 
-venv="${src_dir}/.venv"
-download="${src_dir}/download"
+if [[ -z "${venv}" ]]; then
+    venv="${src_dir}/.venv"
+fi
+
+if [[ -z "${download}" ]]; then
+    download="${src_dir}/download"
+fi
 
 # -----------------------------------------------------------------------------
 
@@ -118,8 +123,10 @@ pip3 ${PIP_INSTALL} -r requirements.txt
 
 # Optional development requirements
 echo 'Installing development requirements'
-pip3 ${PIP_INSTALL} -r requirements_dev.txt || \
-    echo "Failed to install development requirements"
+if [[ -f 'requirements_dev.txt' ]]; then
+    pip3 ${PIP_INSTALL} -r requirements_dev.txt || \
+        echo "Failed to install development requirements"
+fi
 
 # -----------------------------------------------------------------------------
 
