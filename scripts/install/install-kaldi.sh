@@ -10,4 +10,4 @@ kaldi="$(realpath "$1")"
 output="$(realpath "$2")"
 
 mkdir -p "${output}/lib/kaldi"
-tar -C "${output}/lib/kaldi" -xf "${kaldi}" --strip-components=2
+tar -C "${output}/lib/kaldi" -xf "${kaldi}" --strip-components=1

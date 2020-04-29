@@ -14,8 +14,12 @@ AC_CONFIG_FILES([voice2json.sh])
 AC_CANONICAL_HOST
 AC_PROG_INSTALL
 AC_PROG_MKDIR_P
+AC_PROG_CC
+AC_PROG_CXX
 
 dnl ---------------------------------------------------------------------------
+
+is_virtualenv_enabled=yes
 
 dnl -------------------
 dnl Wake Word Detection
@@ -75,6 +79,9 @@ AS_CASE([$host_cpu],
         is_precise_enabled=no
         precise_from=NONE
 
+        is_pocketsphinx_enabled=yes
+        pocketsphinx_from=source
+
         is_kaldi_enabled=no
         kaldi_from=NONE
 
@@ -99,6 +106,9 @@ AS_CASE([$host_cpu],
 
         is_precise_enabled=yes
         precise_arch=armv7l
+
+        is_pocketsphinx_enabled=yes
+        pocketsphinx_from=source
 
         is_kaldi_enabled=yes
         kaldi_arch=armv7
@@ -125,6 +135,9 @@ AS_CASE([$host_cpu],
         is_precise_enabled=yes
         precise_arch=aarch64
 
+        is_pocketsphinx_enabled=yes
+        pocketsphinx_from=source
+
         is_kaldi_enabled=yes
         kaldi_arch=arm64
 
@@ -149,6 +162,9 @@ AS_CASE([$host_cpu],
 
         is_precise_enabled=yes
         precise_arch=x86_64
+
+        is_pocketsphinx_enabled=yes
+        pocketsphinx_from=source
 
         is_kaldi_enabled=yes
         kaldi_arch=amd64
@@ -183,8 +199,6 @@ AC_ARG_VAR([VOICE2JSON_LANGUAGE],
 dnl ---------------------------------------------------------------------------
 dnl Python virtual environment
 dnl ---------------------------------------------------------------------------
-
-is_virtualenv_enabled=yes
 
 AC_ARG_ENABLE([virtualenv],
     [AS_HELP_STRING([--disable-virtualenv],
@@ -382,13 +396,61 @@ AS_CASE([$enable_kenlm],
         [no],[is_kenlm_enabled=no])
 
 dnl Determine prebuilt/source
-AS_IF([$enable_precompiled_binaries],
-      [no],[
-          kaldi_from=source
-          opengrm_from=source
-          phonetisaurus_from=source
-          kenlm_from=source
-      ])
+AS_CASE([$enable_precompiled_binaries],
+        [no],[
+            kaldi_from=source
+            opengrm_from=source
+            phonetisaurus_from=source
+            kenlm_from=source
+        ])
+
+dnl ---------------------------------------------------------------------------
+dnl Extra Dependency Checks
+dnl ---------------------------------------------------------------------------
+
+dnl precise-runner depends on PyAudio, which requires portaudio.h
+AS_IF([test "x$is_precise_enabled" = xyes],
+    [
+        AC_CHECK_HEADER([portaudio.h], [], [
+            AC_MSG_ERROR([portaudio development libary is required for Mycroft Precise (portaudio19-dev package)])
+        ])
+    ])
+
+dnl pocketsphinx needs swig and a C compiler
+AS_IF([test "x${is_pocketsphinx_enabled}x${pocketsphinx_from}" = xyesxsource],
+    [
+        AS_IF([test "x$CC" = x], [
+            AC_MSG_ERROR([C compiler is required for Pocketsphinx (build-essential package)])
+        ])
+
+        AX_PKG_SWIG([3.0.0], [], [
+            AC_MSG_ERROR([swig is required for Pocketsphinx (swig package)])
+        ])
+    ])
+
+dnl julius needs a C compiler
+AS_IF([test "x${is_julius_enabled}x${julius_from}" = xyesxsource],
+    [
+        AS_IF([test "x$CC" = x], [
+            AC_MSG_ERROR([C compiler is required for Julius (build-essential package)])
+        ])
+    ])
+
+dnl kaldi needs ATLAS
+AS_IF([test "x$is_kaldi_enabled" = xyes],
+    [
+        AC_CHECK_LIB(atlas, ATL_xerbla, [], [
+            AC_MSG_ERROR([ATLAS is required for Kaldi (libatlas-base-dev package)])
+        ])
+    ])
+
+dnl kaldi needs a C++ compiler (and a ton of other things)
+AS_IF([test "x${is_kaldi_enabled}x${kaldi_from}" = xyesxsource],
+    [
+        AS_IF([test "x$CXX" = x], [
+            AC_MSG_ERROR([C++ compiler is required for Kaldi (build-essential package)])
+        ])
+    ])
 
 dnl ---------------------------------------------------------------------------
 dnl Summary

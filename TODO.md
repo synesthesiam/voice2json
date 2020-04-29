@@ -1,6 +1,6 @@
 # TODO
 
-* Julius arm64
+* Julius arm64, older GLIBC
 * Kaldi stream decoding
 * stop words for recognize
 * intent whitelist
