@@ -98,13 +98,22 @@ After [downloading a profile](#download-profile), you should now be able to run 
 
 ## From Source
 
-If you'd like to modify `voice2json`, you should clone [the repository](https://github.com/synesthesiam/voice2json) and run the [install script](https://github.com/synesthesiam/voice2json/blob/master/install.sh):
+`voice2json` uses [autoconf](https://www.gnu.org/software/autoconf/) to facilitate building from source. Once you've cloned the [the repository](https://github.com/synesthesiam/voice2json), the build steps should be familiar:
 
 ```bash
 $ git clone https://github.com/synesthesiam/voice2json
 $ cd voice2json
-$ ./install.sh
+$ ./configure
+$ make
+$ make install
 ```
+
+
+
+* C compiler
+* swig
+* libportaudio dev
+
 
 Installing may take a **long time** and requires an Internet connection to download dependencies (cached in `voice2json/download`). The `install.sh` script does the following:
 
