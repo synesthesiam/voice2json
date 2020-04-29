@@ -587,25 +587,34 @@ PACKAGE_URL=''
 ac_default_prefix=$PWD/.venv
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
-KENLM_ARCH
-DEEPSPEECH_ARCH
+KENLM_FROM
 ENABLE_KENLM
-ENABLE_DEEPSPEECH
-JULIUS_ARCH
-ENABLE_JULIUS
-KALDI_ARCH
-ENABLE_KALDI
-ENABLE_POCKETSPHINX
-PRECISE_ARCH
-ENABLE_PRECISE
-PHONETISAURUS_ARCH
+KENLM_ARCH
+PHONETISAURUS_FROM
 ENABLE_PHONETISAURUS
-OPENGRM_ARCH
+PHONETISAURUS_ARCH
+OPENGRM_FROM
 ENABLE_OPENGRM
-VIRTUALENV_FLAGS
-VIRTUALENV
-ENABLE_PRECOMPILED_BINARIES
+OPENGRM_ARCH
+DEEPSPEECH_FROM
+ENABLE_DEEPSPEECH
+DEEPSPEECH_ARCH
+JULIUS_FROM
+ENABLE_JULIUS
+JULIUS_ARCH
+KALDI_FROM
+ENABLE_KALDI
+KALDI_ARCH
+POCKETSPHINX_FROM
+ENABLE_POCKETSPHINX
+PRECISE_FROM
+ENABLE_PRECISE
+PRECISE_ARCH
 DOCKER_ARCH
+VIRTUALENV
+VOICE2JSON_SPEECH_SYSTEM
+VIRTUALENV_FLAGS
+VOICE2JSON_LANGUAGE
 MKDIR_P
 INSTALL_DATA
 INSTALL_SCRIPT
@@ -662,24 +671,25 @@ ac_subst_files=''
 ac_user_opts='
 enable_option_checking
 enable_precompiled_binaries
-with_virtualenv
+enable_virtualenv
 enable_opengrm
 enable_phonetisaurus
 enable_training
 enable_precise
 enable_wake
-enable_speech_to_text
-with_best_for_language
 enable_pocketsphinx
 enable_kaldi
 enable_julius
 enable_deepspeech
+enable_speech_to_text
 '
       ac_precious_vars='build_alias
 host_alias
 target_alias
 PYTHON
-VIRTUALENV_FLAGS'
+VOICE2JSON_LANGUAGE
+VIRTUALENV_FLAGS
+VOICE2JSON_SPEECH_SYSTEM'
 
 
 # Initialize some variables set by options.
@@ -1304,37 +1314,37 @@ Optional Features:
   --disable-option-checking  ignore unrecognized --enable/--with options
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
-  --enable-precompiled-binaries
-                          download pre-compiled binaries for dependencies
-                          instead of building from source
-  --enable-opengrm        enable installation of opengrm language modeling
+  --disable-precompiled-binaries
+                          build dependencies from source instead of
+                          downloading prebuilt binaries
+  --disable-virtualenv    don't create a Python virtual environment at prefix
+  --disable-opengrm       disable installation of opengrm language modeling
                           toolkit
-  --enable-phonetisaurus  enable installation of phonetisaurus grapheme to
+  --disable-phonetisaurus disable installation of phonetisaurus grapheme to
                           phoneme tool
-  --enable-training       enable installation of training tools
-  --enable-precise        enable installation of Mycroft Precise wake word
+  --disable-training      disable installation of training tools
+  --disable-precise       disable installation of Mycroft Precise wake word
                           system
-  --enable-wake           enable installation of all wake word systems
-  --enable-speech-to-text enable installation of all speech to text systems
-  --enable-pocketsphinx   enable installation of pocketsphinx speech to text
+  --disable-wake          disable installation of all wake word systems
+  --disable-pocketsphinx  disable installation of pocketsphinx speech to text
                           system
-  --enable-kaldi          enable installation of Kaldi speech to text system
-  --enable-julius         enable installation of julius speech to text system
-  --enable-deepspeech     enable installation of deepspeech speech to text
+  --disable-kaldi         disable installation of Kaldi speech to text system
+  --disable-julius        disable installation of julius speech to text system
+  --disable-deepspeech    disable installation of deepspeech speech to text
                           system
-
-Optional Packages:
-  --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
-  --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-virtualenv       install to a Python virtual environment
-  --with-best-for-language
-                          choose best settings for specific language
-                          (ca,nl,en,fr,de,el,hi,it,kz,zh,pl,pt,es,sv,vi)
+  --disable-speech-to-text
+                          disable installation of all speech to text systems
 
 Some influential environment variables:
   PYTHON      the Python interpreter
+  VOICE2JSON_LANGUAGE
+              use recommended settings for specific language
+              (ca,nl,en,fr,de,el,hi,it,kz,zh,pl,pt,es,sv,vi)
   VIRTUALENV_FLAGS
               flags to pass to when creating virtual environment
+  VOICE2JSON_SPEECH_SYSTEM
+              only enable a single speech to text system
+              (pocketsphinx,kaldi,julius,deepspeech)
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -2239,340 +2249,441 @@ fi
 $as_echo "$MKDIR_P" >&6; }
 
 
+
+
+is_wake_enabled=yes
+
+is_precise_enabled=UNKNOWN
+precise_arch=NONE
+precise_from=prebuilt
+
+
+is_speech_to_text_enabled=yes
+
+is_pocketsphinx_enabled=UNKNOWN
+pocketsphinx_from=source
+
+is_kaldi_enabled=UNKNOWN
+kaldi_arch=NONE
+kaldi_from=prebuilt
+
+is_julius_enabled=UNKNOWN
+julius_arch=NONE
+julius_from=prebuilt
+
+is_deepspeech_enabled=UNKNOWN
+deepspeech_arch=NONE
+deepspeech_from=prebuilt
+
+
+is_training_enabled=yes
+
+is_opengrm_enabled=UNKNOWN
+opengrm_arch=NONE
+opengrm_from=prebuilt
+
+is_phonetisaurus_enabled=UNKNOWN
+phonetisaurus_arch=NONE
+phonetisaurus_from=prebuilt
+
+is_kenlm_enabled=UNKNOWN
+kenlm_arch=NONE
+kenlm_from=prebuilt
+
 case $host_cpu in #(
   armv6l) :
-    docker_arch=armv6 ;; #(
+
+                docker_arch=armv6
+
+        is_precise_enabled=no
+        precise_from=NONE
+
+        is_kaldi_enabled=no
+        kaldi_from=NONE
+
+        is_julius_enabled=no
+        julius_from=source
+
+        is_deepspeech_enabled=no
+        deepspeech_from=NONE
+
+        is_opengrm_enabled=yes
+        opengrm_arch=armv6l
+
+        is_phonetisaurus_enabled=yes
+        phonetisaurus_arch=armv6l
+
+        is_kenlm_enabled=no
+        kenlm_from=source
+     ;; #(
   armv7l) :
-    docker_arch=armv7 ;; #(
+
+                docker_arch=armv7
+
+        is_precise_enabled=yes
+        precise_arch=armv7l
+
+        is_kaldi_enabled=yes
+        kaldi_arch=armv7
+
+        is_julius_enabled=yes
+        julius_arch=armv7
+
+        is_deepspeech_enabled=yes
+        deepspeech_arch=rpi3
+
+        is_opengrm_enabled=yes
+        opengrm_arch=armhf
+
+        is_phonetisaurus_enabled=yes
+        phonetisaurus_arch=armhf
+
+        is_kenlm_enabled=yes
+        kenlm_arch=armv7
+     ;; #(
   aarch64) :
-    docker_arch=arm64 ;; #(
+
+                docker_arch=arm64
+
+        is_precise_enabled=yes
+        precise_arch=aarch64
+
+        is_kaldi_enabled=yes
+        kaldi_arch=arm64
+
+        is_julius_enabled=no
+        julius_from=source
+
+        is_deepspeech_enabled=no
+        deepspeech_from=NONE
+
+        is_opengrm_enabled=yes
+        opengrm_arch=aarch64
+
+        is_phonetisaurus_enabled=yes
+        phonetisaurus_arch=arm64
+
+        is_kenlm_enabled=no
+        kenlm_from=source
+     ;; #(
+  x86_64) :
+
+                docker_arch=amd64
+
+        is_precise_enabled=yes
+        precise_arch=x86_64
+
+        is_kaldi_enabled=yes
+        kaldi_arch=amd64
+
+        is_julius_enabled=yes
+        julius_arch=amd64
+
+        is_deepspeech_enabled=yes
+        deepspeech_arch=amd64
+
+        is_opengrm_enabled=yes
+        opengrm_arch=amd64
+
+        is_phonetisaurus_enabled=yes
+        phonetisaurus_arch=amd64
+
+        is_kenlm_enabled=yes
+        kenlm_arch=amd64
+     ;; #(
   *) :
-    docker_arch=amd64 ;;
+     ;;
 esac
 
-DOCKER_ARCH=$docker_arch
 
-
+precompiled_binaries_enabled=yes
 
 # Check whether --enable-precompiled-binaries was given.
 if test "${enable_precompiled_binaries+set}" = set; then :
-  enableval=$enable_precompiled_binaries; enable_precompiled_binaries=$enableval
-else
-
-                case $host_cpu in #(
-              x86_64|armv6l|armv7l|aarch64) :
-    enable_precompiled_binaries=yes ;; #(
-  *) :
-    enable_precompiled_binaries=no ;;
-esac
-
+  enableval=$enable_precompiled_binaries;
 fi
 
 
-ENABLE_PRECOMPILED_BINARIES=$enable_precompiled_binaries
 
 
 
+is_virtualenv_enabled=yes
 
-# Check whether --with-virtualenv was given.
-if test "${with_virtualenv+set}" = set; then :
-  withval=$with_virtualenv; with_virtualenv=$enableval
-else
-  with_virtualenv=yes
+# Check whether --enable-virtualenv was given.
+if test "${enable_virtualenv+set}" = set; then :
+  enableval=$enable_virtualenv;
 fi
 
-
-VIRTUALENV=$with_virtualenv
-
-if test "x$with_virtualenv" != xno; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: installing to virtual environment" >&5
-$as_echo "$as_me: installing to virtual environment" >&6;}
-
-fi
 
 
 
 
 # Check whether --enable-opengrm was given.
 if test "${enable_opengrm+set}" = set; then :
-  enableval=$enable_opengrm; enable_opengrm=$enableval
-else
-  enable_opengrm=yes
+  enableval=$enable_opengrm;
 fi
-
-
-case $host_cpu in #(
-  armv6l) :
-    opengrm_arch=armv6l ;; #(
-  armv7l) :
-    opengrm_arch=armhf ;; #(
-  aarch64) :
-    opengrm_arch=aarch64 ;; #(
-  *) :
-    opengrm_arch=amd64 ;;
-esac
-
-ENABLE_OPENGRM=$enable_opengrm
-
-OPENGRM_ARCH=$opengrm_arch
 
 
 # Check whether --enable-phonetisaurus was given.
 if test "${enable_phonetisaurus+set}" = set; then :
-  enableval=$enable_phonetisaurus; enable_phonetisaurus=$enableval
-else
-  enable_phonetisaurus=yes
+  enableval=$enable_phonetisaurus;
 fi
-
-
-case $host_cpu in #(
-  armv6l) :
-    phonetisaurus_arch=armv6l ;; #(
-  armv7l) :
-    phonetisaurus_arch=armhf ;; #(
-  aarch64) :
-    phonetisaurus_arch=arm64 ;; #(
-  *) :
-    phonetisaurus_arch=amd64 ;;
-esac
-
-ENABLE_PHONETISAURUS=$enable_phonetisaurus
-
-PHONETISAURUS_ARCH=$phonetisaurus_arch
 
 
 # Check whether --enable-training was given.
 if test "${enable_training+set}" = set; then :
   enableval=$enable_training;
-        enable_opengrm=$enableval
-        enable_phonetisaurus=$enableval
-
 fi
 
 
 
 # Check whether --enable-precise was given.
 if test "${enable_precise+set}" = set; then :
-  enableval=$enable_precise; enable_precise=$enableval
-else
-
-                case $host_cpu in #(
-              x86_64|armv7l|aarch64) :
-    enable_precise=yes ;; #(
-  *) :
-    enable_precise=no ;;
-esac
-
+  enableval=$enable_precise;
 fi
-
-
-precise_arch=$host_cpu
-ENABLE_PRECISE=$enable_precise
-
-PRECISE_ARCH=$precise_arch
 
 
 # Check whether --enable-wake was given.
 if test "${enable_wake+set}" = set; then :
-  enableval=$enable_wake; enable_precise=$enableval
+  enableval=$enable_wake;
 fi
 
-
-
-# Check whether --enable-speech_to_text was given.
-if test "${enable_speech_to_text+set}" = set; then :
-  enableval=$enable_speech_to_text;
-        enable_pocketsphinx=$enableval
-        enable_kaldi=$enableval
-        enable_deepspeech=$enableval
-        enable_julius=$enableval
-
-fi
-
-
-
-# Check whether --with-best_for_language was given.
-if test "${with_best_for_language+set}" = set; then :
-  withval=$with_best_for_language;
-        lang=$with_best_for_language
-        best=none
-        case $lang in #(
-  ca) :
-    best=pocketsphinx ;; #(
-  nl) :
-    best=kaldi ;; #(
-  en) :
-    best=kaldi ;; #(
-  fr) :
-    best=kaldi ;; #(
-  de) :
-    best=kaldi ;; #(
-  hi) :
-    best=pocketsphinx ;; #(
-  it) :
-    best=pocketsphinx ;; #(
-  kz) :
-    best=pocketsphinx ;; #(
-  zh) :
-    best=pocketsphinx ;; #(
-  pl) :
-    best=julius ;; #(
-  pt) :
-    best=pocketsphinx ;; #(
-  ru) :
-    best=pocketsphinx ;; #(
-  es) :
-    best=pocketsphinx ;; #(
-  sv) :
-    best=kaldi ;; #(
-  vi) :
-    best=kaldi ;; #(
-  *) :
-    as_fn_error $? "Unsupported language: $lang" "$LINENO" 5 ;;
-esac
-
-        if test "x$best" = xpocketsphinx; then :
-
-            enable_pocketsphinx=yes
-            enable_kaldi=no
-            enable_deepspeech=no
-            enable_julius=no
-
-fi
-
-        if test "x$best" = xkaldi; then :
-
-            enable_pocketsphinx=no
-            enable_kaldi=yes
-            enable_deepspeech=no
-            enable_julius=no
-
-fi
-
-        if test "x$best" = xjulius; then :
-
-            enable_pocketsphinx=no
-            enable_kaldi=no
-            enable_deepspeech=no
-            enable_julius=yes
-
-fi
-
-        if test "x$best" = xdeepspeech; then :
-
-            enable_pocketsphinx=no
-            enable_kaldi=no
-            enable_deepspeech=yes
-            enable_julius=no
-
-fi
-
-fi
 
 
 # Check whether --enable-pocketsphinx was given.
 if test "${enable_pocketsphinx+set}" = set; then :
-  enableval=$enable_pocketsphinx; enable_pocketsphinx=$enableval
-else
-  enable_pocketsphinx=yes
+  enableval=$enable_pocketsphinx;
 fi
-
-
-ENABLE_POCKETSPHINX=$enable_pocketsphinx
 
 
 # Check whether --enable-kaldi was given.
 if test "${enable_kaldi+set}" = set; then :
-  enableval=$enable_kaldi; enable_kaldi=$enableval
-else
-
-                case $host_cpu in #(
-              x86_64|armv7l|aarch64) :
-    enable_kaldi=yes ;; #(
-  *) :
-    enable_kaldi=no ;;
-esac
-
+  enableval=$enable_kaldi;
 fi
-
-
-case $host_cpu in #(
-  armv7l) :
-    kaldi_arch=armv7 ;; #(
-  aarch64) :
-    kaldi_arch=arm64 ;; #(
-  *) :
-    kaldi_arch=amd64 ;;
-esac
-
-ENABLE_KALDI=$enable_kaldi
-
-KALDI_ARCH=$kaldi_arch
 
 
 # Check whether --enable-julius was given.
 if test "${enable_julius+set}" = set; then :
-  enableval=$enable_julius; enable_julius=$enableval
-else
-
-                case $host_cpu in #(
-              x86_64|armv7l) :
-    enable_julius=yes ;; #(
-  *) :
-    enable_julius=no ;;
-esac
-
+  enableval=$enable_julius;
 fi
-
-
-julius_arch=$docker_arch
-ENABLE_JULIUS=$enable_julius
-
-JULIUS_ARCH=$julius_arch
 
 
 # Check whether --enable-deepspeech was given.
 if test "${enable_deepspeech+set}" = set; then :
   enableval=$enable_deepspeech;
-        enable_deepspeech=$enableval
-        enable_kenlm=$enableval
+fi
 
-else
 
-                case $host_cpu in #(
-              x86_64|armv7l) :
+# Check whether --enable-speech-to-text was given.
+if test "${enable_speech_to_text+set}" = set; then :
+  enableval=$enable_speech_to_text;
+fi
 
-                enable_deepspeech=yes
-                enable_kenlm=yes
-             ;; #(
+
+
+
+
+stt_system=NONE
+
+if test "x$VOICE2JSON_LANGUAGE" != x; then :
+
+        lang=$VOICE2JSON_LANGUAGE
+        case $lang in #(
+  ca) :
+    stt_system=pocketsphinx ;; #(
+  nl) :
+    stt_system=kaldi ;; #(
+  en) :
+    stt_system=kaldi ;; #(
+  fr) :
+    stt_system=kaldi ;; #(
+  de) :
+    stt_system=kaldi ;; #(
+  hi) :
+    stt_system=pocketsphinx ;; #(
+  it) :
+    stt_system=pocketsphinx ;; #(
+  kz) :
+    stt_system=pocketsphinx ;; #(
+  zh) :
+    stt_system=pocketsphinx ;; #(
+  pl) :
+    stt_system=julius ;; #(
+  pt) :
+    stt_system=pocketsphinx ;; #(
+  ru) :
+    stt_system=pocketsphinx ;; #(
+  es) :
+    stt_system=pocketsphinx ;; #(
+  sv) :
+    stt_system=kaldi ;; #(
+  vi) :
+    stt_system=kaldi ;; #(
   *) :
-
-                enable_deepspeech=no
-                enable_kenlm=no
-             ;;
+    as_fn_error $? "Unsupported language: $lang" "$LINENO" 5 ;;
 esac
+
 
 fi
 
 
-case $host_cpu in #(
-  armv7l) :
-    deepspeech_arch=rpi3
-     kenlm_arch=armv7 ;; #(
+if test "x$VOICE2JSON_SPEECH_SYSTEM" != x; then :
+  stt_system=$VOICE2JSON_SPEECH_SYSTEM
+fi
+
+case $stt_system in #(
+  pocketsphinx) :
+
+            is_pocketsphinx_enabled=yes
+            is_kaldi_enabled=no
+            is_julius_enabled=no
+            is_deepspeech_enabled=no
+         ;; #(
+  kaldi) :
+
+            is_pocketsphinx_enabled=no
+            is_kaldi_enabled=yes
+            is_julius_enabled=no
+            is_deepspeech_enabled=no
+         ;; #(
+  julius) :
+
+            is_pocketsphinx_enabled=no
+            is_kaldi_enabled=no
+            is_julius_enabled=yes
+            is_deepspeech_enabled=no
+         ;; #(
+  deepspeech) :
+
+            is_pocketsphinx_enabled=no
+            is_kaldi_enabled=no
+            is_julius_enabled=no
+            is_deepspeech_enabled=yes
+         ;; #(
   *) :
-    deepspeech_arch=amd64
-     kenlm_arch=amd64 ;;
+     ;;
 esac
 
-ENABLE_DEEPSPEECH=$enable_deepspeech
+if test "x${is_deepspeech_enabled}x${is_pocketsphinx_enabled}x${is_kaldi_enabled}x${is_julius_enabled}" = xyesxnoxnoxno; then :
+  is_phonetisaurus_enabled=no
+fi
 
-ENABLE_KENLM=$enable_kenlm
+if test "x${is_deepspeech_enabled}" = xno; then :
+  is_kenlm_enabled=no
+fi
 
-DEEPSPEECH_ARCH=$deepspeech_arch
+case $enable_wake in #(
+  no) :
+    is_precise_enabled=no ;; #(
+  *) :
+     ;;
+esac
 
-KENLM_ARCH=$kenlm_arch
+case $enable_speech_to_text in #(
+  no) :
 
+            is_pocketsphinx_enabled=no
+            is_kaldi_enabled=no
+            is_julius_enabled=no
+            is_deepspeech_enabled=no
+         ;; #(
+  *) :
+     ;;
+esac
+
+case $enable_training in #(
+  no) :
+
+            is_opengrm_enabled=no
+            is_phonetisaurus_enabled=no
+            is_kenlm_enabled=no
+         ;; #(
+  *) :
+     ;;
+esac
+
+case $enable_precise in #(
+  yes) :
+    is_precise_enabled=yes ;; #(
+  no) :
+    is_precise_enabled=no ;; #(
+  *) :
+     ;;
+esac
+
+case $enable_pocketsphinx in #(
+  yes) :
+    is_pocketsphinx_enabled=yes ;; #(
+  no) :
+    is_pocketsphinx_enabled=no ;; #(
+  *) :
+     ;;
+esac
+
+case $enable_kaldi in #(
+  yes) :
+    is_kaldi_enabled=yes ;; #(
+  no) :
+    is_kaldi_enabled=no ;; #(
+  *) :
+     ;;
+esac
+
+case $enable_julius in #(
+  yes) :
+    is_julius_enabled=yes ;; #(
+  no) :
+    is_julius_enabled=no ;; #(
+  *) :
+     ;;
+esac
+
+case $enable_deepspeech in #(
+  yes) :
+    is_deepspeech_enabled=yes ;; #(
+  no) :
+    is_deepspeech_enabled=no ;; #(
+  *) :
+     ;;
+esac
+
+case $enable_opengrm in #(
+  yes) :
+    is_opengrm_enabled=yes ;; #(
+  no) :
+    is_opengrm_enabled=no ;; #(
+  *) :
+     ;;
+esac
+
+case $enable_phonetisaurus in #(
+  yes) :
+    is_phonetisaurus_enabled=yes ;; #(
+  no) :
+    is_phonetisaurus_enabled=no ;; #(
+  *) :
+     ;;
+esac
+
+case $enable_kenlm in #(
+  yes) :
+    is_kenlm_enabled=yes ;; #(
+  no) :
+    is_kenlm_enabled=no ;; #(
+  *) :
+     ;;
+esac
+
+if $enable_precompiled_binaries; then :
+  no
+else
+
+          kaldi_from=source
+          opengrm_from=source
+          phonetisaurus_from=source
+          kenlm_from=source
+
+fi
 
 
 summary_prefix=$prefix
@@ -2587,22 +2698,121 @@ voice2json configuration summary:
 
 architecture: ${host_cpu}/${docker_arch}
 prefix: ${summary_prefix}
-virtualenv: ${with_virtualenv}
-pre-compiled binaries: ${enable_precompiled_binaries}
+virtualenv: ${is_virtualenv_enabled}
+language: ${VOICE2JSON_LANGUAGE}
 
-wake:
-  mycroft precise: ${enable_precise} ($precise_arch)
+wake:"
 
-speech to text:
-  pocketsphinx: ${enable_pocketsphinx}
-  kaldi: ${enable_kaldi} ($kaldi_arch)
-  deepspeech: ${enable_deepspeech} ($deepspeech_arch)
-    kenlm: ${enable_kenlm} ($kenlm_arch)
+if test "x$is_precise_enabled" = xyes; then :
+  $as_echo "  mycroft precise: ${is_precise_enabled} (${precise_arch}, ${precise_from})"
+else
+  $as_echo "  mycroft precise: ${is_precise_enabled}"
+fi
 
-training:
-  opengrm: ${enable_opengrm} (${opengrm_arch})
-  phonetisaurus: ${enable_phonetisaurus} (${phonetisaurus_arch})
-"
+$as_echo "
+speech to text:"
+
+if test "x$is_pocketsphinx_enabled" = xyes; then :
+  $as_echo "  pocketsphinx: ${is_pocketsphinx_enabled} (${pocketsphinx_from})"
+else
+  $as_echo "  pocketsphinx: ${is_pocketsphinx_enabled}"
+fi
+
+if test "x$is_kaldi_enabled" = xyes; then :
+  $as_echo "  kaldi: ${is_kaldi_enabled} (${kaldi_arch}, ${kaldi_from})"
+else
+  $as_echo "  kaldi: ${is_kaldi_enabled}"
+fi
+
+
+if test "x$is_deepspeech_enabled" = xyes; then :
+  $as_echo "  deepspeech: ${is_deepspeech_enabled} (${deepspeech_arch}, ${deepspeech_from})"
+else
+  $as_echo "  deepspeech: ${is_deepspeech_enabled}"
+fi
+
+$as_echo "
+training:"
+
+if test "x$is_opengrm_enabled" = xyes; then :
+  $as_echo "  opengrm: ${is_opengrm_enabled} (${opengrm_arch}, ${opengrm_from})"
+else
+  $as_echo "  opengrm: ${is_opengrm_enabled}"
+fi
+
+if test "x$is_phonetisaurus_enabled" = xyes; then :
+  $as_echo "  phonetisaurus: ${is_phonetisaurus_enabled} (${phonetisaurus_arch}, ${phonetisaurus_from})"
+else
+  $as_echo "  phonetisaurus: ${is_phonetisaurus_enabled}"
+fi
+
+if test "x$is_kenlm_enabled" = xyes; then :
+  $as_echo "  kenlm: ${is_kenlm_enabled} (${kenlm_arch}, ${kenlm_from})"
+else
+  $as_echo "  kenlm: ${is_kenlm_enabled}"
+fi
+
+$as_echo ""
+
+
+VIRTUALENV=$is_virtualenv_enabled
+
+
+DOCKER_ARCH=$docker_arch
+
+
+PRECISE_ARCH=$precise_arch
+
+ENABLE_PRECISE=$is_precise_enabled
+
+PRECISE_FROM=$precise_from
+
+
+ENABLE_POCKETSPHINX=$is_pocketsphinx_enabled
+
+POCKETSPHINX_FROM=$pocketsphinx_from
+
+
+KALDI_ARCH=$kaldi_arch
+
+ENABLE_KALDI=$is_kaldi_enabled
+
+KALDI_FROM=$kaldi_from
+
+
+JULIUS_ARCH=$julius_arch
+
+ENABLE_JULIUS=$is_julius_enabled
+
+JULIUS_FROM=$julius_from
+
+
+DEEPSPEECH_ARCH=$deepspeech_arch
+
+ENABLE_DEEPSPEECH=$is_deepspeech_enabled
+
+DEEPSPEECH_FROM=$deepspeech_from
+
+
+OPENGRM_ARCH=$opengrm_arch
+
+ENABLE_OPENGRM=$is_opengrm_enabled
+
+OPENGRM_FROM=$opengrm_from
+
+
+PHONETISAURUS_ARCH=$phonetisaurus_arch
+
+ENABLE_PHONETISAURUS=$is_phonetisaurus_enabled
+
+PHONETISAURUS_FROM=$phonetisaurus_from
+
+
+KENLM_ARCH=$kenlm_arch
+
+ENABLE_KENLM=$is_kenlm_enabled
+
+KENLM_FROM=$kenlm_from
 
 
 cat >confcache <<\_ACEOF
