@@ -278,16 +278,20 @@ dnl ---------------------------------------------------------------------------
 
 stt_system=NONE
 
+kaldi_or_pocketsphinx=kaldi
+AS_IF([test "x${is_kaldi_enabled}" != xyes],
+    [kaldi_or_pocketsphinx=pocketsphinx])
+
 dnl Override with recommended settings for language
 AS_IF([test "x$VOICE2JSON_LANGUAGE" != x],
     [
         lang=$VOICE2JSON_LANGUAGE
         AS_CASE([$lang],
             [ca],[stt_system=pocketsphinx],
-            [nl],[stt_system=kaldi],
-            [en],[stt_system=kaldi],
-            [fr],[stt_system=kaldi],
-            [de],[stt_system=kaldi],
+            [nl],[stt_system=${kaldi_or_pocketsphinx}],
+            [en],[stt_system=${kaldi_or_pocketsphinx}],
+            [fr],[stt_system=${kaldi_or_pocketsphinx}],
+            [de],[stt_system=${kaldi_or_pocketsphinx}],
             [hi],[stt_system=pocketsphinx],
             [it],[stt_system=pocketsphinx],
             [kz],[stt_system=pocketsphinx],

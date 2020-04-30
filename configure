@@ -3941,6 +3941,11 @@ fi
 
 stt_system=NONE
 
+kaldi_or_pocketsphinx=kaldi
+if test "x${is_kaldi_enabled}" != xyes; then :
+  kaldi_or_pocketsphinx=pocketsphinx
+fi
+
 if test "x$VOICE2JSON_LANGUAGE" != x; then :
 
         lang=$VOICE2JSON_LANGUAGE
@@ -3948,13 +3953,13 @@ if test "x$VOICE2JSON_LANGUAGE" != x; then :
   ca) :
     stt_system=pocketsphinx ;; #(
   nl) :
-    stt_system=kaldi ;; #(
+    stt_system=${kaldi_or_pocketsphinx} ;; #(
   en) :
-    stt_system=kaldi ;; #(
+    stt_system=${kaldi_or_pocketsphinx} ;; #(
   fr) :
-    stt_system=kaldi ;; #(
+    stt_system=${kaldi_or_pocketsphinx} ;; #(
   de) :
-    stt_system=kaldi ;; #(
+    stt_system=${kaldi_or_pocketsphinx} ;; #(
   hi) :
     stt_system=pocketsphinx ;; #(
   it) :
