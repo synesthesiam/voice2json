@@ -17,7 +17,7 @@ armv7:
 	docker build . -f Dockerfile.run.armv7 -t armv7/voice2json-run
 	docker build . -f Dockerfile.debian.armv7 -t armv7/voice2json-debian
 
-armv64:
-	docker build . -f Dockerfile.build.armv64 -t armv64/voice2json-build
-	docker build . -f Dockerfile.run.armv64 -t armv64/voice2json-run
+arm64:
+	docker build . -f Dockerfile.build.arm64 -t arm64/voice2json-build
+	docker build . -f Dockerfile.run.arm64 -t arm64/voice2json-run
 	docker build . -f Dockerfile.debian.arm64 -t arm64/voice2json-debian

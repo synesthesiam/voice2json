@@ -10,7 +10,7 @@ version="$(cat "${src_dir}/VERSION")"
 # -----------------------------------------------------------------------------
 
 if [[ -z "$1" ]]; then
-    platforms='linux/amd64,linux/arm/v7,linux/arm/v6,linux/arm64'
+    platforms='linux/amd64,linux/arm/v7,linux/arm64'
     use_buildx='yes'
 else
     targets=("$@")
@@ -22,7 +22,7 @@ fi
 if [[ "${use_buildx}" = 'yes' ]]; then
     docker buildx build \
            "${src_dir}" \
-           --platform "${platforms}" \
+           "--platform=${platforms}" \
            --tag "${DOCKER_REGISTRY}synesthesiam/voice2json:${version}" \
            --tag "${DOCKER_REGISTRY}synesthesiam/voice2json" \
            --push
