@@ -1,7 +1,7 @@
 black==19.10b0
 coverage==5.0.4
 flake8==3.7.9
-mkdocs==1.0.4
+mkdocs>=1.1
 mkdocs-material==5.1.1
 mypy==0.770
 pyinstaller==3.6

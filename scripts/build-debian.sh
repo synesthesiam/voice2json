@@ -19,7 +19,7 @@ version="$(cat "${src_dir}/VERSION")"
 # -----------------------------------------------------------------------------
 
 if [[ -z "$1" ]]; then
-    targets=('amd64' 'armv6' 'armv7' 'arm64')
+    targets=('amd64' 'armv7' 'arm64')
 else
     targets=("$@")
 fi

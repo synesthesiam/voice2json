@@ -1,6 +1,6 @@
 .PHONY: amd64 armv6 armv7 arm64
 
-all: amd64 armv6 armv7 arm64
+all: amd64 armv7 arm64
 
 amd64:
 	docker build . -f Dockerfile.build.amd64 -t amd64/voice2json-build

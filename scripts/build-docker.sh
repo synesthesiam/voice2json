@@ -20,7 +20,12 @@ fi
 # -----------------------------------------------------------------------------
 
 if [[ "${use_buildx}" = 'yes' ]]; then
-    echo TODO
+    docker buildx build \
+           "${src_dir}" \
+           --platform "${platforms}" \
+           --tag "${DOCKER_REGISTRY}synesthesiam/voice2json:${version}" \
+           --tag "${DOCKER_REGISTRY}synesthesiam/voice2json" \
+           --push
 else
     declare -A target_to_arch
     target_to_arch=(['amd64']='amd64' ['armv6']='arm' ['armv7']='arm' ['arm64']='arm64')
