@@ -20,6 +20,8 @@ async def wake(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     """Wait for wake word in audio stream."""
     from precise_runner import PreciseEngine, PreciseRunner, ReadWriteStream
 
+    loop = asyncio.get_event_loop()
+
     # Load settings
     engine_path = pydash.get(core.profile, "wake-word.precise.engine-executable")
     if not engine_path:
@@ -75,11 +77,13 @@ async def wake(args: argparse.Namespace, core: Voice2JsonCore) -> None:
         def on_prediction(prob: float):
             pass
 
-    start_time = time.perf_counter()
     activation_count = 0
+    activation_event = asyncio.Event()
+
+    start_time = time.perf_counter()
 
     def on_activation():
-        nonlocal activation_count
+        nonlocal activation_count, loop
         print_json(
             {
                 "keyword": str(model_path),
@@ -87,6 +91,7 @@ async def wake(args: argparse.Namespace, core: Voice2JsonCore) -> None:
             }
         )
         activation_count += 1
+        loop.call_soon_threadsafe(activation_event.set)
 
     runner = PreciseRunner(
         engine,
@@ -110,13 +115,15 @@ async def wake(args: argparse.Namespace, core: Voice2JsonCore) -> None:
                 engine_stream.write(chunk)
             else:
                 _LOGGER.debug(
-                    "Received empty audio chunk (waiting %s second(s)).",
+                    "Received empty audio chunk (waiting up to %s second(s)).",
                     args.exit_timeout,
                 )
 
-                if engine_stream and (args.exit_timeout > 0):
+                if engine_stream and (activation_count < 1) and (args.exit_timeout > 0):
                     # Wait for Precise engine to finish predictions
-                    await asyncio.sleep(args.exit_timeout)
+                    await asyncio.wait_for(
+                        activation_event.wait(), timeout=args.exit_timeout
+                    )
 
                 break
 

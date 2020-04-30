@@ -29,23 +29,24 @@ RUN cd ${APP_DIR} && \
 
 COPY scripts/install/ ${APP_DIR}/scripts/install/
 
-COPY etc/profile.defaults.yml ${BUILD_DIR}/etc/
-COPY etc/precise/ ${BUILD_DIR}/etc/precise/
-COPY site/ ${BUILD_DIR}/site/
-
 RUN export PIP_INSTALL_ARGS="-f /pipcache --no-index" && \
     cd ${APP_DIR} && \
     make && \
     make install-init && \
     make install-dependencies
 
+COPY etc/profile.defaults.yml ${APP_DIR}/etc/
+COPY etc/precise/ ${APP_DIR}/etc/precise/
+COPY site/ ${APP_DIR}/site/
+
 COPY README.md LICENSE VERSION ${APP_DIR}/
 COPY voice2json/ ${APP_DIR}/voice2json/
+
 RUN cd ${APP_DIR} && \
     make install-voice2json
 
 # Strip binaries and shared libraries
-RUN (find ${APP_VENV} -type f \( -name '*.so*' -or -type x \) -print0 | xargs -0 strip --strip-unneeded -- 2>/dev/null) || true
+RUN (find ${APP_VENV} -type f \( -name '*.so*' -or -executable \) -print0 | xargs -0 strip --strip-unneeded -- 2>/dev/null) || true
 
 # -----------------------------------------------------------------------------
 # Runtime Image
@@ -64,15 +65,7 @@ ENV APP_DIR=/usr/lib/voice2json
 ENV APP_VENV=${APP_DIR}/.venv
 
 # Copy Rhasspy virtual environment
-COPY --from=build ${APP_VENV} ${APP_VENV}
-COPY ${APP_VENV}/bin/voice2json /usr/bin/
-
-COPY README.md LICENSE VERSION ${APP_DIR}/
-
-# Copy source
-COPY voice2json/ ${APP_DIR}/voice2json/
-
-# Copy documentation
-COPY site/ ${APP_DIR}/site/
+COPY --from=build ${APP_VENV}/ ${APP_VENV}/
+RUN cp -a ${APP_VENV}/bin/voice2json /usr/bin/
 
 ENTRYPOINT ["bash", "/usr/lib/voice2json/.venv/bin/voice2json"]

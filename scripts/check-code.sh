@@ -11,13 +11,15 @@ if [[ -d "${venv}" ]]; then
     source "${venv}/bin/activate"
 fi
 
+code_dir="${src_dir}/voice2json"
+
 # -----------------------------------------------------------------------------
 
-flake8 "$@"
-pylint "$@"
-mypy "$@"
-black --check .
-isort --check-only "$@"
+flake8 "${code_dir}"/*.py
+pylint "${code_dir}"/*.py
+mypy "${code_dir}"/*.py
+black --check "${code_dir}"
+isort --check-only "${code_dir}"/*.py
 
 # -----------------------------------------------------------------------------
 

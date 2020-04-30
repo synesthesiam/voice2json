@@ -37,11 +37,13 @@ async def pronounce(args: argparse.Namespace, core: Voice2JsonCore) -> None:
         # Make sure profile has been trained
         assert core.check_trained(), "Not trained"
 
-        base_dictionary_path = core.ppath("training.base_dictionary", "base_dictionary.txt")
+        base_dictionary_path = core.ppath(
+            "training.base_dictionary", "base_dictionary.txt"
+        )
         dictionary_path = core.ppath("training.dictionary", "dictionary.txt")
         custom_words_path = core.ppath("training.custom-words-file", "custom_words.txt")
         g2p_path = core.ppath("training.g2p-model", "g2p.fst")
-        g2p_exists = g2p_path and g2p_path.exists()
+        g2p_exists = bool(g2p_path and g2p_path.exists())
 
         # Load dictionaries
         dictionary_paths = [dictionary_path, base_dictionary_path]
