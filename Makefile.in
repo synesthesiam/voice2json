@@ -98,6 +98,7 @@ KENLM_SRC_FILE = $(DOWNLOAD_DIR)/kenlm-20200308.tar.gz
 
 VENV_DIR = $(DESTDIR)$(prefix)
 VENV_PYTHON = $(VENV_DIR)/bin/python
+VIRTUALENV_FLAGS ?= --clear --copies
 
 ifeq ($(VIRTUALENV),yes)
   INSTALL_PYTHON=$(VENV_PYTHON)

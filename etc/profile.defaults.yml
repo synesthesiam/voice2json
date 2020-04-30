@@ -22,6 +22,9 @@ speech-to-text:
   # Text file with word examples for each phoneme in the pronunciation dictionary
   phoneme-examples-file: !env "${profile_dir}/phoneme_examples.txt"
 
+  # True if acoustic model uses phonemes for pronunciations
+  phoneme-pronunciations: true
+
   # Kaldi-specific settings
   kaldi:
     # Type of Kaldi model (either nnet3 or gmm)

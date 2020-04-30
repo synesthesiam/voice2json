@@ -22,40 +22,46 @@ async def pronounce(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     """Pronounce one or more words from a dictionary or by guessing."""
     import rhasspynlu
 
-    # Make sure profile has been trained
-    assert core.check_trained(), "Not trained"
-
-    base_dictionary_path = core.ppath("training.base_dictionary", "base_dictionary.txt")
-    dictionary_path = core.ppath("training.dictionary", "dictionary.txt")
-    custom_words_path = core.ppath("training.custom-words-file", "custom_words.txt")
-    g2p_path = core.ppath("training.g2p-model", "g2p.fst")
-    g2p_exists = g2p_path and g2p_path.exists()
+    # Load settings
+    phoneme_pronunciations = bool(
+        pydash.get(core.profile, "speech-to-text.phoneme-pronunciations", True)
+    )
 
     play_command = shlex.split(pydash.get(core.profile, "audio.play-command"))
-
     word_casing = pydash.get(core.profile, "training.word-casing", "ignore").lower()
+    g2p_exists = False
+
+    pronunciations: rhasspynlu.g2p.PronunciationsType = {}
+
+    if phoneme_pronunciations:
+        # Make sure profile has been trained
+        assert core.check_trained(), "Not trained"
+
+        base_dictionary_path = core.ppath("training.base_dictionary", "base_dictionary.txt")
+        dictionary_path = core.ppath("training.dictionary", "dictionary.txt")
+        custom_words_path = core.ppath("training.custom-words-file", "custom_words.txt")
+        g2p_path = core.ppath("training.g2p-model", "g2p.fst")
+        g2p_exists = g2p_path and g2p_path.exists()
+
+        # Load dictionaries
+        dictionary_paths = [dictionary_path, base_dictionary_path]
+
+        if custom_words_path and custom_words_path.exists():
+            dictionary_paths.insert(0, custom_words_path)
+
+        for dict_path in dictionary_paths:
+            if dict_path and dict_path.exists():
+                _LOGGER.debug("Loading pronunciation dictionary from %s", dict_path)
+                with open(dict_path, "r") as dict_file:
+                    pronunciations = rhasspynlu.g2p.read_pronunciations(
+                        dict_file, pronunciations
+                    )
 
     # True if audio will go to stdout.
     # In this case, printing will go to stderr.
     wav_stdout = args.wav_sink == "-"
 
     print_file = sys.stderr if wav_stdout else sys.stdout
-
-    # Load dictionaries
-    dictionary_paths = [dictionary_path, base_dictionary_path]
-
-    if custom_words_path and custom_words_path.exists():
-        dictionary_paths.insert(0, custom_words_path)
-
-    pronunciations: rhasspynlu.g2p.PronunciationsType = {}
-
-    for dict_path in dictionary_paths:
-        if dict_path and dict_path.exists():
-            _LOGGER.debug("Loading pronunciation dictionary from %s", dict_path)
-            with open(dict_path, "r") as dict_file:
-                pronunciations = rhasspynlu.g2p.read_pronunciations(
-                    dict_file, pronunciations
-                )
 
     # Load text to speech system
     marytts_voice = pydash.get(core.profile, "text-to-speech.marytts.voice")
@@ -95,7 +101,10 @@ async def pronounce(args: argparse.Namespace, core: Voice2JsonCore) -> None:
                 # Pronunciation provided
                 dict_phonemes.append(word_parts[1:])
 
-            if word in pronunciations:
+            if not phoneme_pronunciations:
+                # Use word itself if acoustic model does not use phonemes
+                dict_phonemes.append(word)
+            elif word in pronunciations:
                 # Use pronunciations from dictionary
                 dict_phonemes.extend(phonemes for phonemes in pronunciations[word])
             elif g2p_exists:
