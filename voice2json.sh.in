@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-srcdir="@abs_srcdir@"
 prefix="@prefix@"
-export voice2json_dir="${srcdir}"
+virtualenv="@VIRTUALENV@"
+export voice2json_dir="${prefix}/share/voice2json"
 
 : "${PYTHON=python3}"
 
-if [[ "@VIRTUALENV@" = 'yes' ]]; then
+if [[ "${virtualenv}" = 'yes' ]]; then
     # Use virtual environment
     source "${prefix}/bin/activate"
     PYTHON="${prefix}/bin/python"
@@ -15,5 +15,4 @@ export LD_LIBRARY_PATH="${prefix}/lib:${LD_LIBRARY_PATH}"
 export PATH="${prefix}/bin:${PATH}"
 export KALDI_DIR="${prefix}/lib/kaldi"
 
-export PYTHONPATH="${prefix}:${PYTHONPATH}"
 "${PYTHON}" -m voice2json "$@"

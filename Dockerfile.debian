@@ -1,7 +1,7 @@
 ARG TARGETPLATFORM
 ARG TARGETARCH
 ARG TARGETVARIANT
-FROM $TARGETARCH$TARGETVARIANT/voice2json-build
+FROM $TARGETARCH$TARGETVARIANT/voice2json-debian
 ARG TARGETPLATFORM
 ARG TARGETARCH
 ARG TARGETVARIANT
@@ -20,6 +20,14 @@ COPY debian/control.in /
 
 RUN sed -e "s/@DEBIAN_ARCH@/${DEBIANARCH}/" < /control.in > ${DEBIAN_DIR}/DEBIAN/control
 
+# Directory of prebuilt tools
+COPY download/ ${BUILD_DIR}/download/
+
+# Cache pip downloads
+COPY requirements.txt ${BUILD_DIR}/
+RUN pip3 download --dest /pipcache pip wheel setuptools
+RUN pip3 download --dest /pipcache -r ${BUILD_DIR}/requirements.txt
+
 COPY m4/ ${BUILD_DIR}/m4/
 COPY configure config.sub config.guess \
      install-sh missing aclocal.m4 \
@@ -28,13 +36,18 @@ COPY configure config.sub config.guess \
 RUN cd ${BUILD_DIR} && \
     ./configure --prefix=${APP_DIR}
 
-COPY download/ ${BUILD_DIR}/download/
 COPY scripts/install/ ${BUILD_DIR}/scripts/install/
 
-COPY README.md LICENSE VERSION requirements.txt ${BUILD_DIR}/
+COPY etc/profile.defaults.yml ${BUILD_DIR}/etc/
+COPY etc/precise/ ${BUILD_DIR}/etc/precise/
+COPY site/ ${BUILD_DIR}/site/
+
+COPY README.md LICENSE VERSION ${BUILD_DIR}/
 COPY voice2json/ ${BUILD_DIR}/voice2json/
 
-RUN cd ${BUILD_DIR} && \
+RUN export VIRTUALENV_FLAGS='--copies' && \
+    export PIP_INSTALL_ARGS='-f /pipcache --no-index' && \
+    cd ${BUILD_DIR} && \
     make && \
     make install && \
     mkdir -p ${DEBIAN_DIR}${APP_DIR} && \
@@ -43,9 +56,11 @@ RUN cd ${BUILD_DIR} && \
 RUN mkdir -p ${DEBIAN_DIR}/usr/bin/ && \
     cp ${DEBIAN_DIR}${APP_DIR}/bin/voice2json ${DEBIAN_DIR}/usr/bin/
 
-# Strip binaries
-RUN strip --strip-unneeded -- ${DEBIAN_DIR}${APP_DIR}/bin/* 2>/dev/null || true
-RUN (find ${DEBIAN_DIR}${APP_DIR}/lib -type f -name '*.so*' -print0 | xargs -0 strip --strip-unneeded -- 2>/dev/null) || true
+# Copy libpython to virtual env
+RUN cp -a /usr/local/lib/libpython3.7*.so* ${DEBIAN_DIR}${APP_DIR}/lib/
+
+# Strip binaries and shared libraries
+RUN (find ${APP_VENV} -type f \( -name '*.so*' -or -executable \) -print0 | xargs -0 strip --strip-unneeded -- 2>/dev/null) || true
 
 RUN cd ${BUILD_DIR} && \
     fakeroot dpkg --build ${PACKAGE_NAME}

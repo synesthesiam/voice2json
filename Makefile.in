@@ -13,7 +13,6 @@
 DISTFILES = PKG-INFO Makefile.in configure setup.py install-sh
 
 DESTDIR =
-VPATH = @srcdir@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
 PACKAGE_NAME = @PACKAGE_NAME@
 PACKAGE_STRING = @PACKAGE_STRING@
@@ -34,7 +33,7 @@ exec_prefix = @exec_prefix@
 includedir = @includedir@
 infodir = @infodir@
 prefix = @prefix@
-srcdir = @srcdir@
+srcdir = @abs_srcdir@
 datadir = @datadir@
 datarootdir = @datarootdir@
 pkgdatadir = $(datadir)/@PACKAGE_NAME@
@@ -110,32 +109,37 @@ endif # VIRTUALENV == yes
 
 all: download-init build-init opengrm phonetisaurus precise pocketsphinx kaldi julius deepspeech kenlm
 
-.PHONY: install-init install-opengrm install-phonetisaurus install-precise install-pocketsphinx install-kaldi install-julius install-deepspeech install-kenlm install-voice2json
+.PHONY: install-init install-dependencies install-voice2json
 install: installdirs \
          install-init \
-         install-opengrm \
-         install-phonetisaurus \
-         install-precise \
-         install-pocketsphinx \
-         install-kaldi \
-         install-julius \
-         install-deepspeech \
-         install-kenlm \
+         install-dependencies \
          install-voice2json
 
 install-init:
 ifeq ($(VIRTUALENV),yes)
 	"$(PYTHON)" -m venv $(VIRTUALENV_FLAGS) "$(VENV_DIR)" || "$(PYTHON)" -m venv "$(VENV_DIR)"
-	"$(VENV_PYTHON)" -m pip install --upgrade pip
-	"$(VENV_PYTHON)" -m pip install setuptools wheel
+	"$(VENV_PYTHON)" -m pip install $(PIP_INSTALL_ARGS) --upgrade pip
+	"$(VENV_PYTHON)" -m pip install $(PIP_INSTALL_ARGS) wheel
+	"$(VENV_PYTHON)" -m pip install $(PIP_INSTALL_ARGS) setuptools
 endif # VIRTUALENV == yes
 
+.PHONY: install-opengrm install-phonetisaurus install-precise install-pocketsphinx install-kaldi install-julius install-deepspeech install-kenlm
+install-dependencies: install-opengrm \
+                      install-phonetisaurus \
+                      install-precise \
+                      install-pocketsphinx \
+                      install-kaldi \
+                      install-julius \
+                      install-deepspeech \
+                      install-kenlm
+
 install-voice2json:
-	"$(INSTALL_PYTHON)" -m pip install "$(srcdir)"
+	"$(INSTALL_PYTHON)" -m pip install $(PIP_INSTALL_ARGS) "$(srcdir)"
 	chmod +x "${srcdir}/voice2json.sh"
 	install -D "${srcdir}/voice2json.sh" "$(DESTDIR)$(prefix)/bin/voice2json"
-	install -D "--target-directory=$(DESTDIR)$(prefix)/voice2json/etc" "${srcdir}/etc/profile.defaults.yml"
-	install -D "--target-directory=$(DESTDIR)$(prefix)/voice2json/etc/precise" "${srcdir}/etc/precise"/*
+	install -D "--target-directory=$(DESTDIR)$(prefix)/share/voice2json/etc" "${srcdir}/etc/profile.defaults.yml"
+	install -D "--target-directory=$(DESTDIR)$(prefix)/share/voice2json/etc/precise" "${srcdir}/etc/precise"/*
+	cp -fR "${srcdir}/site" "$(DESTDIR)$(prefix)/share/voice2json/"
 
 # -----------------------------------------------------------------------------
 

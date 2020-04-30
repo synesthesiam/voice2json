@@ -52,6 +52,7 @@ for target in "${targets[@]}"; do
         exit 1
     fi
 
+    echo "Building..."
     docker build \
            --build-arg TARGETPLATFORM=linux \
            --build-arg "TARGETARCH=${target_arch}" \
@@ -62,8 +63,11 @@ for target in "${targets[@]}"; do
            -f Dockerfile.debian \
            -t "${target}/voice2json-debian:${version}"
 
+    echo "Packaging..."
     package_name="voice2json_${version}_${debian_arch}"
     docker run --rm -i --entrypoint /bin/cat \
            "${target}/voice2json-debian:${version}" \
            "/build/${package_name}.deb" > "${dist_dir}/${package_name}.deb"
+
+    echo "Wrote ${dist_dir}/${package_name}.deb"
 done
