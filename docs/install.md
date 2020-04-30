@@ -21,7 +21,7 @@ After installation:
 | Category           | Name                                                            | amd64    | armv7    | arm64    |
 | --------           | ------                                                          | -------  | -------  | -------  |
 | **Wake Word**      | [Mycroft Precise](https://github.com/MycroftAI/mycroft-precise) | &#x2713; | &#x2713; | &#x2713; |
-| **Speech to Text** | [pocketsphinx](speech-to-text.md#pocketsphinx)                  | &#x2713; | &#x2713; | &#x2713; |
+| **Speech to Text** | [Pocketsphinx](https://github.com/cmusphinx/pocketsphinx)       | &#x2713; | &#x2713; | &#x2713; |
 |                    | [Kaldi](https://kaldi-asr.org)                                  | &#x2713; | &#x2713; | &#x2713; |
 |                    | [DeepSpeech](https://github.com/mozilla/DeepSpeech)             | &#x2713; | &#x2713; |          |
 
