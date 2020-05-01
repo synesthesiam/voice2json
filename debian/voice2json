@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 prefix="/usr/lib/voice2json"
+export voice2json_dir="${prefix}"
 
 : "${PYTHON=python3}"
 
@@ -7,4 +8,4 @@ export LD_LIBRARY_PATH="${prefix}/lib:${LD_LIBRARY_PATH}"
 export PATH="${prefix}/bin:${PATH}"
 export KALDI_DIR="${prefix}/lib/kaldi"
 
-"${prefix}/voice2json" "$@"
+"${prefix}/voice2json/voice2json" "$@"
