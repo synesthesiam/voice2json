@@ -19,14 +19,13 @@ version="$(cat "${src_dir}/VERSION")"
 # -----------------------------------------------------------------------------
 
 if [[ -z "$1" ]]; then
-    # platforms='linux/amd64,linux/arm/v7,linux/arm64'
-    platforms=('linux/amd64')
+    platforms=('linux/amd64' 'linux/arm/v7' 'linux/arm64')
 else
     platforms=("$@")
 fi
 
 function join { local IFS="$1"; shift; echo "$*"; }
-platform_str=$(join , ${platforms[@]})
+platform_str=$(join ',' ${platforms[@]})
 
 # ------------------------------------------------------------------------------
 

@@ -25,5 +25,4 @@ docker buildx build \
         "--platform=${platforms}" \
         --build-arg "DOCKER_REGISTRY=${DOCKER_REGISTRY}" \
         --tag "${DOCKER_REGISTRY}/synesthesiam/voice2json:${version}" \
-        --tag "${DOCKER_REGISTRY}/synesthesiam/voice2json" \
         --push
