@@ -47,13 +47,20 @@ async def test_examples(args: argparse.Namespace, core: Voice2JsonCore) -> None:
         _LOGGER.debug("Loading expected intents from %s", examples_dir)
         for wav_path in examples_dir.glob("*.wav"):
             json_path = wav_path.with_suffix(".json")
+            text_path = wav_path.with_suffix(".txt")
+
             if json_path.is_file():
+                # JSON file with expected intent and transcripion
                 with open(json_path, "r") as json_file:
                     expected[wav_path.name] = Recognition.from_dict(
                         json.load(json_file)
                     )
+            elif text_path.is_file():
+                # Text file with expected transcripion only
+                transcription = text_path.read_text().strip()
+                expected[wav_path.name] = Recognition(text=transcription)
             else:
-                _LOGGER.warning("No JSON file for %s", wav_path)
+                _LOGGER.warning("No JSON or text file for %s", wav_path)
 
     if not expected:
         _LOGGER.fatal("No expected examples provided")
@@ -92,22 +99,25 @@ async def test_examples(args: argparse.Namespace, core: Voice2JsonCore) -> None:
                     print(str(wav_path.absolute()), file=actual_wavs_file)
 
             # Transcribe in parallel
-            transcribe_command = [
-                "parallel",
-                "-k",
-                "--pipe",
-                "-n",
-                str(args.threads),
-                "voice2json",
-                "-p",
-                shlex.quote(str(core.profile_file)),
-                "transcribe-wav",
-                "--stdin-files",
-                "<",
-                str(actual_wavs_path),
-                ">",
-                str(actual_transcriptions_path),
-            ]
+            transcribe_args = ["--stdin-files"]
+            if args.open:
+                transcribe_args.append("--open")
+
+            transcribe_command = (
+                [
+                    "parallel",
+                    "-k",
+                    "--pipe",
+                    "-n",
+                    str(args.threads),
+                    "voice2json",
+                    "-p",
+                    shlex.quote(str(core.profile_file)),
+                    "transcribe-wav",
+                ]
+                + transcribe_args
+                + ["<", str(actual_wavs_path), ">", str(actual_transcriptions_path)]
+            )
 
             _LOGGER.debug(transcribe_command)
 
