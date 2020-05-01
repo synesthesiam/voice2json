@@ -7,7 +7,7 @@ from PyInstaller.utils.hooks import copy_metadata
 
 block_cipher = None
 
-prefix = Path("/home/hansenm/opt/voice2json/.venv")
+prefix = Path("/usr/lib/voice2json")
 
 site_dirs = site.getsitepackages()
 lib_dir = prefix / "lib"

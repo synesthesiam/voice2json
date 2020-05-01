@@ -1,55 +1,28 @@
-FROM pumpkin.lan:15555/voice2json-build as build
+ARG DOCKER_REGISTRY=docker.io
+FROM ${DOCKER_REGISTRY}/voice2json-run as build
 
-ENV LANG C.UTF-8
+RUN apt-get update && \
+    apt-get install --yes --no-install-recommends \
+        dpkg-dev
 
-ENV APP_DIR=/usr/lib/voice2json
-ENV APP_VENV=/usr/lib/voice2json/.venv
+COPY dist/ /dist/
+COPY VERSION /
 
-# Directory of prebuilt tools
-COPY download/ ${APP_DIR}/download/
+RUN export DEBIAN_ARCH="$(dpkg-architecture | grep DEB_BUILD_ARCH= | sed -e 's/[^=]\+=//')" && \
+    export VERSION="$(cat /VERSION)" && \
+    apt install --yes --no-install-recommends \
+        /dist/voice2json_${VERSION}_${DEBIAN_ARCH}.deb
 
-# Cache pip downloads
-COPY configure config.sub config.guess \
-     install-sh missing aclocal.m4 \
-     Makefile.in setup.py.in voice2json.sh.in ${APP_DIR}/
-COPY m4/ ${APP_DIR}/m4/
-
-RUN cd ${APP_DIR} && \
-    ./configure --prefix=${APP_VENV}
-
-COPY scripts/install/ ${APP_DIR}/scripts/install/
-COPY requirements.txt ${APP_DIR}/
-
-RUN cd ${APP_DIR} && \
-    make && \
-    make install-init && \
-    make install-dependencies
-
-COPY etc/profile.defaults.yml ${APP_DIR}/etc/
-COPY etc/precise/ ${APP_DIR}/etc/precise/
-COPY site/ ${APP_DIR}/site/
-
-COPY README.md LICENSE VERSION ${APP_DIR}/
-COPY voice2json/ ${APP_DIR}/voice2json/
-
-RUN cd ${APP_DIR} && \
-    make install-voice2json
-
-# Strip binaries and shared libraries
-RUN (find ${APP_VENV} -type f \( -name '*.so*' -or -executable \) -print0 | xargs -0 strip --strip-unneeded -- 2>/dev/null) || true
+# Sanity check
+RUN voice2json --version
 
 # -----------------------------------------------------------------------------
-# Runtime Image
-# -----------------------------------------------------------------------------
 
-FROM pumpkin.lan:15555/voice2json-run
+ARG DOCKER_REGISTRY=docker.io
+FROM ${DOCKER_REGISTRY}/voice2json-run
 
-ENV LANG C.UTF-8
-ENV APP_DIR=/usr/lib/voice2json
-ENV APP_VENV=${APP_DIR}/.venv
+ENV APP_PREFIX=/usr
+COPY --from=build ${APP_PREFIX}/lib/voice2json/ ${APP_PREFIX}/lib/voice2json/
+COPY --from=build ${APP_PREFIX}/bin/voice2json ${APP_PREFIX}/bin/
 
-# Copy Rhasspy virtual environment
-COPY --from=build ${APP_VENV}/ ${APP_VENV}/
-RUN cp -a ${APP_VENV}/bin/voice2json /usr/bin/
-
-ENTRYPOINT ["bash", "/usr/lib/voice2json/.venv/bin/voice2json"]
+ENTRYPOINT ["bash", "/usr/bin/voice2json"]

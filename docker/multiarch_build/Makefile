@@ -1,23 +1,11 @@
-.PHONY: amd64 armv6 armv7 arm64
+.PHONY: run debian
+DOCKER_REGISTRY ?= docker.io
+DOCKER_PLATFORMS ?= linux/amd64,linux/arm/v7,linux/arm64
 
-all: amd64 armv7 arm64
+all: run debian
 
-amd64:
-	docker build . -f Dockerfile.build.amd64 -t amd64/voice2json-build
-	docker build . -f Dockerfile.run.amd64 -t amd64/voice2json-run
-	docker build . -f Dockerfile.debian.amd64 -t amd64/voice2json-debian
+run:
+	docker buildx build . -f Dockerfile.run "--platform=$(DOCKER_PLATFORMS)" --tag "$(DOCKER_REGISTRY)/voice2json-run" --push
 
-armv6:
-	docker build . -f Dockerfile.build.armv6 -t armv6/voice2json-build
-	docker build . -f Dockerfile.run.armv6 -t armv6/voice2json-run
-	docker build . -f Dockerfile.debian.armv6 -t armv6/voice2json-debian
-
-armv7:
-	docker build . -f Dockerfile.build.armv7 -t armv7/voice2json-build
-	docker build . -f Dockerfile.run.armv7 -t armv7/voice2json-run
-	docker build . -f Dockerfile.debian.armv7 -t armv7/voice2json-debian
-
-arm64:
-	docker build . -f Dockerfile.build.arm64 -t arm64/voice2json-build
-	docker build . -f Dockerfile.run.arm64 -t arm64/voice2json-run
-	docker build . -f Dockerfile.debian.arm64 -t arm64/voice2json-debian
+debian:
+	docker buildx build . -f Dockerfile.debian "--platform=$(DOCKER_PLATFORMS)" --tag "$(DOCKER_REGISTRY)/voice2json-debian" --push

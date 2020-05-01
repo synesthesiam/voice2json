@@ -19,54 +19,46 @@ version="$(cat "${src_dir}/VERSION")"
 # -----------------------------------------------------------------------------
 
 if [[ -z "$1" ]]; then
-    targets=('amd64' 'armv7' 'arm64')
+    # platforms='linux/amd64,linux/arm/v7,linux/arm64'
+    platforms=('linux/amd64')
 else
-    targets=("$@")
+    platforms=("$@")
 fi
 
-declare -A target_to_debian
-target_to_debian=(['amd64']='amd64' ['armv6']='armel' ['armv7']='armhf' ['arm64']='aarch64')
+function join { local IFS="$1"; shift; echo "$*"; }
+platform_str=$(join , ${platforms[@]})
 
-declare -A target_to_arch
-target_to_arch=(['amd64']='amd64' ['armv6']='arm' ['armv7']='arm' ['arm64']='arm64')
+# ------------------------------------------------------------------------------
 
-declare -A target_to_variant
-target_to_variant=(['amd64']='' ['armv6']='v6' ['armv7']='v7' ['arm64']='')
+: "${DOCKER_REGISTRY=docker.io}"
 
-echo "${targets[@]}"
+echo "Building..."
+docker buildx build \
+       "${src_dir}" \
+       -f "${src_dir}/Dockerfile.debian" \
+       "--platform=${platform_str}" \
+       --build-arg "DOCKER_REGISTRY=${DOCKER_REGISTRY}" \
+       --tag "${DOCKER_REGISTRY}/voice2json-debian" \
+       --push
 
-for target in "${targets[@]}"; do
-    debian_arch="${target_to_debian[${target}]}"
-    target_arch="${target_to_arch[${target}]}"
-    target_variant="${target_to_variant[${target}]}"
+# ------------------------------------------------------------------------------
 
-    echo "target=${target}, debian=${debian_arch}, arch=${target_arch}, variant=${target_variant}"
+declare -A platform_to_debian
+platform_to_debian=(['linux/amd64']='amd64' ['linux/arm/v6']='armel' ['linux/arm/v7']='armhf' ['linux/arm64']='aarch64')
 
-    if [[ -z "${debian_arch}" ]]; then
-        echo "Invalid debian arch"
-        exit 1
-    fi
-
-    if [[ -z "${target_arch}" ]]; then
-        echo "Invalid target arch"
-        exit 1
-    fi
-
-    echo "Building..."
-    docker build \
-           --build-arg TARGETPLATFORM=linux \
-           --build-arg "TARGETARCH=${target_arch}" \
-           --build-arg "TARGETVARIANT=${target_variant}" \
-           --build-arg "VERSION=${version}" \
-           --build-arg "DEBIANARCH=${debian_arch}" \
-           "${src_dir}" \
-           -f Dockerfile.debian \
-           -t "${target}/voice2json-debian:${version}"
-
+for platform in "${platforms[@]}"; do
     echo "Packaging..."
+    debian_arch="${platform_to_debian["${platform}"]}"
     package_name="voice2json_${version}_${debian_arch}"
-    docker run --rm -i --entrypoint /bin/cat \
-           "${target}/voice2json-debian:${version}" \
+
+    docker pull \
+           --platform "${platform}" \
+           "${DOCKER_REGISTRY}/voice2json-debian"
+
+    docker run \
+           --platform "${platform}" \
+           --rm -i --entrypoint /bin/cat \
+           "${DOCKER_REGISTRY}/voice2json-debian" \
            "/build/${package_name}.deb" > "${dist_dir}/${package_name}.deb"
 
     echo "Wrote ${dist_dir}/${package_name}.deb"

@@ -7,7 +7,7 @@ RUN apt-get update && \
         python3 \
         libportaudio2 libatlas3-base libgfortran4 \
         ca-certificates \
-        perl sox alsa-utils espeak
+        perl sox alsa-utils espeak jq
 
 FROM ubuntu-base as base-amd64
 

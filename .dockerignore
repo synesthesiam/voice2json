@@ -12,6 +12,7 @@
 
 !etc/
 !download/
+!dist/
 !requirements.txt
 !scripts/
 !voice2json/*.py
@@ -20,4 +21,8 @@
 !LICENSE
 !site
 
+!debian/sox
 !debian/control.in
+!debian/voice2json
+!voice2json.spec
+!__main__.py
