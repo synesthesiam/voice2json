@@ -1,0 +1,47 @@
+---
+default:
+  acoustic_model/feat.params:
+    bytes: 112
+    sha256: 44ec61d22acd9e9ba8f49fee48800a06da5139d92d3491a35d0660d8a4349838
+  acoustic_model/mdef:
+    bytes: 4927793
+    sha256: 8d394659b7db658600d25f2d2be812eaf66c14314483d1d733010c923d4c60bc
+  acoustic_model/means:
+    bytes: 395684
+    sha256: bb2b94f2f512c374405032e5ed1fd2ff84ad1231d0ca16d142187daab812aacf
+  acoustic_model/mixture_weights:
+    bytes: 10208
+    sha256: 09fe80fe6ef7648589aa35d9f25b9b69af1a4d8dc03e9b4c8afba6d21dbb46f5
+  acoustic_model/noisedict:
+    bytes: 17
+    sha256: d007e078a0e1ad3e0ae50bbe5cc066105bb2eb598b2ac6376f9adbd0f40105c8
+  acoustic_model/transition_matrices:
+    bytes: 1936
+    sha256: 90983fe382076eff86fac1df6663b30e7679f7a53df9b436ac8bbcc79517da88
+  acoustic_model/variances:
+    bytes: 395684
+    sha256: b51d277e8211918db6569f32841c780c763c7ea9c8b68f244753114026575966
+  base_dictionary.txt.gz:
+    bytes: 409151
+    sha256: 30005834fa6bcc55c90c292aac64757debc45c72d8db5a2d4aa5e805cf927af9
+  stop_words.txt:
+    bytes: 1267
+    sha256: 5f305fac1d830620eeb9b2a68a1b96bf26f65c2e9257d56c8413d6fb36ed6cac
+
+# Files needed to guess word pronunciations
+grapheme-to-phoneme:
+  g2p.fst.gz:
+    bytes: 5537250
+    sha256: 535c106132d9d1e00f17668be93002408d9c69a77d40ec32342d20abf156d90f
+
+# Files needed for open transcription (pre-built model)
+open-transcription:
+  base_language_model.txt.gz:
+    bytes: 1206006
+    sha256: 6d6aa2b38e075b01edf8160beea2d7c3d68add73c468362b18a25e58e6853a4a
+
+# Files needed for mixed language modeling (pre-built + custom)
+mixed-language-model:
+  base_language_model.fst.gz:
+    bytes: 1576373
+    sha256: 0d5060914b9ca3b535a6cc2623616d4756995558fa73912e7c6f22fe84aed74a

@@ -1,0 +1,65 @@
+---
+default:
+  "acoustic_model/feat.params":
+    bytes: 129
+    sha256: 9f4883ca1680270667565cec30a0b827081799617bb825ff6adace06f50c178f
+  "acoustic_model/feature_transform":
+    bytes: 5660
+    sha256: 05cd0ef213623137b6ac76d72922776c8a14f252e032c4a3f331d41760ef30cc
+  "acoustic_model/mdef":
+    bytes: 6992233
+    sha256: a100d7401e8d59ed597ea6083e0acca77e41637b7db6db66f43a0799a2eba840
+  "acoustic_model/means":
+    bytes: 23675972
+    sha256: 10c8a3c1b0718bc786f4c82ba1824b22cd9cdc7ffb0589559c08c0189884f0f1
+  "acoustic_model/mixture_weights":
+    bytes: 657728
+    sha256: a756459b78bfaf85ad59215c77caaf03f9e58e91956975e33de7b8179d551c1f
+  "acoustic_model/noisedict":
+    bytes: 113
+    sha256: 394633701a17db97a512838a79de395020fc571e0537b0498b2179f727642a48
+  "acoustic_model/transition_matrices":
+    bytes: 2272
+    sha256: 020e3a8998d12db0d02b620aed95ee1534676fd8e50afaad29d5b432f1e6f893
+  "acoustic_model/variances":
+    bytes: 23675972
+    sha256: 66bc86ddf763cf27d6194247cbf4f2e912d78789ced246811e7f323f1e8280da
+  "base_dictionary.txt.gz":
+    bytes: 850548
+    sha256: 82d0b1b38e791fcdff67d2dd1c3f57dbf15d5e6338ba3d4fc13a5d90cbe9f10d
+  "stop_words.txt":
+    bytes: 530
+    sha256: c70d3a9220951c0d80c3bc83e751618a7384308162e52544f786b3406547d00b
+
+# Files needed to guess word pronunciations
+grapheme-to-phoneme:
+  "g2p.fst.gz":
+    bytes: 12796914
+    sha256: c2e5c173e22931d5bee2c3a42816a175a3af77d133ba0bd35f6e16e7bbd29768
+
+# Files needed for open transcription (pre-built model)
+open-transcription:
+  "base_language_model.txt.gz":
+    bytes: 33456672
+    sha256: c354a19b53b2e5bdef1736fb713c0ce632bcca675da967604fc8b140dcb616ee
+
+# Files needed for mixed language modeling (pre-built + custom)
+mixed-language-model:
+  "base_language_model.fst.gz":
+    bytes: 37267066
+    sha256: 8e016f27d7c55a4759a0b0e7031b96ee2cbc74a6b6f33138a15950281937e886
+
+# Files needed for text to speech
+text-to-speech:
+  "espeak_phonemes.txt":
+    bytes: 189
+    sha256: 43b1a6cc93f038ba92a5b40da10041350551bccf160eb900552756cd5990f2e4
+  "marytts_phonemes.txt":
+    bytes: 187
+    sha256: ddf040f81c9048ae7e2c193ef19bf38c4562ff3bc4d9612fc6ed47d0bf47dedf
+  "marytts/marytts-lang-en-5.2.jar":
+    bytes: 6908619
+    sha256: f46cc60abbf1b7444ac37a75e72f60f1aa566bf2448c458463f2f50369fcb3d1
+  "marytts/voice-cmu-slt-hsmm-5.2.jar":
+    bytes: 1242746
+    sha256: d012c43f109c60dba106741ce1c18a6caf4bb1476d7af8861ceaab4c655294cb

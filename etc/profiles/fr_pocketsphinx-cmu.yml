@@ -1,0 +1,56 @@
+---
+default:
+  acoustic_model/feat.params:
+    bytes: 112
+    sha256: 44ec61d22acd9e9ba8f49fee48800a06da5139d92d3491a35d0660d8a4349838
+  acoustic_model/feature_transform:
+    bytes: 5036
+    sha256: c20b2a4b36c6e232ea90d3c7788f1c076de2e2fb6c8c13a1e345a59b71fa3033
+  acoustic_model/mdef:
+    bytes: 4950081
+    sha256: 93bbae9f2c3ea724d7b200ee9dcbc404c0d6375cdf3b2950cdc6f5f81c4c0759
+  acoustic_model/means:
+    bytes: 2158660
+    sha256: a4999995c08218de512fc0580b567bc819ece0f859b15537e66386655ab1ccb8
+  acoustic_model/mixture_weights:
+    bytes: 67520
+    sha256: c59e1d4c1d4ccebacfd9d0e265b666ac0c796229a9fb8de6802be2bc0f1e6eda
+  acoustic_model/noisedict:
+    bytes: 27
+    sha256: af281d8c53f0a24ace7193e014dcb876e4e517f96b34791d5cd3e71fc69fc83b
+  acoustic_model/transition_matrices:
+    bytes: 1792
+    sha256: 23db4d08509bd0d13836933869b58a010772cc1bf753b2b22ad686ad6e9e9175
+  acoustic_model/variances:
+    bytes: 2158660
+    sha256: ca4ffa8f0f9f94fb9137bd74a660b5ab94c71aa33465759953b774a4a02f15ff
+  base_dictionary.txt.gz:
+    bytes: 623346
+    sha256: 73b2ec95b796e8dfb180b06a48b43b5b00b987c3cc0406d0c04c7a1686a9b8a0
+  stop_words.txt:
+    bytes: 805
+    sha256: 6ca60ffd4257c35cc3981d0e923881c3d8b85c8c0f6ef7a6697bd4ae97200fd8
+
+# Files needed to guess word pronunciations
+grapheme-to-phoneme:
+  g2p.fst.gz:
+    bytes: 7520942
+    sha256: 5f0669a9bb084c59356779960a22d643b532cc04690f8e458718fc1dfd7a0c00
+
+# Files needed for open transcription (pre-built model)
+open-transcription:
+  base_language_model.txt.gz:
+    bytes: 21453362
+    sha256: 5bad59d04c983afeea8a384851257c4f9fcf14c1b4a9a9d1949d882b64cf7fe5
+
+# Files needed for mixed language modeling (pre-built + custom)
+mixed-language-model:
+  base_language_model.fst.gz:
+    bytes: 27944649
+    sha256: 955e4e8973f054c1e857a3ae5ba528f739428a0b167682eac41cd1469cf31598
+
+# Files needed for text to speech
+text-to-speech:
+  espeak_phonemes.txt:
+    bytes: 180
+    sha256: 62e9d039be7bf60b1632ab33881cc565b87b8cb711274465a216db1a4417281b

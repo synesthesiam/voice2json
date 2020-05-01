@@ -13,6 +13,7 @@ import platform
 import sys
 import time
 import typing
+from collections import defaultdict
 from pathlib import Path
 
 import pydash
@@ -26,7 +27,7 @@ from .record import record_command, record_examples
 from .speak import speak
 from .test import test_examples
 from .transcribe import transcribe
-from .utils import env_constructor, recursive_update
+from .utils import env_constructor, recursive_update, print_json
 from .wake import wake
 
 _LOGGER = logging.getLogger("voice2json")
@@ -40,9 +41,10 @@ async def main():
     # Expand environment variables in string value
     yaml.SafeLoader.add_constructor("!env", env_constructor)
 
-    if (len(sys.argv) > 1) and (sys.argv[1] == "--version"):
-        # Patch argv to use print-version command
-        sys.argv = [sys.argv[0], "print-version"]
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "--version":
+            # Patch argv to use print-version command
+            sys.argv = [sys.argv[0], "print-version"]
 
     # Parse command-line arguments
     args = get_args()
@@ -54,14 +56,18 @@ async def main():
 
     _LOGGER.debug(args)
 
-    # Load profile and create core
-    core = get_core(args)
+    if args.command in ["print-downloads"]:
+        # Special-case commands
+        args.func(args)
+    else:
+        # Load profile and create core
+        core = get_core(args)
 
-    # Call sub-commmand
-    try:
-        await args.func(args, core)
-    finally:
-        await core.stop()
+        # Call sub-commmand
+        try:
+            await args.func(args, core)
+        finally:
+            await core.stop()
 
 
 # -----------------------------------------------------------------------------
@@ -105,6 +111,40 @@ def get_args() -> argparse.Namespace:
         "print-profile", help="Print profile JSON to stdout"
     )
     print_parser.set_defaults(func=print_profile)
+
+    # -------------
+    # print-downloads
+    # -------------
+    downloads_parser = sub_parsers.add_parser(
+        "print-downloads", help="Print links to download files for profile(s)"
+    )
+    downloads_parser.add_argument(
+        "--url-format",
+        default="https://github.com/synesthesiam/{profile}/raw/master/{file}",
+        help="Format string for URL (receives {profile} and {file})",
+    )
+    downloads_parser.add_argument(
+        "--no-grapheme-to-phoneme",
+        action="store_true",
+        help="Hide files for guessing word pronunciations",
+    )
+    downloads_parser.add_argument(
+        "--no-open-transcription",
+        action="store_true",
+        help="Hide files for open transcription (pre-built)",
+    )
+    downloads_parser.add_argument(
+        "--no-mixed-language-model",
+        action="store_true",
+        help="Hide files for mixed language modeling (pre-built + custom)",
+    )
+    downloads_parser.add_argument(
+        "--no-text-to-speech", action="store_true", help="Hide files for text to speech"
+    )
+    downloads_parser.add_argument(
+        "profile", nargs="*", default=[], help="Profile prefixes"
+    )
+    downloads_parser.set_defaults(func=print_downloads)
 
     # -------------
     # train-profile
@@ -443,7 +483,8 @@ def get_core(args: argparse.Namespace) -> Voice2JsonCore:
 
 async def print_version(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     """Print version."""
-    print(Path("VERSION").read_text().strip())
+    version_path = Path(os.environ.get("voice2json_dir", os.getcwd())) / "VERSION"
+    print(version_path.read_text().strip())
 
 
 # -----------------------------------------------------------------------------
@@ -452,6 +493,56 @@ async def print_version(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 async def print_profile(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     """Print all settings as JSON."""
     json.dump(core.profile, sys.stdout, indent=4)
+
+
+# -----------------------------------------------------------------------------
+
+
+def print_downloads(args: argparse.Namespace):
+    """Print links to files for profiles."""
+    downloads_dict = defaultdict(dict)
+    profiles_dir = Path("etc/profiles")
+
+    # Each YAML file is a profile name with required and optional files
+    for yaml_path in profiles_dir.glob("*.yml"):
+        profile_name = yaml_path.stem
+        if args.profile:
+            # Check prefix
+            has_prefix = False
+            for prefix in args.profile:
+                if profile_name.startswith(prefix):
+                    has_prefix = True
+                    break
+
+            if not has_prefix:
+                # Skip file
+                continue
+
+        # Load YAML
+        with open(yaml_path, "r") as yaml_file:
+            files_yaml = yaml.safe_load(yaml_file)
+
+        # Add files to downloads
+        for condition, files in files_yaml.items():
+            # Filter based on condition and arguments
+            if (
+                (args.no_grapheme_to_phoneme and condition == "grapheme-to-phoneme")
+                or (args.no_open_transcription and condition == "open-transcription")
+                or (
+                    args.no_mixed_language_model and condition == "mixed-language-model"
+                )
+                or (args.no_text_to_speech and condition == "text-to-speech")
+            ):
+                continue
+
+            for file_path, file_info in files.items():
+                # Add URL to file info
+                file_info["url"] = args.url_format.format(
+                    profile=profile_name, file=file_path
+                )
+                downloads_dict[profile_name][file_path] = file_info
+
+    print_json(downloads_dict)
 
 
 # -----------------------------------------------------------------------------

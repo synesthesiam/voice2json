@@ -27,7 +27,7 @@ done
 
 # -----------------------------------------------------------------------------
 
-# Create a temporary directory for extraction
+# Create a temporary directory for testing
 temp_dir="$(mktemp -d)"
 
 function cleanup {
