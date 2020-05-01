@@ -4,6 +4,9 @@ export voice2json_dir="${prefix}"
 
 : "${PYTHON=python3}"
 
+export OLD_LD_LIBRARY_PATH="${LD_LIBRARY_PATH}"
+export OLD_PATH="${PATH}"
+
 export LD_LIBRARY_PATH="${prefix}/lib:${LD_LIBRARY_PATH}"
 export PATH="${prefix}/bin:${PATH}"
 export KALDI_DIR="${prefix}/lib/kaldi"
