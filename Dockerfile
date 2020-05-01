@@ -1,10 +1,4 @@
-ARG TARGETPLATFORM
-ARG TARGETARCH
-ARG TARGETVARIANT
-FROM $TARGETARCH$TARGETVARIANT/voice2json-build as build
-ARG TARGETPLATFORM
-ARG TARGETARCH
-ARG TARGETVARIANT
+FROM pumpkin.lan:15555/voice2json-build as build
 
 ENV LANG C.UTF-8
 
@@ -15,10 +9,6 @@ ENV APP_VENV=/usr/lib/voice2json/.venv
 COPY download/ ${APP_DIR}/download/
 
 # Cache pip downloads
-COPY requirements.txt ${APP_DIR}/
-RUN pip3 download --dest /pipcache pip wheel setuptools
-RUN pip3 download --dest /pipcache -r ${APP_DIR}/requirements.txt
-
 COPY configure config.sub config.guess \
      install-sh missing aclocal.m4 \
      Makefile.in setup.py.in voice2json.sh.in ${APP_DIR}/
@@ -28,9 +18,9 @@ RUN cd ${APP_DIR} && \
     ./configure --prefix=${APP_VENV}
 
 COPY scripts/install/ ${APP_DIR}/scripts/install/
+COPY requirements.txt ${APP_DIR}/
 
-RUN export PIP_INSTALL_ARGS="-f /pipcache --no-index" && \
-    cd ${APP_DIR} && \
+RUN cd ${APP_DIR} && \
     make && \
     make install-init && \
     make install-dependencies
@@ -52,13 +42,7 @@ RUN (find ${APP_VENV} -type f \( -name '*.so*' -or -executable \) -print0 | xarg
 # Runtime Image
 # -----------------------------------------------------------------------------
 
-ARG TARGETPLATFORM
-ARG TARGETARCH
-ARG TARGETVARIANT
-FROM $TARGETARCH$TARGETVARIANT/voice2json-run
-ARG TARGETPLATFORM
-ARG TARGETARCH
-ARG TARGETVARIANT
+FROM pumpkin.lan:15555/voice2json-run
 
 ENV LANG C.UTF-8
 ENV APP_DIR=/usr/lib/voice2json
