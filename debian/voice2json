@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 prefix="/usr/lib/voice2json"
-export voice2json_dir="${prefix}"
+export voice2json_dir="${prefix}/share/voice2json"
 
 : "${PYTHON=python3}"
 
