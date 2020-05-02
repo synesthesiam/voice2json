@@ -48,15 +48,12 @@ RUN . /.vars && \
 # Directory of prebuilt tools
 COPY download/ ${BUILD_DIR}/download/
 
-# Cache pip downloads
-COPY requirements.txt ${BUILD_DIR}/
-RUN pip3 download --dest /pipcache pip wheel setuptools
-RUN pip3 download --dest /pipcache -r ${BUILD_DIR}/requirements.txt
-
 COPY m4/ ${BUILD_DIR}/m4/
 COPY configure config.sub config.guess \
      install-sh missing aclocal.m4 \
-     Makefile.in setup.py.in voice2json.sh.in ${BUILD_DIR}/
+     Makefile.in setup.py.in voice2json.sh.in \
+     requirements.txt \
+     ${BUILD_DIR}/
 
 RUN cd ${BUILD_DIR} && \
     ./configure --prefix=${APP_DIR}
@@ -70,9 +67,7 @@ COPY site/ ${BUILD_DIR}/site/
 COPY README.md LICENSE ${BUILD_DIR}/
 COPY voice2json/ ${BUILD_DIR}/voice2json/
 
-RUN export VIRTUALENV_FLAGS='--copies' && \
-    export PIP_INSTALL_ARGS='-f /pipcache --no-index' && \
-    cd ${BUILD_DIR} && \
+RUN cd ${BUILD_DIR} && \
     make && \
     make install
 

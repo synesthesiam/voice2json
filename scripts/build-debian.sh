@@ -43,7 +43,7 @@ docker buildx build \
 # ------------------------------------------------------------------------------
 
 declare -A platform_to_debian
-platform_to_debian=(['linux/amd64']='amd64' ['linux/arm/v6']='armel' ['linux/arm/v7']='armhf' ['linux/arm64']='aarch64')
+platform_to_debian=(['linux/amd64']='amd64' ['linux/arm/v6']='armel' ['linux/arm/v7']='armhf' ['linux/arm64']='arm64')
 
 for platform in "${platforms[@]}"; do
     echo "Packaging..."
