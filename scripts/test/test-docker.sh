@@ -9,11 +9,13 @@ version="$(cat "${src_dir}/VERSION")"
 
 # -----------------------------------------------------------------------------
 
-if [[ -z "$1" ]]; then
-    targets=('amd64' 'armv7' 'arm64')
-else
-    targets=("$@")
-fi
+# if [[ -z "$1" ]]; then
+#     targets=('amd64' 'armv7' 'arm64')
+# else
+#     targets=("$@")
+# fi
+
+platforms=('linux/amd64' 'linux/arm/v7' 'linux/arm64')
 
 # -----------------------------------------------------------------------------
 
@@ -28,34 +30,28 @@ trap cleanup EXIT
 
 # -----------------------------------------------------------------------------
 
-declare -A target_to_arch
-target_to_arch=(['amd64']='amd64' ['armv6']='arm' ['armv7']='arm' ['arm64']='arm64')
+declare -A platform_to_target
+platform_to_target=(['linux/amd64']='amd64' ['linux/arm/v6']='armv6' ['linux/arm/v7']='armv7' ['linux/arm64']='arm64')
 
-declare -A target_to_variant
-target_to_variant=(['amd64']='' ['armv6']='v6' ['armv7']='v7' ['arm64']='')
+for platform in "${platforms[@]}"; do
+    echo "${platform}"
+    target="${platform_to_target["${platform}"]}"
+    if [[ -z "${target}" ]]; then
+        echo "ERROR: ${platform}"
+        exit 1
+    fi
 
-echo "${targets[@]}"
+    docker pull  \
+           --platform "${platform}" \
+           "${DOCKER_REGISTRY}/synesthesiam/voice2json:${version}"
 
-for target in "${targets[@]}"; do
     target_dir="${temp_dir}/${target}"
     rm -rf "${target_dir}"
     mkdir -p "${target_dir}"
 
-    target_platform='linux'
-    target_arch="${target_to_arch[${target}]}"
-    target_variant="${target_to_variant[${target}]}"
-
-    if [[ -z "${target_variant}" ]]; then
-        platform="${target_platform}/${target_arch}"
-    else
-        platform="${target_platform}/${target_arch}/${target_variant}"
-    fi
-
-    echo "target=${target}, arch=${target_arch}, variant=${target_variant}"
-
     # Create voice2json script for testing
     echo '#!/usr/bin/env bash
-docker run \
+docker run -i \
         --platform "${voice2json_platform}" \
         -v "${HOME}:${HOME}" \
         -e "HOME=${HOME}" \
