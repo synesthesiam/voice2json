@@ -24,7 +24,7 @@ _LOGGER = logging.getLogger("voice2json.record")
 
 async def record_command(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     """Segment audio by speech and silence."""
-    import rhasspysilence
+    from rhasspysilence import VoiceCommand
 
     # Make sure profile has been trained
     assert core.check_trained(), "Not trained"
@@ -32,42 +32,46 @@ async def record_command(args: argparse.Namespace, core: Voice2JsonCore) -> None
     # Expecting raw 16-bit, 16Khz mono audio
     audio_source = await core.make_audio_source(args.audio_source)
 
-    # JSON events are not printed by default
-    json_file = None
-    wav_sink = sys.stdout.buffer
-
-    if (args.wav_sink is not None) and (args.wav_sink != "-"):
-        wav_sink = open(args.wav_sink, "wb")
-
-        # Print JSON to stdout
-        json_file = sys.stdout
-
-    # Record command
     try:
+        # JSON events are not printed by default
+        json_file = None
+        wav_sink = sys.stdout.buffer
+
+        if args.wav_sink and (args.wav_sink != "-"):
+            wav_sink = open(args.wav_sink, "wb")
+
+            # Print JSON to stdout
+            json_file = sys.stdout
+
+        if args.event_sink:
+            if args.event_sink == "-":
+                # Print JSON to stdout
+                json_file = sys.stdout
+            else:
+                # Print to file
+                json_file = open(args.event_sink, "w")
+
+        # Record command
         recorder = core.get_command_recorder()
         recorder.start()
 
-        result: typing.Optional[rhasspysilence.VoiceCommand] = None
+        voice_command: typing.Optional[VoiceCommand] = None
 
         # Read raw audio chunks
         chunk = await audio_source.read(args.chunk_size)
         while chunk:
-            result = recorder.process_chunk(chunk)
-            if result:
+            voice_command = recorder.process_chunk(chunk)
+
+            if voice_command:
                 # Voice command finished
                 break
 
             chunk = await audio_source.read(args.chunk_size)
 
-        try:
-            await audio_source.close()
-        except Exception:
-            _LOGGER.exception("close audio")
-
         # Output WAV data
-        if result:
-            result.audio_data = result.audio_data or bytes()
-            wav_bytes = core.buffer_to_wav(result.audio_data)
+        if voice_command and not args.live:
+            voice_command.audio_data = voice_command.audio_data or bytes()
+            wav_bytes = core.buffer_to_wav(voice_command.audio_data)
 
             if args.output_size:
                 # Write size first on a separate line
@@ -77,10 +81,13 @@ async def record_command(args: argparse.Namespace, core: Voice2JsonCore) -> None
             wav_sink.write(wav_bytes)
 
             if json_file:
-                for event in result.events:
+                for event in voice_command.events:
                     print_json(dataclasses.asdict(event), out_file=json_file)
-    except KeyboardInterrupt:
-        pass  # expected
+    finally:
+        try:
+            await audio_source.close()
+        except Exception:
+            pass
 
 
 # -----------------------------------------------------------------------------
@@ -204,9 +211,6 @@ async def record_examples(args: argparse.Namespace, core: Voice2JsonCore) -> Non
             # Response
             print("Wrote", wav_path)
             print("")
-
-    except KeyboardInterrupt:
-        pass
     finally:
         record_task.cancel()
 

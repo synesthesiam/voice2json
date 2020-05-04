@@ -3,7 +3,7 @@
 # Command-Line Tools
 
 ```bash
-voice2json [--debug] [--profile <PROFILE_DIR>] <COMMAND> [<COMMAND_ARG>...]
+$ voice2json [--debug] [--profile <PROFILE_DIR>] <COMMAND> [<COMMAND_ARG>...]
 ```
 
 The [profile](profiles.md) directory can be given with `--profile`. If not provided, a profile is expected in `$XDG_CONFIG_HOME/voice2json`, which is typically `$HOME/.config/voice2json`.
@@ -13,6 +13,7 @@ The following commands are available:
 * [print-profile](#print-profile) - Print profile settings
 * [train-profile](#train-profile) - Generate speech/intent artifacts
 * [transcribe-wav](#transcribe-wav) - Transcribe WAV file to text
+* [transcribe-stream](#transcribe-stream) - Transcribe live audio stream to text
 * [recognize-intent](#recognize-intent) - Recognize intent from JSON or text
 * [wait-wake](#wait-wake) - Listen to live audio stream for wake word
 * [record-command](#record-command) - Record voice command from live audio stream
@@ -31,7 +32,7 @@ The following commands are available:
 Prints all profile settings as JSON to the console. This is a combination of the [default settings](profiles.md#default-settings) and what's provided in [profile.yml](profiles.md#profileyml).
 
 ```bash
-voice2json print-profile | jq .
+$ voice2json print-profile | jq .
 ```
 
 Output:
@@ -75,7 +76,7 @@ Output:
 Generates all necessary artifacts in a [profile](profiles.md) for speech/intent recognition.
 
 ```bash
-voice2json train-profile
+$ voice2json train-profile
 ```
 
 Output:
@@ -122,7 +123,7 @@ time voice2json train-profile
 ...
 real	0m0.688s
 
-voice2json transcribe-wav \
+$ voice2json transcribe-wav \
     turn_on_living_room_lamp.wav | \
     jq -r .text
 
@@ -132,7 +133,7 @@ turn on the living room lamp
 Now let's do speech to text on a variation of the command, a WAV file with the speech "would you please turn on the living room lamp":
 
 ```bash
-voice2json transcribe-wav \
+$ voice2json transcribe-wav \
     would_you_please_turn_on_living_room_lamp.wav | \
     jq -r .text
     
@@ -150,13 +151,13 @@ real	1m3.221s
 Note that training took **significantly** longer (a full minute!) because of the size of the base langauge model. Now, let's test our two WAV files again:
 
 ```bash
-voice2json transcribe-wav \
+$ voice2json transcribe-wav \
     turn_on_living_room_lamp.wav | \
     jq -r .text
     
 turn on the living room lamp
 
-voice2json transcribe-wav \
+$ voice2json transcribe-wav \
     would_you_please_turn_on_living_room_lamp.wav | \
     jq -r .text
     
@@ -172,7 +173,7 @@ This isn't the end of the story for open-ended speech recognition in `voice2json
 In our `ChangeLightState` example above, we're fortunate that everything still works as expected:
 
 ```bash
-voice2json recognize-intent -t \
+$ voice2json recognize-intent -t \
     'would you please turn on the living room lamp' | \
     jq .
 ```
@@ -229,7 +230,7 @@ Transcribes WAV file(s) or raw audio data. Outputs a single line of [jsonl](http
 Reads a WAV file from standard in and transcribes it.
 
 ```bash
-voice2json transcribe-wav < turn-on-the-light.wav
+$ voice2json transcribe-wav < turn-on-the-light.wav
 ```
 
 Output:
@@ -246,7 +247,7 @@ Output:
 Reads one or more WAV files and transcribes each of them in turn.
 
 ```bash
-voice2json transcribe-wav \
+$ voice2json transcribe-wav \
       turn-on-the-light.wav \
       what-time-is-it.wav
 ```
@@ -264,7 +265,7 @@ Output:
 Reads one or more WAV file paths from standard in and transcribes each of them in turn. If arguments are also provided, they will be processed **first**.
 
 ```bash
-voice2json transcribe-wav --stdin-files
+$ voice2json transcribe-wav --stdin-files
 ...
 turn-on-the-light.wav
 what-time-is-it.wav
@@ -287,6 +288,41 @@ If you want the best of both worlds (transcriptions focused on a particular doma
 
 ---
 
+## transcribe-stream
+
+Transcribes voice commands from a live audio stream, automatically detecting speech and silence. Outputs a single line of [jsonl](http://jsonlines.org) for each transcription ([format description](formats.md#transcriptions)).
+
+```bash
+$ voice2json transcribe-stream
+
+{"text": "turn off the living room lamp", "likelihood": 1, "transcribe_seconds": 2.333360348999122, "wav_seconds": 2.407, "tokens": null, "timeout": false}
+```
+
+Like [`transcribe-wav`](#transcribe-wav), `transcribe-stream` accepts a `--open` argument for [open transcription](#open-transcription).
+
+### Stream Events
+
+If you need to react to the voice command starting and stopping, use `--event-sink` to direct events to file ([same events as `record-command`](#redirecting-wav-output)). With [process substition](https://www.gnu.org/software/bash/manual/html_node/Process-Substitution.html), you can easily publish these events to MQTT:
+
+```bash
+$ voice2json transcribe-stream \
+    --event-sink >(mosquitto_pub -l -t stream/events/topic)
+```
+
+The `-l` argument to `mosquitto_pub` will cause it to read lines from standard in and send them as separate messages. Catching these events in [Node-RED](https://nodered.org/) is straightforward with an MQTT input node subscribed to the same topic.
+
+### Saving Voice Commands
+
+Using the `--wav-sink` argument, you can save voice commands to WAV file(s) as they're spoken. If the argument to `--wav-sink` is an existing directory, each voice command will be written to that directory with a [name formatted](https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior) according to `--wav-filename` (`.wav` is automatically appended):
+
+```bash
+$ voice2json transcribe-stream \
+    --wav-sink /path/to/existing/directory/ \
+    --wav-filename '%Y%m%d-%H%M%S'
+```
+
+---
+
 ## recognize-intent
 
 Recognizes an intent and slots from JSON or plaintext. Outputs a single line of [jsonl](http://jsonlines.org) for each input line ([format description](formats.md#intents)).
@@ -298,7 +334,7 @@ Inputs can be provided either as arguments **or** lines via standard in.
 Input is a single line of [jsonl](http://jsonlines.org) per sentence, minimally with a `text` property (like the output of [transcribe-wav](#transcribe-wav)).
 
 ```bash
-voice2json recognize-intent '{ "text": "turn on the light" }'
+$ voice2json recognize-intent '{ "text": "turn on the light" }'
 ```
 
 Output:
@@ -312,7 +348,7 @@ Output:
 Input is a single line of plaintext per sentence.
 
 ```bash
-voice2json recognize-intent --text-input 'turn on the light' 'turn off the light'
+$ voice2json recognize-intent --text-input 'turn on the light' 'turn off the light'
 ```
 
 Output:
@@ -327,10 +363,22 @@ Output:
 For most profile languages, `voice2json` supports replacing numbers in the input text (e.g., "75") with words ("seventy five"). You can enable this sentences given to `recognize-intent` by adding the `--replace-numbers` argument:
 
 ```bash
-voice2json recognize-intent --replace-numbers --text-input 'set the temperature to 75'
+$ voice2json recognize-intent --replace-numbers --text-input 'set the temperature to 75'
 ```
 
 For English, this will perform intent recognition on the sentence "set the temperature to seventy five". See the [number replacement](sentences.md#number-replacement) section in the template language documentation for how to do this automatically in your `sentences.ini`.
+
+### Intent Filter
+
+You can filter which intents are eligible for recognition using `--intent-filter`:
+
+```bash
+$ voice2json recognize-intent \
+    --text 'some text to recognize' \
+    --intent-filter 'Intent1' 'Intent2'
+```
+
+Only the intent names provided will be checked. Intent names are case sensitive, and should match your `sentences.ini` file.
 
 ---
 
@@ -339,7 +387,7 @@ For English, this will perform intent recognition on the sentence "set the tempe
 Listens to a live audio stream for a wake word using [Mycroft Precise](https://github.com/MycroftAI/mycroft-precise) (default phrase is "hey mycroft"). Outputs a single line of [jsonl](http://jsonlines.org) each time the wake word is detected.
 
 ```bash
-voice2json wait-wake
+$ voice2json wait-wake
 ```
 
 Once the wake word is spoken, `voice2json` will output:
@@ -370,7 +418,7 @@ By default, the [wait-wake](#wait-wake), [record-command](#record-command), and 
 Records from a live audio stream until a voice command has been spoken. Outputs WAV audio data containing just the voice command.
 
 ```bash
-voice2json record-command > my-voice-command.wav
+$ voice2json record-command > my-voice-command.wav
 ```
 
 `record-command` uses the [webrtcvad](https://github.com/wiseman/py-webrtcvad) library to detect live speech. Once speech has been detected, `voice2json` begins recording until there is silence. If speech goes on too long, a timeout is reached and recording stops. The [profile settings](profiles.md) under the `voice-command` section control exactly how many seconds of speech and silence are needed to segment live audio.
@@ -382,9 +430,9 @@ See [audio sources](#audio-sources) for a description of how `record-command` ge
 The `--wav-sink` argument lets you change where `record-command`, `pronounce-word`, and `speak-sentence` write their output WAV data. When this is set to something other than "-" (standard out), `record-command` will output lines of JSON to standard out that describe events in the live speech.
 
 ```bash
-voice2json record-command \
-      --audio-source <(sox turn-on-the-living-room-lamp.wav -t raw -) \
-      --wav-sink /dev/null
+$ voice2json record-command \
+    --audio-source <(sox turn-on-the-living-room-lamp.wav -t raw -) \
+    --wav-sink /dev/null
 ```
 
 will output something like:
@@ -411,7 +459,7 @@ Words can be provided either as arguments **or** lines via standard in. You can 
 Assuming you're using the [en-us_pocketsphinx-cmu](https://github.com/synesthesiam/en-us_pocketsphinx-cmu) profile:
 
 ```bash
-voice2json pronounce-word --espeak hello
+$ voice2json pronounce-word hello
 ```
 
 Output:
@@ -431,7 +479,7 @@ If you leave off the `--espeak` argument, make sure you have a [MaryTTS](http://
 The same `pronounce-word` command works for words that are hopefully **not** in the U.S. English dictionary:
 
 ```bash
-voice2json pronounce-word --espeak raxacoricofallipatorius
+$ voice2json pronounce-word raxacoricofallipatorius
 ```
 
 Output:
@@ -449,7 +497,7 @@ This produced 5 pronunciation guesses using [phonetisaurus](https://github.com/A
 If you want to hear a specific pronunciation, just provide it with the word:
 
 ```bash
-voice2json pronounce-word --espeak 'moogle M UW G AH L' 
+$ voice2json pronounce-word 'moogle M UW G AH L' 
 ```
 
 You can save these pronunciations in the `custom_words.txt` file in your [profile](profiles.md). Make sure to [re-train](#train-profile).
@@ -458,15 +506,15 @@ You can save these pronunciations in the `custom_words.txt` file in your [profil
 
 ## speak-sentence
 
-Speaks a full sentence using either [eSpeak](https://github.com/espeak-ng/espeak-ng) or [MaryTTS](http://mary.dfki.de/) if `text-to-speech.marytts.voice` is set in your [profile](profiles.md).
+Speaks a full sentence using either [eSpeak](https://github.com/espeak-ng/espeak-ng) or [MaryTTS](http://mary.dfki.de/) (make sure to set `text-to-speech.marytts.voice` in your [profile](profiles.md)).
 
 Sentences can be provided either as arguments **or** lines via standard in. You can also [save output to a WAV file](#redirecting-wav-output).
 
 ```bash
-voice2json speak-sentence --espeak 'hello world!'
+$ voice2json speak-sentence 'hello world!'
 ```
 
-If you leave off the `--espeak` argument, make sure you have a [MaryTTS](http://mary.dfki.de/) server running locally on port 59125.
+If you pass a `--marytts` argument, `voice2json` will try to contact a [MaryTTS](http://mary.dfki.de/) server running locally on port 59125. This can be changed using the `marytts.process-url` in your [profile](profiles.md).
 
 ### MaryTTS User Dictionaries
 
@@ -479,7 +527,7 @@ If you've added custom words to your profile (in `custom_words.txt`), `voice2jso
 Generates random intents and slots from your [profile](profiles.md). Outputs a single line of [jsonl](http://jsonlines.org) for each intent line ([format description](formats.md#intents)).
 
 ```bash
-voice2json generate-examples --number 1 | jq .
+$ voice2json generate-examples --number 1 | jq .
 ```
 
 Output (formatted with [jq](https://stedolan.github.io/jq/)):
@@ -520,7 +568,7 @@ If the `--iob` argument is given, `generate-examples` will output examples in an
 3. The intent name
 
 ```bash
-voice2json generate-examples --number 1 --iob
+$ voice2json generate-examples --number 1 --iob
 ```
 
 Output:
@@ -541,7 +589,7 @@ See the [Rasa NLU bot recipe](recipes.md#train-a-rasa nlu-bot) for an example of
 Generates random example sentences from [sentences.ini](sentences.md) and prompts you to record them. Saves WAV files, transcriptions, and expected intents (as [JSON events](formats.md#intents)) to a directory.
 
 ```bash
-voice2json record-examples --directory /path/to/examples/
+$ voice2json record-examples --directory /path/to/examples/
 ```
 
 You will be prompted with a random sentence. Once you press ENTER, `voice2json` will [begin recording](#audio-sources). When you press ENTER again, the recorded audio will be saved to a WAV file in the provided `--directory` (default is the current directory). When you're finished recording examples, press CTRL+C to exit.
@@ -555,7 +603,7 @@ A directory of recorded examples can be used for [performance testing](#test-exa
 Transcribes and performs intent recognition on all WAV files in a directory (usually recorded with [record-examples](#record-examples)). Outputs a JSON report with speech/intent recognition details and accuracy statistics (including [word error rate](https://en.wikipedia.org/wiki/Word_error_rate)).
 
 ```bash
-voice2json test-examples --directory /path/to/examples/
+$ voice2json test-examples --directory /path/to/examples/
 ```
 
 outputs something like:
@@ -630,7 +678,7 @@ The `expected` section is just the intent or transcription recorded in the examp
 Runs a local HTTP server with this documentation. The default port is 8000, which can be changed with `--port`:
 
 ```bash
-voice2json show-documentation --port 8000
+$ voice2json show-documentation --port 8000
 ```
 
 The documentation should now be accessible at [http://localhost:8000](http://localhost:8000)

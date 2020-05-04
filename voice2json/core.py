@@ -432,6 +432,7 @@ class Voice2JsonCore:
 
     async def make_audio_source(self, audio_source: str) -> typing.Any:
         """Create an async audio source from command-line argument."""
+        import aioconsole
         import aiofiles
 
         if audio_source is None:
@@ -444,28 +445,8 @@ class Voice2JsonCore:
                     "Recording raw 16-bit 16Khz mono audio from stdin", file=sys.stderr
                 )
 
-            return FakeStdin()
+            stdin, _ = await aioconsole.get_standard_streams()
+            return stdin
 
         _LOGGER.debug("Recording raw 16-bit 16Khz mono audio from %s", audio_source)
         return await aiofiles.open(audio_source, "rb")
-
-
-# -----------------------------------------------------------------------------
-
-
-class FakeStdin:
-    """Avoid crash when stdin is closed/read in daemon thread"""
-
-    def __init__(self):
-        self.done = False
-
-    async def read(self, n):
-        """Read n bytes from stdin."""
-        if self.done:
-            return None
-
-        return sys.stdin.buffer.read(n)
-
-    async def close(self):
-        """Set done flag."""
-        self.done = True

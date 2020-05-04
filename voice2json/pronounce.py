@@ -69,12 +69,12 @@ async def pronounce(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     marytts_voice = pydash.get(core.profile, "text-to-speech.marytts.voice")
 
     if not args.quiet:
-        if args.espeak or (marytts_voice is None):
-            # Use eSpeak
-            do_pronounce = get_pronounce_espeak(args, core)
-        else:
+        if args.marytts:
             # Use MaryTTS
             do_pronounce = get_pronounce_marytts(args, core, marytts_voice)
+        else:
+            # Use eSpeak
+            do_pronounce = get_pronounce_espeak(args, core)
     else:
         # Quiet
         async def do_pronounce(word: str, dict_phonemes: typing.Iterable[str]) -> bytes:

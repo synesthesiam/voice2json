@@ -17,11 +17,12 @@ _LOGGER = logging.getLogger("voice2json.tts")
 
 async def speak(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     """Speak one or more sentences using text to speech."""
-    marytts_voice = pydash.get(core.profile, "text-to-speech.marytts.voice")
-    if args.espeak or (marytts_voice is None):
-        await speak_espeak(args, core)
-    else:
+    if args.marytts:
+        marytts_voice = pydash.get(core.profile, "text-to-speech.marytts.voice")
+        assert marytts_voice, "No MaryTTS voice"
         await speak_marytts(args, core, marytts_voice)
+    else:
+        await speak_espeak(args, core)
 
 
 # -----------------------------------------------------------------------------

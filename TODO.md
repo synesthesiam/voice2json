@@ -1,9 +1,8 @@
 # TODO
 
+* print-downloads one per line
 * Julius arm64, older GLIBC
-* Default to espeak
-* Kaldi stream decoding
+* Finish files.yml for all profiles
 * stop words for recognize
 * intent whitelist
-* intent filter for recognize
 * flatpak (deprecate Debian)

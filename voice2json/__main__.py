@@ -13,7 +13,6 @@ import platform
 import sys
 import time
 import typing
-from collections import defaultdict
 from pathlib import Path
 
 import pydash
@@ -26,8 +25,8 @@ from .recognize import recognize
 from .record import record_command, record_examples
 from .speak import speak
 from .test import test_examples
-from .transcribe import transcribe
-from .utils import env_constructor, recursive_update, print_json
+from .transcribe import transcribe_stream, transcribe_wav
+from .utils import env_constructor, print_json, recursive_update
 from .wake import wake
 
 _LOGGER = logging.getLogger("voice2json")
@@ -56,9 +55,9 @@ async def main():
 
     _LOGGER.debug(args)
 
-    if args.command in ["print-downloads"]:
-        # Special-case commands
-        args.func(args)
+    if args.command in ["print-downloads", "print-version"]:
+        # Special-case commands (no core loaded)
+        await args.func(args)
     else:
         # Load profile and create core
         core = get_core(args)
@@ -157,32 +156,68 @@ def get_args() -> argparse.Namespace:
     # --------------
     # transcribe-wav
     # --------------
-    transcribe_parser = sub_parsers.add_parser(
+    transcribe_wav_parser = sub_parsers.add_parser(
         "transcribe-wav", help="Transcribe WAV file to text"
     )
-    transcribe_parser.set_defaults(func=transcribe)
-    transcribe_parser.add_argument(
+    transcribe_wav_parser.set_defaults(func=transcribe_wav)
+    transcribe_wav_parser.add_argument(
         "--stdin-files",
         "-f",
         action="store_true",
         help="Read WAV file paths from stdin instead of WAV data",
     )
-    transcribe_parser.add_argument(
+    transcribe_wav_parser.add_argument(
         "--open",
         "-o",
         action="store_true",
         help="Use large pre-built model for transcription",
     )
-    transcribe_parser.add_argument(
+    transcribe_wav_parser.add_argument(
         "--relative-directory", help="Set wav_name as path relative to this directory"
     )
-    transcribe_parser.add_argument(
-        "wav_file", nargs="*", default=[], help="Path(s) to WAV file(s)"
-    )
-    transcribe_parser.add_argument(
+    transcribe_wav_parser.add_argument(
         "--input-size",
         action="store_true",
-        help="WAV file size is sent on a separate line for each input WAV on stdin",
+        help="WAV file byte size is sent on a separate line for each input WAV on stdin",
+    )
+    transcribe_wav_parser.add_argument(
+        "wav_file", nargs="*", default=[], help="Path(s) to WAV file(s)"
+    )
+
+    # -----------------
+    # transcribe-stream
+    # -----------------
+    transcribe_stream_parser = sub_parsers.add_parser(
+        "transcribe-stream", help="Transcribe live stream of WAV chunks to text"
+    )
+    transcribe_stream_parser.set_defaults(func=transcribe_stream)
+    transcribe_stream_parser.add_argument(
+        "--audio-source",
+        "-a",
+        help="File to read raw 16-bit 16Khz mono audio from (use '-' for stdin)",
+    )
+    transcribe_stream_parser.add_argument(
+        "--open",
+        "-o",
+        action="store_true",
+        help="Use large pre-built model for transcription",
+    )
+    transcribe_stream_parser.add_argument(
+        "--chunk-size",
+        type=int,
+        default=1024,
+        help="Number of bytes to read at a time from audio source",
+    )
+    transcribe_stream_parser.add_argument(
+        "--wav-sink", help="File or directory to write voice commands to"
+    )
+    transcribe_stream_parser.add_argument(
+        "--wav-filename",
+        default="%Y%m%d-%H%M%S",
+        help="strftime format of WAV file name in directory",
+    )
+    transcribe_stream_parser.add_argument(
+        "--event-sink", "-e", help="File to write JSON voice command events to"
     )
 
     # ----------------
@@ -212,6 +247,12 @@ def get_args() -> argparse.Namespace:
         action="append",
         help="Compute perplexity of input text relative to language model FST",
     )
+    recognize_parser.add_argument(
+        "--intent-filter",
+        "-f",
+        nargs="+",
+        help="Intent names that allowed to be recognized",
+    )
 
     # --------------
     # record-command
@@ -237,6 +278,9 @@ def get_args() -> argparse.Namespace:
         type=int,
         default=1024,
         help="Number of bytes to read at a time from audio source",
+    )
+    command_parser.add_argument(
+        "--event-sink", "-e", help="File to write JSON events to instead of stdout"
     )
     command_parser.set_defaults(func=record_command)
 
@@ -293,7 +337,7 @@ def get_args() -> argparse.Namespace:
         help="Number of pronunciations to generate for unknown words",
     )
     pronounce_parser.add_argument(
-        "--espeak", action="store_true", help="Use eSpeak even if MaryTTS is available"
+        "--marytts", action="store_true", help="Use MaryTTS instead of eSpeak"
     )
     pronounce_parser.add_argument("--wav-sink", "-w", help="File to write WAV data to")
     pronounce_parser.add_argument(
@@ -389,14 +433,16 @@ def get_args() -> argparse.Namespace:
     )
     show_documentation_parser.set_defaults(func=show_documentation)
 
+    # --------------
     # speak-sentence
+    # --------------
     speak_parser = sub_parsers.add_parser(
         "speak-sentence", help="Speak a sentence using MaryTTS"
     )
     speak_parser.add_argument("sentence", nargs="*", help="Sentence(s) to speak")
     speak_parser.add_argument("--wav-sink", "-w", help="File to write WAV data to")
     speak_parser.add_argument(
-        "--espeak", action="store_true", help="Use eSpeak even if MaryTTS is available"
+        "--marytts", action="store_true", help="Use MaryTTS instead of eSpeak"
     )
     speak_parser.set_defaults(func=speak)
 
@@ -481,7 +527,7 @@ def get_core(args: argparse.Namespace) -> Voice2JsonCore:
 # -----------------------------------------------------------------------------
 
 
-async def print_version(args: argparse.Namespace, core: Voice2JsonCore) -> None:
+async def print_version(args: argparse.Namespace) -> None:
     """Print version."""
     version_path = Path(os.environ.get("voice2json_dir", os.getcwd())) / "VERSION"
     print(version_path.read_text().strip())
@@ -498,9 +544,8 @@ async def print_profile(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 # -----------------------------------------------------------------------------
 
 
-def print_downloads(args: argparse.Namespace):
+async def print_downloads(args: argparse.Namespace) -> None:
     """Print links to files for profiles."""
-    downloads_dict = defaultdict(dict)
     profiles_dir = Path("etc/profiles")
 
     # Each YAML file is a profile name with required and optional files
@@ -536,13 +581,13 @@ def print_downloads(args: argparse.Namespace):
                 continue
 
             for file_path, file_info in files.items():
-                # Add URL to file info
+                # Add extra info to file info
+                file_info["profile"] = profile_name
                 file_info["url"] = args.url_format.format(
                     profile=profile_name, file=file_path
                 )
-                downloads_dict[profile_name][file_path] = file_info
 
-    print_json(downloads_dict)
+                print_json(file_info)
 
 
 # -----------------------------------------------------------------------------

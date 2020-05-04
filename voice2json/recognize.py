@@ -60,6 +60,17 @@ async def recognize(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 
         sentences = sys.stdin
 
+    # Whitelist function for intents
+    if args.intent_filter:
+        args.intent_filter = set(args.intent_filter)
+
+    def intent_filter(intent_name: str) -> bool:
+        """Filter out intents."""
+        if args.intent_filter:
+            return intent_name in args.intent_filter
+
+        return True
+
     # Load intent graph
     _LOGGER.debug("Loading %s", intent_graph_path)
     with gzip.GzipFile(intent_graph_path, mode="rb") as graph_gzip:
@@ -93,6 +104,7 @@ async def recognize(args: argparse.Namespace, core: Voice2JsonCore) -> None:
                 fuzzy=fuzzy,
                 word_transform=word_transform,
                 extra_converters=extra_converters,
+                intent_filter=intent_filter,
             )
 
             if recognitions:

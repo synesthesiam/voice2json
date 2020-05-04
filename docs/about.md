@@ -12,6 +12,32 @@
 
 ---
 
+## Version Changes
+
+### 1.0 to 2.0
+
+#### Added
+
+* Support for [Mozilla's DeepSpeech](https://github.com/mozilla/DeepSpeech) speech to text engine (version 0.6.1).
+* [`transcribe-stream`](commands.md#transcribe-stream) for live transcription
+* [Number ranges](sentences.md#number-ranges), [slot programs](sentences.md#slot-programs), and [converters](sentences.md#converters) to template language.
+* `--intent-filter` for [`recognize-intent`](commands.md#recognize-intent) command.
+* `--certfile` and `--keyfile` arguments for SSL support.
+* `print-version` command (or `--version`).
+
+#### Changed
+
+* [`wait-wake`](commands.md#wait-wake) command uses [Mycroft Precise](https://github.com/MycroftAI/mycroft-precise) instead of porcupine.
+* [`speak-sentence`](commands.md#speak-sentence) command takes `--marytts` flag instead of `--espeak`. Defaults to eSpeak.
+* Using [autoconf](https://www.gnu.org/software/autoconf/) for [source install](install.md#from-source).
+* Minimum required Python version is 3.7
+
+#### Removed
+
+* MaryTTS server is no longer embedded in Docker image. Must be hosted externally.
+
+---
+
 ## License
 
 `voice2json` itself is licensed under the [MIT license](#mit-license), so feel free to do what you want with the code.
