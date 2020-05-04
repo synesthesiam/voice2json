@@ -69,7 +69,7 @@ async def record_command(args: argparse.Namespace, core: Voice2JsonCore) -> None
             chunk = await audio_source.read(args.chunk_size)
 
         # Output WAV data
-        if voice_command and not args.live:
+        if voice_command:
             voice_command.audio_data = voice_command.audio_data or bytes()
             wav_bytes = core.buffer_to_wav(voice_command.audio_data)
 

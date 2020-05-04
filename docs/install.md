@@ -24,18 +24,19 @@ After installation:
 | **Speech to Text** | [Pocketsphinx](https://github.com/cmusphinx/pocketsphinx)       | &#x2713; | &#x2713; | &#x2713; |
 |                    | [Kaldi](https://kaldi-asr.org)                                  | &#x2713; | &#x2713; | &#x2713; |
 |                    | [DeepSpeech](https://github.com/mozilla/DeepSpeech)             | &#x2713; | &#x2713; |          |
+|                    | [Julius](https://github.com/julius-speech/julius)               | &#x2713; | &#x2713; | &#x2713; |
 
 ---
 
 ## Debian Package
 
-Pre-compiled packages are available for Debian-based distributions (Ubuntu, Linux Mint, etc.) on `amd64`, `armhf`, and `aarch64` architectures. These packages are built using Docker and `dpkg`.
+Pre-compiled packages are available for Debian-based distributions (Ubuntu, Linux Mint, etc.) on `amd64`, `armhf`, and `arm64` (`aarch64`) architectures. These packages are built using Docker and `dpkg`.
 
 Next, download the appropriate `.deb` file for your CPU architecture:
 
-* [amd64](https://github.com/synesthesiam/voice2json/releases/download/v1.0-beta/voice2json_1.0_amd64.deb) - Desktops, laptops, and servers
-* [armhf](https://github.com/synesthesiam/voice2json/releases/download/v1.0-beta/voice2json_1.0_armhf.deb) - Raspberry Pi 1, 2, and 3 (armv7)
-* [aarch64](https://github.com/synesthesiam/voice2json/releases/download/v1.0-beta/voice2json_1.0_aarch64.deb) - Raspberry Pi 3+, 4 (arm64)
+* [amd64](https://github.com/synesthesiam/voice2json/releases/download/v2.0/voice2json_2.0_amd64.deb) - Desktops, laptops, and servers
+* [armhf](https://github.com/synesthesiam/voice2json/releases/download/v2.0/voice2json_2.0_armhf.deb) - Raspberry Pi 1, 2, and 3 (armv7)
+* [arm64](https://github.com/synesthesiam/voice2json/releases/download/v2.0/voice2json_2.0_arm64.deb) - Raspberry Pi 3+, 4
 
 If you're unsure about your architecture, run:
 
@@ -63,7 +64,7 @@ After [downloading a profile](#download-profile), you should now be able to run 
 
 ## Docker Image
 
-The easiest way to try out `voice2json` is with [Docker](https://docker.com). Pre-built images are available for `amd64`, `armhf`, and `aarch64` CPU architectures. To get started, make sure you have [Docker installed](https://docs.docker.com/install/):
+The easiest way to try out `voice2json` is with [Docker](https://docker.com). Pre-built images are available for `amd64`, `armhf`, and `arm64` (`aarch64`) CPU architectures. To get started, make sure you have [Docker installed](https://docs.docker.com/install/):
 
 ```bash
 $ curl -sSL https://get.docker.com | sh

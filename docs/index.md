@@ -1,6 +1,6 @@
 ![voice2json logo](img/voice2json.svg)
 
-`voice2json` is a collection of [command-line tools](commands.md) for <strong>offline speech/intent recognition</strong> on Linux. It is free, open source ([MIT](https://opensource.org/licenses/MIT)), and [supports 16 human languages](#supported-languages). 
+`voice2json` is a collection of [command-line tools](commands.md) for <strong>offline speech/intent recognition</strong> on Linux. It is free, open source ([MIT](https://opensource.org/licenses/MIT)), and [supports 16 human languages](#supported-languages).
 
 * [Getting Started](#getting-started)
 * [Commands](commands.md)
@@ -37,6 +37,10 @@ when [trained](commands.md#train-profile) with this [template](sentences.md):
 states = (on | off)
 turn (<states>){state} [the] light
 ```
+
+Tools like [Node-RED](https://node-red.org) can be [easily integrated](recipes.md#create-an-mqtt-transcription-service) with `voice2json` through [MQTT](http://mqtt.org).
+
+---
 
 `voice2json` is <strong>optimized for</strong>:
 
