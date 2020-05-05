@@ -92,15 +92,16 @@ async def wake(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 
     try:
         while True:
-            prob_str = (
-                (
-                    await asyncio.wait_for(
-                        prob_stream.readline(), timeout=args.exit_timeout
-                    )
+            if args.exit_timeout is None:
+                # No timeout
+                prob_bytes = await prob_stream.readline()
+            else:
+                # With timeout
+                prob_bytes = await asyncio.wait_for(
+                    prob_stream.readline(), timeout=args.exit_timeout
                 )
-                .decode()
-                .strip()
-            )
+
+            prob_str = prob_bytes.decode().strip()
             _LOGGER.debug("Prediction: %s", prob_str)
 
             if detector.update(float(prob_str)):

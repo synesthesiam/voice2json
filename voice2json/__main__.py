@@ -123,6 +123,11 @@ def get_args() -> argparse.Namespace:
         help="Format string for URL (receives {profile} and {file})",
     )
     downloads_parser.add_argument(
+        "--only-missing",
+        action="store_true",
+        help="Only print files that don't exist in your profile directory",
+    )
+    downloads_parser.add_argument(
         "--no-grapheme-to-phoneme",
         action="store_true",
         help="Hide files for guessing word pronunciations",
@@ -141,7 +146,13 @@ def get_args() -> argparse.Namespace:
         "--no-text-to-speech", action="store_true", help="Hide files for text to speech"
     )
     downloads_parser.add_argument(
-        "profile", nargs="*", default=[], help="Profile prefixes"
+        "--with-examples", action="store_true", help="Include example sentences, etc."
+    )
+    downloads_parser.add_argument(
+        "profile_names", nargs="+", help="Profile names to check"
+    )
+    downloads_parser.add_argument(
+        "--list-profiles", action="store_true", help="List names of known profiles"
     )
     downloads_parser.set_defaults(func=print_downloads)
 
@@ -308,7 +319,6 @@ def get_args() -> argparse.Namespace:
     wake_parser.add_argument(
         "--exit-timeout",
         type=float,
-        default=5,
         help="Seconds to wait for predictions before exiting",
     )
     wake_parser.set_defaults(func=wake)
@@ -452,9 +462,8 @@ def get_args() -> argparse.Namespace:
 # -----------------------------------------------------------------------------
 
 
-def get_core(args: argparse.Namespace) -> Voice2JsonCore:
-    """Load profile and create voice2json core."""
-    # Load profile (YAML)
+def get_profile_location(args: argparse.Namespace) -> typing.Tuple[Path, Path]:
+    """Return detected profile directory and YAML file path."""
     profile_yaml: typing.Optional[Path] = None
 
     if args.profile is None:
@@ -477,8 +486,19 @@ def get_core(args: argparse.Namespace) -> Voice2JsonCore:
             profile_dir = profile_dir_or_file.parent
             profile_yaml = profile_dir_or_file
 
-    # Set environment variable usually referenced in profile
     profile_dir = profile_dir.resolve()
+
+    if profile_yaml is None:
+        profile_yaml = profile_dir / "profile.yml"
+
+    return profile_dir, profile_yaml
+
+
+def get_core(args: argparse.Namespace) -> Voice2JsonCore:
+    """Load profile and create voice2json core."""
+    profile_dir, profile_yaml = get_profile_location(args)
+
+    # Set environment variable usually referenced in profile
     os.environ["profile_dir"] = str(profile_dir)
 
     # x86_64, armv7l, armv6l, ...
@@ -498,10 +518,7 @@ def get_core(args: argparse.Namespace) -> Voice2JsonCore:
         # No defaults
         profile = {}
 
-    # Load profile
-    if profile_yaml is None:
-        profile_yaml = profile_dir / "profile.yml"
-
+    # Load profile (YAML)
     _LOGGER.debug("Loading profile from %s", profile_yaml)
 
     if profile_yaml.exists():
@@ -548,20 +565,28 @@ async def print_downloads(args: argparse.Namespace) -> None:
     """Print links to files for profiles."""
     profiles_dir = Path("etc/profiles")
 
+    if args.list_profiles:
+        # List profile names and exit
+        for profile_name in sorted(p.stem for p in profiles_dir.glob("*.yml")):
+            print(profile_name)
+
+        return
+
+    # Check profile files
+    profile_dir: typing.Optional[Path] = None
+    if args.only_missing:
+        # Will check if files actually exist
+        profile_dir, _ = get_profile_location(args)
+
+    # Names of profiles to check
+    profile_names = set(args.profile_names)
+
     # Each YAML file is a profile name with required and optional files
     for yaml_path in profiles_dir.glob("*.yml"):
         profile_name = yaml_path.stem
-        if args.profile:
-            # Check prefix
-            has_prefix = False
-            for prefix in args.profile:
-                if profile_name.startswith(prefix):
-                    has_prefix = True
-                    break
-
-            if not has_prefix:
-                # Skip file
-                continue
+        if profile_name not in profile_names:
+            # Skip file
+            continue
 
         # Load YAML
         with open(yaml_path, "r") as yaml_file:
@@ -577,10 +602,26 @@ async def print_downloads(args: argparse.Namespace) -> None:
                     args.no_mixed_language_model and condition == "mixed-language-model"
                 )
                 or (args.no_text_to_speech and condition == "text-to-speech")
+                or (not args.with_examples and condition == "examples")
             ):
                 continue
 
             for file_path, file_info in files.items():
+                if args.only_missing and profile_dir:
+                    # Check if file is missing
+                    real_file_name = file_info.get("file-name")
+                    if real_file_name:
+                        # Use combined/unzipped file name
+                        expected_path = (
+                            profile_dir / Path(file_path).parent / real_file_name
+                        )
+                    else:
+                        expected_path = profile_dir / file_path
+
+                    if expected_path.is_file():
+                        # Skip existing file
+                        continue
+
                 # Add extra info to file info
                 file_info["profile"] = profile_name
                 file_info["url"] = args.url_format.format(
