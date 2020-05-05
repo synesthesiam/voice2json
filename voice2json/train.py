@@ -233,6 +233,10 @@ async def train_profile(
 
     def load_pronunciations():
         for dict_path in [base_dictionary, custom_words]:
+            if not dict_path.is_file():
+                _LOGGER.warning("Skipping %s (does not exist)", dict_path)
+                continue
+
             _LOGGER.debug("Loading base dictionary from %s", dict_path)
             with open(dict_path, "r") as dict_file:
                 rhasspynlu.g2p.read_pronunciations(dict_file, word_dict=pronunciations)
