@@ -1,0 +1,158 @@
+---
+default:
+  LICENSE:
+    bytes: 7651
+    sha256: da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768
+  acoustic_model/dnn.jconf:
+    bytes: 0
+  acoustic_model/julius.jconf:
+    bytes: 0
+  acoustic_model/model.am.gz.part-00:
+    bytes: 0
+    file-name: model.am
+  acoustic_model/model.am.gz.part-01:
+    bytes: 0
+    file-name: model.am
+  acoustic_model/model.layer2_bias.npy:
+    bytes: 0
+  acoustic_model/model.layer2_weight.npy:
+    bytes: 0
+  acoustic_model/model.layer3_bias.npy:
+    bytes: 0
+  acoustic_model/model.layer3_weight.npy:
+    bytes: 0
+  acoustic_model/model.layer4_bias.npy:
+    bytes: 0
+  acoustic_model/model.layer4_weight.npy:
+    bytes: 0
+  acoustic_model/model.layer5_bias.npy:
+    bytes: 0
+  acoustic_model/model.layer5_weight.npy:
+    bytes: 0
+  acoustic_model/model.layer6_bias.npy:
+    bytes: 0
+  acoustic_model/model.layer6_weight.npy:
+    bytes: 0
+  acoustic_model/model.layerout_bias.npy:
+    bytes: 0
+  acoustic_model/model.layerout_weight.npy.gz.part-00:
+    bytes: 0
+    file-name: model.layerout_weight.npy
+  acoustic_model/model.layerout_weight.npy.gz.part-01:
+    bytes: 0
+    file-name: model.layerout_weight.npy
+  acoustic_model/model.mfc:
+    bytes: 0
+  acoustic_model/model.norm:
+    bytes: 0
+  acoustic_model/model.phn:
+    bytes: 0
+  acoustic_model/model.prior:
+    bytes: 0
+  acoustic_model/wav_config:
+    bytes: 0
+  base_dictionary.txt.gz:
+    bytes: 1089197
+    sha256: 6a4c11bb0775e659bf4b2c7bf24ba309842ed00ce7bdfd28a282cb77f9b4e8d1
+    file-name: "base_dictionary.txt"
+  profile.yml:
+    bytes: 674
+    sha256: 4a3aedf4ef8da12d4e559673401c7486608640dbe99039707ec7af632bca5c42
+  stop_words.txt:
+    bytes: 530
+    sha256: c70d3a9220951c0d80c3bc83e751618a7384308162e52544f786b3406547d00b
+
+# Files needed to guess word pronunciations
+grapheme-to-phoneme:
+  g2p.fst.gz.part-00:
+    bytes: 16209041
+    sha256: dd0b5caa6bef0e70ba113e116cd2f451adebd9d966137f1b23ff6ee56174a16a
+    file-name: "g2p.fst"
+  g2p.fst.gz.part-01:
+    bytes: 16209041
+    sha256: dd0b5caa6bef0e70ba113e116cd2f451adebd9d966137f1b23ff6ee56174a16a
+    file-name: "g2p.fst"
+
+# Files needed for open transcription (pre-built model)
+open-transcription:
+  base_language_model.bin.gz.part-00:
+    bytes: 21364794
+    sha256: 79d7e80a1ac1dc86578e46c6a1edd9514a84932c4a05c184d50b958f05ddb017
+    file-name: "base_language_model.bin"
+  base_language_model.bin.gz.part-01:
+    bytes: 21364794
+    sha256: 79d7e80a1ac1dc86578e46c6a1edd9514a84932c4a05c184d50b958f05ddb017
+    file-name: "base_language_model.bin"
+  base_language_model.bin.gz.part-02:
+    bytes: 21364794
+    sha256: 79d7e80a1ac1dc86578e46c6a1edd9514a84932c4a05c184d50b958f05ddb017
+    file-name: "base_language_model.bin"
+  base_language_model.bin.gz.part-03:
+    bytes: 21364794
+    sha256: 79d7e80a1ac1dc86578e46c6a1edd9514a84932c4a05c184d50b958f05ddb017
+    file-name: "base_language_model.bin"
+  base_language_model.bin.gz.part-04:
+    bytes: 21364794
+    sha256: 79d7e80a1ac1dc86578e46c6a1edd9514a84932c4a05c184d50b958f05ddb017
+    file-name: "base_language_model.bin"
+  base_language_model.bin.gz.part-05:
+    bytes: 21364794
+    sha256: 79d7e80a1ac1dc86578e46c6a1edd9514a84932c4a05c184d50b958f05ddb017
+    file-name: "base_language_model.bin"
+  base_language_model.bin.gz.part-06:
+    bytes: 21364794
+    sha256: 79d7e80a1ac1dc86578e46c6a1edd9514a84932c4a05c184d50b958f05ddb017
+    file-name: "base_language_model.bin"
+  base_language_model.bin.gz.part-07:
+    bytes: 21364794
+    sha256: 79d7e80a1ac1dc86578e46c6a1edd9514a84932c4a05c184d50b958f05ddb017
+    file-name: "base_language_model.bin"
+  base_language_model.bin.gz.part-08:
+    bytes: 21364794
+    sha256: 79d7e80a1ac1dc86578e46c6a1edd9514a84932c4a05c184d50b958f05ddb017
+    file-name: "base_language_model.bin"
+  base_language_model.bin.gz.part-09:
+    bytes: 21364794
+    sha256: 79d7e80a1ac1dc86578e46c6a1edd9514a84932c4a05c184d50b958f05ddb017
+    file-name: "base_language_model.bin"
+  base_language_model.bin.gz.part-10:
+    bytes: 21364794
+    sha256: 79d7e80a1ac1dc86578e46c6a1edd9514a84932c4a05c184d50b958f05ddb017
+    file-name: "base_language_model.bin"
+  base_language_model.bin.gz.part-11:
+    bytes: 21364794
+    sha256: 79d7e80a1ac1dc86578e46c6a1edd9514a84932c4a05c184d50b958f05ddb017
+    file-name: "base_language_model.bin"
+  base_language_model.bin.gz.part-12:
+    bytes: 21364794
+    sha256: 79d7e80a1ac1dc86578e46c6a1edd9514a84932c4a05c184d50b958f05ddb017
+    file-name: "base_language_model.bin"
+  base_language_model.bin.gz.part-13:
+    bytes: 21364794
+    sha256: 79d7e80a1ac1dc86578e46c6a1edd9514a84932c4a05c184d50b958f05ddb017
+    file-name: "base_language_model.bin"
+
+# Files needed for mixed language modeling (pre-built + custom)
+mixed-language-model:
+  base_language_model.fst.gz:
+    bytes: 37267066
+    sha256: 8e016f27d7c55a4759a0b0e7031b96ee2cbc74a6b6f33138a15950281937e886
+    file-name: "base_language_model.fst"
+
+# Files needed for text to speech
+text-to-speech:
+  espeak_phonemes.txt:
+    bytes: 180
+    sha256: efe5342de25eb12fd0c869dfb79725904c6562a6eea56ec40a9d7b1832cb358b
+  marytts/marytts-lang-en-5.2.jar:
+    bytes: 6908619
+    sha256: f46cc60abbf1b7444ac37a75e72f60f1aa566bf2448c458463f2f50369fcb3d1
+  marytts/voice-cmu-slt-hsmm-5.2.jar:
+    bytes: 1242746
+    sha256: d012c43f109c60dba106741ce1c18a6caf4bb1476d7af8861ceaab4c655294cb
+
+# Sample sentences, etc.
+examples:
+  sentences.ini:
+    bytes: 538
+    sha256: 839b4f949ab5248401920bf4290e8f13a479f17f37626cb5306d4db5d76faf6c

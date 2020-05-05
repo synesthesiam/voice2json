@@ -1,5 +1,8 @@
 ---
 default:
+  LICENSE:
+    bytes: 537
+    sha256: da543899f829027ffb9ded48093a47083586c1e821ccc0c3900c63092c9226bc
   acoustic_model/feat.params:
     bytes: 110
     sha256: 6ad725f620b3f0c1d82bba878498630e8be4fa1f0b0bf035a7fe9ffb36f5a735
@@ -24,6 +27,10 @@ default:
   base_dictionary.txt.gz:
     bytes: 923136
     sha256: f20a16a27cce5d453664604451b78f209789ced3fd140c106513b56097a8e411
+    file-name: base_dictionary.txt
+  profile.yml:
+    bytes: 342
+    sha256: 3781d1016a04360beac60526a5d0708f2e9ce8aaf146bbd6fcd0271ffddeadfd
   stop_words.txt:
     bytes: 4532
     sha256: 69c43ce97fdc651aa01d3a5bb8aa98d7bfcdea9cfa9823b624dcc4360bff2a3a
@@ -33,21 +40,30 @@ grapheme-to-phoneme:
   g2p.fst.gz:
     bytes: 10361119
     sha256: ee45c4d557835bef666b6bed5cb3a21503a1c0ee1f7ebfb515d857f4cf88ea8a
+    file-name: g2p.fst
 
 # Files needed for open transcription (pre-built model)
 open-transcription:
   base_language_model.txt.gz:
     bytes: 1746859
     sha256: 63334c9b435380f7d18951b3cfed47a3564ecddba3ac38a5ebe1daf71b21b52a
+    file-name: base_language_model.txt
 
 # Files needed for mixed language modeling (pre-built + custom)
 mixed-language-model:
   base_language_model.fst.gz:
     bytes: 2181120
     sha256: 22810ea1bd810d8f9af52f25a2964ad2bccc95e0e375fb7a27548aa0fe07bbdd
+    file-name: base_language_model.fst
 
 # Files needed for text to speech
 text-to-speech:
   espeak_phonemes.txt:
     bytes: 172
     sha256: 0d8070b738a56a3c86cb2e12423ff42bed7062308d62f68ac8d837adacf13eca
+
+# Sample sentences, etc.
+examples:
+  sentences.ini:
+    bytes: 330
+    sha256: b669b6416e9f9e1d0b718c55720907e6b5231766c6af5448dfa12895aba3aac4
