@@ -85,11 +85,12 @@ class JuliusTranscriber(Transcriber):
         _LOGGER.debug(julius_cmd)
 
         # Start Julius server
+        stderr = subprocess.DEVNULL
+        if self.debug:
+            stderr = None
+
         self.julius_proc = subprocess.Popen(
-            julius_cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            universal_newlines=True,
+            julius_cmd, stdout=subprocess.PIPE, stderr=stderr, universal_newlines=True
         )
 
         self.julius_out = open(fifo_path, "w")
@@ -98,11 +99,17 @@ class JuliusTranscriber(Transcriber):
 
         # Read until Julius has started
         line = self.julius_proc.stdout.readline().lower().strip()
+        if self.debug:
+            _LOGGER.debug("Julius: %s", line)
+
         if "error" in line:
             raise Exception(line)
 
         while "system information end" not in line:
             line = self.julius_proc.stdout.readline().lower().strip()
+            if self.debug:
+                _LOGGER.debug("Julius: %s", line)
+
             if "error" in line:
                 raise Exception(line)
 
