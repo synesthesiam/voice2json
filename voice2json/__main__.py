@@ -154,6 +154,11 @@ def get_args() -> argparse.Namespace:
     downloads_parser.add_argument(
         "--list-profiles", action="store_true", help="List names of known profiles"
     )
+    downloads_parser.add_argument(
+        "--machine",
+        default=platform.machine(),
+        help="Platform machine used for machine-specific files (default: host)",
+    )
     downloads_parser.set_defaults(func=print_downloads)
 
     # -------------
@@ -604,6 +609,7 @@ async def print_downloads(args: argparse.Namespace) -> None:
                 or (args.no_text_to_speech and condition == "text-to-speech")
                 or (not args.with_examples and condition == "examples")
             ):
+                _LOGGER.debug("Excluding condition %s", condition)
                 continue
 
             for file_path, file_info in files.items():
@@ -620,6 +626,20 @@ async def print_downloads(args: argparse.Namespace) -> None:
 
                     if expected_path.is_file():
                         # Skip existing file
+                        _LOGGER.debug("Excluding %s (exists)", file_path)
+                        continue
+
+                # Check machine
+                platforms = file_info.get("platform")
+                if platforms:
+                    machine_match = False
+                    for platform in platforms:
+                        if args.machine == platform.get("machine", ""):
+                            machine_match = True
+                            break
+
+                    if not machine_match:
+                        _LOGGER.debug("Excluding %s (machine mismatch)", file_path)
                         continue
 
                 # Add extra info to file info

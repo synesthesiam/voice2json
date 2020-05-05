@@ -41,7 +41,8 @@ trap cleanup EXIT
 # Profile names to test
 if [[ -z "${profiles[*]}" ]]; then
     # All profiles
-    profiles=('en-us_pocketsphinx-cmu' 'en-us_kaldi-zamia' 'en-us_deepspeech-mozilla')
+    # profiles=('en-us_pocketsphinx-cmu' 'en-us_kaldi-zamia' 'en-us_deepspeech-mozilla')
+    profiles=('en-us_julius-github')
 fi
 
 stt_tests=('transcribe-wav' 'open-transcription')

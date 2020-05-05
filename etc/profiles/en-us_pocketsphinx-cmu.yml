@@ -1,5 +1,8 @@
 ---
 default:
+  "LICENSE":
+    bytes: 1537
+    sha256: 49181202f2b991d25f6cac8cd1705994494b9600d4311794ecbb9fcf8b188aef
   "acoustic_model/feat.params":
     bytes: 129
     sha256: 9f4883ca1680270667565cec30a0b827081799617bb825ff6adace06f50c178f
@@ -27,6 +30,10 @@ default:
   "base_dictionary.txt.gz":
     bytes: 850548
     sha256: 82d0b1b38e791fcdff67d2dd1c3f57dbf15d5e6338ba3d4fc13a5d90cbe9f10d
+    file-name: "base_dictionary.txt"
+  "profile.yml":
+    bytes: 594
+    sha256: 4d03b85c245668ae0cc96c3f786661b6f80d1c968b399902064e66d403f0d0eb
   "stop_words.txt":
     bytes: 530
     sha256: c70d3a9220951c0d80c3bc83e751618a7384308162e52544f786b3406547d00b
@@ -36,18 +43,21 @@ grapheme-to-phoneme:
   "g2p.fst.gz":
     bytes: 12796914
     sha256: c2e5c173e22931d5bee2c3a42816a175a3af77d133ba0bd35f6e16e7bbd29768
+    file-name: "g2p.fst"
 
 # Files needed for open transcription (pre-built model)
 open-transcription:
   "base_language_model.txt.gz":
     bytes: 33456672
     sha256: c354a19b53b2e5bdef1736fb713c0ce632bcca675da967604fc8b140dcb616ee
+    file-name: "base_language_model.txt"
 
 # Files needed for mixed language modeling (pre-built + custom)
 mixed-language-model:
   "base_language_model.fst.gz":
     bytes: 37267066
     sha256: 8e016f27d7c55a4759a0b0e7031b96ee2cbc74a6b6f33138a15950281937e886
+    file-name: "base_language_model.fst"
 
 # Files needed for text to speech
 text-to-speech:
@@ -63,3 +73,9 @@ text-to-speech:
   "marytts/voice-cmu-slt-hsmm-5.2.jar":
     bytes: 1242746
     sha256: d012c43f109c60dba106741ce1c18a6caf4bb1476d7af8861ceaab4c655294cb
+
+# Sample sentences, etc.
+examples:
+  "sentences.ini":
+    bytes: 538
+    sha256: 839b4f949ab5248401920bf4290e8f13a479f17f37626cb5306d4db5d76faf6c
