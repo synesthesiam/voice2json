@@ -87,6 +87,11 @@ def get_args() -> argparse.Namespace:
         help="Override profile setting(s)",
     )
     parser.add_argument(
+        "--machine",
+        default=platform.machine(),
+        help="Platform machine to use (default: host)",
+    )
+    parser.add_argument(
         "--debug", action="store_true", help="Print DEBUG log to console"
     )
 
@@ -534,7 +539,24 @@ def get_core(args: argparse.Namespace) -> Voice2JsonCore:
     else:
         _LOGGER.warning("%s does not exist. Using default settings.", profile_yaml)
 
-    # Override settings
+    # Override with platform-specific settings
+    platform_overrides = profile.get("platform", [])
+    for platform_settings in platform_overrides:
+        machines = platform_settings.get("machine")
+        machine_settings = platform_settings.get("settings", {})
+
+        if machines and machine_settings:
+            if isinstance(machines, str):
+                # Ensure list
+                machines = [machines]
+
+            if args.machine in machines:
+                # Machine match: override settings
+                for key, value in machine_settings.items():
+                    _LOGGER.debug("Overriding %s (machine=%s)", key, args.machine)
+                    profile[key] = value
+
+    # Override with user settings
     for setting_path, setting_value in args.setting:
         setting_value = json.loads(setting_value)
         _LOGGER.debug("Overriding %s with %s", setting_path, setting_value)
@@ -578,10 +600,7 @@ async def print_downloads(args: argparse.Namespace) -> None:
         return
 
     # Check profile files
-    profile_dir: typing.Optional[Path] = None
-    if args.only_missing:
-        # Will check if files actually exist
-        profile_dir, _ = get_profile_location(args)
+    profile_dir, _ = get_profile_location(args)
 
     # Names of profiles to check
     profile_names = set(args.profile_names)
@@ -613,7 +632,9 @@ async def print_downloads(args: argparse.Namespace) -> None:
                 continue
 
             for file_path, file_info in files.items():
-                if args.only_missing and profile_dir:
+                _LOGGER.debug("Checking %s", file_path)
+
+                if args.only_missing:
                     # Check if file is missing
                     real_file_name = file_info.get("file-name")
                     if real_file_name:
@@ -626,15 +647,19 @@ async def print_downloads(args: argparse.Namespace) -> None:
 
                     if expected_path.is_file():
                         # Skip existing file
-                        _LOGGER.debug("Excluding %s (exists)", file_path)
+                        _LOGGER.debug(
+                            "Excluding %s (%s exists)", file_path, expected_path
+                        )
                         continue
+
+                    _LOGGER.debug("%s does not exist (%s)", expected_path, file_path)
 
                 # Check machine
                 platforms = file_info.get("platform")
                 if platforms:
                     machine_match = False
-                    for platform in platforms:
-                        if args.machine == platform.get("machine", ""):
+                    for platform_matches in platforms:
+                        if args.machine == platform_matches.get("machine", ""):
                             machine_match = True
                             break
 
@@ -643,10 +668,12 @@ async def print_downloads(args: argparse.Namespace) -> None:
                         continue
 
                 # Add extra info to file info
+                file_info["file"] = file_path
                 file_info["profile"] = profile_name
                 file_info["url"] = args.url_format.format(
                     profile=profile_name, file=file_path
                 )
+                file_info["profile-directory"] = str(profile_dir)
 
                 print_json(file_info)
 

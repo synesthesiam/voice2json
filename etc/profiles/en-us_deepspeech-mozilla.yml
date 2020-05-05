@@ -68,135 +68,135 @@ default:
 open-transcription:
   model/lm.binary.gz.part-00:
     bytes: 26214400
-    file-name: model/lm.binary
+    file-name: lm.binary
     sha256: fd49fd1480a07a70c2cf47ab43d513b225136442f6e4471e77cd3e85fa5ed389
   model/lm.binary.gz.part-01:
     bytes: 26214400
-    file-name: model/lm.binary
+    file-name: lm.binary
     sha256: eaca2f302e76d845a43af5058abcd021cdd73692dbb2499e1224dbee84aa4a55
   model/lm.binary.gz.part-02:
     bytes: 26214400
-    file-name: model/lm.binary
+    file-name: lm.binary
     sha256: e6d8476263a5da09eecf2d287d823f18d75e5d2c29e90e7ce4fd672bfd903d21
   model/lm.binary.gz.part-03:
     bytes: 26214400
-    file-name: model/lm.binary
+    file-name: lm.binary
     sha256: 53ddd5b0ba2f3f9f99e77f4acd634a35e0a23bbc0fc321d87a93dca90d87a128
   model/lm.binary.gz.part-04:
     bytes: 26214400
-    file-name: model/lm.binary
+    file-name: lm.binary
     sha256: b267b74224aea69e77c6c7ebe5a44a432dfefe862b1c83dde9a2f20f2c2ebe26
   model/lm.binary.gz.part-05:
     bytes: 26214400
-    file-name: model/lm.binary
+    file-name: lm.binary
     sha256: 5264cf6af2b4836ba055bcc4c2d5a1c5bb63032d9048082db8a23f5ef9001fdb
   model/lm.binary.gz.part-06:
     bytes: 26214400
-    file-name: model/lm.binary
+    file-name: lm.binary
     sha256: 949d383fd3cebfae947bfdfdb6c7eaafef7697dfa83400a752bf66d645ee17f5
   model/lm.binary.gz.part-07:
     bytes: 26214400
-    file-name: model/lm.binary
+    file-name: lm.binary
     sha256: fd6b9d77b6740b4daf213f8fd0b0e1ec309a7784cfddb4435b16ebf207e8d04e
   model/lm.binary.gz.part-08:
     bytes: 26214400
-    file-name: model/lm.binary
+    file-name: lm.binary
     sha256: 2a726b87fb741c56b847b9edf77f911a3939466e993aff34e1bf61e6a0345b9d
   model/lm.binary.gz.part-09:
     bytes: 26214400
-    file-name: model/lm.binary
+    file-name: lm.binary
     sha256: fa2aa9410b39c8ec36d61a30e754eb923c71dace9deee62a6d1f86b301ab5c6d
   model/lm.binary.gz.part-10:
     bytes: 26214400
-    file-name: model/lm.binary
+    file-name: lm.binary
     sha256: f85008552adf9505af43020ef6721235e2aec992d0a74e59797b729c48c38047
   model/lm.binary.gz.part-11:
     bytes: 26214400
-    file-name: model/lm.binary
+    file-name: lm.binary
     sha256: 1232151510d973f1eff103f11e30524fa8bf7c7bf21d6d3c4a423a9f6e3563ef
   model/lm.binary.gz.part-12:
     bytes: 26214400
-    file-name: model/lm.binary
+    file-name: lm.binary
     sha256: fb508d77d7a85fbfc87fccce4b27bd5ae923d5b9c7d3e1a1efac726fcebbbdf1
   model/lm.binary.gz.part-13:
     bytes: 26214400
-    file-name: model/lm.binary
+    file-name: lm.binary
     sha256: 2cdd10276ed066164f9d19a6f8f08ea03995ecada453ea00bc14a2b0317a265f
   model/lm.binary.gz.part-14:
     bytes: 26214400
-    file-name: model/lm.binary
+    file-name: lm.binary
     sha256: d43797349c8526f4e17d7fe7b983c081a90324c1618413b895058b6cd4816e80
   model/lm.binary.gz.part-15:
     bytes: 26214400
-    file-name: model/lm.binary
+    file-name: lm.binary
     sha256: 0ec9a5209c37fd3d28a4edf29b99b84d9af51db012ba9bc4cca0afe3d9b06aba
   model/lm.binary.gz.part-16:
     bytes: 26214400
-    file-name: model/lm.binary
+    file-name: lm.binary
     sha256: 3ced89fc948fdfe34f8bcad88b81f24536891ece23833cd3c5382c2df3d4d8fd
   model/lm.binary.gz.part-17:
     bytes: 26214400
-    file-name: model/lm.binary
+    file-name: lm.binary
     sha256: 321272796931a7788074c2558f3bb8d869f37e003ef933d009717838145afbdd
   model/lm.binary.gz.part-18:
     bytes: 26214400
-    file-name: model/lm.binary
+    file-name: lm.binary
     sha256: f406b0529016471040837a21bccbd107bcc01fde4fc6dd384294a9f1850afecc
   model/lm.binary.gz.part-19:
     bytes: 26214400
-    file-name: model/lm.binary
+    file-name: lm.binary
     sha256: ade770b66ee5d0a92cffd3b0841fd9f785b19bbda867004dc6743c87423267b4
   model/lm.binary.gz.part-20:
     bytes: 26214400
-    file-name: model/lm.binary
+    file-name: lm.binary
     sha256: 0ed9d36980773255a72371a36bc45183797225fbf3047c1ec935748c911c3b0f
   model/lm.binary.gz.part-21:
     bytes: 26214400
-    file-name: model/lm.binary
+    file-name: lm.binary
     sha256: 9c31a5f0a187beace9f25593417555637606f8e830897078d0eead1aaf4ceae2
   model/lm.binary.gz.part-22:
     bytes: 26214400
-    file-name: model/lm.binary
+    file-name: lm.binary
     sha256: 6345a356d75ca6ef3a6e0a8b72aa2998d3cc18673872258c1b8f1b3fe8bfbeb6
   model/lm.binary.gz.part-23:
     bytes: 26214400
-    file-name: model/lm.binary
+    file-name: lm.binary
     sha256: 4660725784d1c78e3894a1217bb594fa6da59271297079503cd11af57b2f8701
   model/lm.binary.gz.part-24:
     bytes: 26214400
-    file-name: model/lm.binary
+    file-name: lm.binary
     sha256: c63f2c15b59aec8d50a67198bc424b437de9b207f6eb89b17133c0c9c33adb64
   model/lm.binary.gz.part-25:
     bytes: 26214400
-    file-name: model/lm.binary
+    file-name: lm.binary
     sha256: 5ddc7a7830352199241d8a67bedd60f48ce5d017edef3419ade530dcd41269ac
   model/lm.binary.gz.part-26:
     bytes: 26214400
-    file-name: model/lm.binary
+    file-name: lm.binary
     sha256: 98324aad0044c1dc19b3a3ed6a8f0ad4ec749bd99b4869751ee7103a06ce31f5
   model/lm.binary.gz.part-27:
     bytes: 26214400
-    file-name: model/lm.binary
+    file-name: lm.binary
     sha256: 57ef26b8c58f0e505894b254e75dec82372d288ecbe3b297138b92a6bfea6304
   model/lm.binary.gz.part-28:
     bytes: 26214400
-    file-name: model/lm.binary
+    file-name: lm.binary
     sha256: c9729dd4a96c19e06768c3536b9a342ea1791d615875b8a4872ba47cd36717ca
   model/lm.binary.gz.part-29:
     bytes: 26214400
-    file-name: model/lm.binary
+    file-name: lm.binary
     sha256: b391266568297069bac6fb8b24e94d8c83f96d045ea901e3ccc22e98281f1f18
   model/lm.binary.gz.part-30:
     bytes: 26214400
-    file-name: model/lm.binary
+    file-name: lm.binary
     sha256: 6744f2e2c019bb19158a42511bbcffff315fc509dd9143eeb2f2f3bb282bcb98
   model/lm.binary.gz.part-31:
     bytes: 26214400
-    file-name: model/lm.binary
+    file-name: lm.binary
     sha256: 393d58bc4f19b3f99e87f9d10eb13d9ac16b2f93ec52306d116017b54c2f1106
   model/lm.binary.gz.part-32:
     bytes: 11599540
-    file-name: model/lm.binary
+    file-name: lm.binary
     sha256: 22ffe8e9232f5ae7a728c8557ecb1d1b87ebf8a822f1946a5c0b0c30aef5c362
   model/trie.gz:
     bytes: 2049091
