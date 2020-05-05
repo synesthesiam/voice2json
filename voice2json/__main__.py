@@ -296,7 +296,7 @@ def get_args() -> argparse.Namespace:
     wake_parser.add_argument(
         "--chunk-size",
         type=int,
-        default=1024,
+        default=2048,
         help="Number of bytes to read at a time from audio source",
     )
     wake_parser.add_argument(
@@ -308,7 +308,7 @@ def get_args() -> argparse.Namespace:
     wake_parser.add_argument(
         "--exit-timeout",
         type=float,
-        default=0,
+        default=5,
         help="Seconds to wait for predictions before exiting",
     )
     wake_parser.set_defaults(func=wake)

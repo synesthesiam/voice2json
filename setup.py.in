@@ -13,13 +13,6 @@ with open(os.path.join(this_dir, "README.md"), "r") as readme_file:
 with open("requirements.txt", "r") as requirements_file:
     requirements = requirements_file.read().splitlines()
 
-    enable_precise = "@ENABLE_PRECISE@"
-    if enable_precise != "yes":
-        # Disable Mycroft Precise
-        requirements = [
-            r for r in requirements if not r.startswith("precise-runner")
-        ]
-
     enable_pocketsphinx = "@ENABLE_POCKETSPHINX@"
     if enable_pocketsphinx != "yes":
         # Disable pocketsphinx

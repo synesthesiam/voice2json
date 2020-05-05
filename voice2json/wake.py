@@ -18,9 +18,9 @@ _LOGGER = logging.getLogger("voice2json.wake")
 
 async def wake(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     """Wait for wake word in audio stream."""
-    from precise_runner import PreciseEngine, PreciseRunner, ReadWriteStream
+    # from precise_runner import PreciseEngine, PreciseRunner, ReadWriteStream
 
-    loop = asyncio.get_event_loop()
+    # loop = asyncio.get_event_loop()
 
     # Load settings
     engine_path = pydash.get(core.profile, "wake-word.precise.engine-executable")
@@ -39,92 +39,82 @@ async def wake(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     assert engine_path.exists(), f"Engine does not exist at {engine_path}"
     assert model_path.exists(), f"Model does not exist at {model_path}"
 
-    _LOGGER.debug("Loading Precise (engine=%s, model=%s)", engine_path, model_path)
-    engine = PreciseEngine(
-        str(engine_path), str(model_path), chunk_size=args.chunk_size
+    _LOGGER.debug(
+        "Loading Precise (engine=%s, model=%s, chunk_size=%s)",
+        engine_path,
+        model_path,
+        args.chunk_size,
     )
 
-    assert engine, "Engine not loaded"
+    precise_cmd = [str(engine_path), str(model_path), str(args.chunk_size)]
+    engine_proc = await asyncio.create_subprocess_exec(
+        *precise_cmd, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE
+    )
 
-    # Patch get_prediction to avoid errors on exit
-    _get_prediction = engine.get_prediction
+    chunk_stream = engine_proc.stdin
+    prob_stream = engine_proc.stdout
+    assert chunk_stream and prob_stream, "Failed to connect engine streams"
 
-    def safe_get_prediction(chunk):
-        try:
-            return _get_prediction(chunk)
-        except ValueError:
-            return 0.0
-
-    engine.get_prediction = safe_get_prediction
-
-    # Create stream to write audio chunks to
-    engine_stream = ReadWriteStream()
-
-    # Create runner
+    # Create detector
     _LOGGER.debug(
-        "Creating Precise runner (sensitivity=%s, trigger_level=%s)",
+        "Creating Precise detector (sensitivity=%s, trigger_level=%s)",
         sensitivity,
         trigger_level,
     )
 
-    if args.debug:
-
-        def on_prediction(prob: float):
-            _LOGGER.debug("Prediction: %s", prob)
-
-    else:
-
-        def on_prediction(prob: float):
-            pass
-
+    detector = TriggerDetector(args.chunk_size, sensitivity, trigger_level)
     activation_count = 0
-    activation_event = asyncio.Event()
+    chunks_left = 0
 
     start_time = time.perf_counter()
-
-    def on_activation():
-        nonlocal activation_count, loop
-        print_json(
-            {
-                "keyword": str(model_path),
-                "detect_seconds": time.perf_counter() - start_time,
-            }
-        )
-        activation_count += 1
-        loop.call_soon_threadsafe(activation_event.set)
-
-    runner = PreciseRunner(
-        engine,
-        stream=engine_stream,
-        sensitivity=sensitivity,
-        trigger_level=trigger_level,
-        on_activation=on_activation,
-        on_prediction=on_prediction,
-    )
-
-    assert runner, "Runner not loaded"
-    runner.start()
 
     # Create audio source and start listening
     audio_source = await core.make_audio_source(args.audio_source)
 
-    try:
+    async def write_chunks():
+        nonlocal chunks_left
+
         while True:
             chunk = await audio_source.read(args.chunk_size)
             if chunk:
-                engine_stream.write(chunk)
+                chunk_stream.write(chunk)
+                await chunk_stream.drain()
+                chunks_left += 1
             else:
-                _LOGGER.debug(
-                    "Received empty audio chunk (waiting up to %s second(s)).",
-                    args.exit_timeout,
+                _LOGGER.debug("Received empty audio chunk")
+
+                # Ensure one more prediction
+                chunk_stream.write(b"\0" * args.chunk_size)
+                await chunk_stream.drain()
+                break
+
+    asyncio.create_task(write_chunks())
+
+    try:
+        while True:
+            prob_str = (
+                (
+                    await asyncio.wait_for(
+                        prob_stream.readline(), timeout=args.exit_timeout
+                    )
+                )
+                .decode()
+                .strip()
+            )
+            _LOGGER.debug("Prediction: %s", prob_str)
+
+            if detector.update(float(prob_str)):
+                # Activation
+                activation_count += 1
+                print_json(
+                    {
+                        "keyword": str(model_path),
+                        "detect_seconds": time.perf_counter() - start_time,
+                    }
                 )
 
-                if engine_stream and (activation_count < 1) and (args.exit_timeout > 0):
-                    # Wait for Precise engine to finish predictions
-                    await asyncio.wait_for(
-                        activation_event.wait(), timeout=args.exit_timeout
-                    )
-
+            chunks_left -= 1
+            if chunks_left <= 0:
                 break
 
             # Check exit count
@@ -133,6 +123,42 @@ async def wake(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     finally:
         try:
             await audio_source.close()
-            runner.stop()
+            engine_proc.terminate()
+            await engine_proc.wait()
+            # runner.stop()
         except Exception:
             pass
+
+
+# -----------------------------------------------------------------------------
+
+# Taken from precise-runner
+class TriggerDetector:
+    """
+    Reads predictions and detects activations
+    This prevents multiple close activations from occurring when
+    the predictions look like ...!!!..!!...
+    """
+
+    def __init__(self, chunk_size, sensitivity=0.5, trigger_level=3):
+        self.chunk_size = chunk_size
+        self.sensitivity = sensitivity
+        self.trigger_level = trigger_level
+        self.activation = 0
+
+    def update(self, prob):
+        # type: (float) -> bool
+        """Returns whether the new prediction caused an activation"""
+        chunk_activated = prob > 1.0 - self.sensitivity
+
+        if chunk_activated or self.activation < 0:
+            self.activation += 1
+            has_activated = self.activation > self.trigger_level
+            if has_activated or chunk_activated and self.activation < 0:
+                self.activation = -(8 * 2048) // self.chunk_size
+
+            if has_activated:
+                return True
+        elif self.activation > 0:
+            self.activation -= 1
+        return False
