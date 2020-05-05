@@ -17,7 +17,7 @@ for lib_python_dir in lib_dir.glob("python*"):
         site_dirs.append(site_dir)
 
 # Look for compiled artifacts
-artifacts = ["_webrtcvad.*.so", "_portaudio.*.so"]
+artifacts = ["_webrtcvad.*.so"]
 found_artifacts = {}
 for site_dir in site_dirs:
     site_dir = Path(site_dir)
