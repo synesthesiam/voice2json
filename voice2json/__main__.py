@@ -48,6 +48,12 @@ async def main():
     # Parse command-line arguments
     args = get_args()
 
+    # voice2json_dir
+    if not args.base_directory:
+        args.base_directory = os.environ.get("voice2json_dir", os.getcwd())
+
+    args.base_directory = Path(args.base_directory)
+
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)
     else:
@@ -76,6 +82,10 @@ def get_args() -> argparse.Namespace:
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(prog="voice2json", description="voice2json")
     parser.add_argument("--profile", "-p", help="Path to profle directory")
+    parser.add_argument(
+        "--base-directory",
+        help="Directory with shared voice2json files (voice2json_dir)",
+    )
     parser.add_argument("--certfile", help="Path to SSL certificate file")
     parser.add_argument("--keyfile", help="Path to SSL key file")
     parser.add_argument(
@@ -158,11 +168,6 @@ def get_args() -> argparse.Namespace:
     )
     downloads_parser.add_argument(
         "--list-profiles", action="store_true", help="List names of known profiles"
-    )
-    downloads_parser.add_argument(
-        "--machine",
-        default=platform.machine(),
-        help="Platform machine used for machine-specific files (default: host)",
     )
     downloads_parser.set_defaults(func=print_downloads)
 
@@ -512,14 +517,10 @@ def get_core(args: argparse.Namespace) -> Voice2JsonCore:
     os.environ["profile_dir"] = str(profile_dir)
 
     # x86_64, armv7l, armv6l, ...
-    os.environ["machine"] = platform.machine()
+    os.environ["machine"] = args.machine
 
     # Load profile defaults
-    defaults_yaml = (
-        Path(os.environ.get("voice2json_dir", os.getcwd()))
-        / "etc"
-        / "profile.defaults.yml"
-    )
+    defaults_yaml = args.base_directory / "etc" / "profile.defaults.yml"
     if defaults_yaml.exists():
         _LOGGER.debug("Loading profile defaults from %s", defaults_yaml)
         with open(defaults_yaml, "r") as defaults_file:
@@ -573,7 +574,7 @@ def get_core(args: argparse.Namespace) -> Voice2JsonCore:
 
 async def print_version(args: argparse.Namespace) -> None:
     """Print version."""
-    version_path = Path(os.environ.get("voice2json_dir", os.getcwd())) / "VERSION"
+    version_path = args.base_directory / "VERSION"
     print(version_path.read_text().strip())
 
 
@@ -590,7 +591,7 @@ async def print_profile(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 
 async def print_downloads(args: argparse.Namespace) -> None:
     """Print links to files for profiles."""
-    profiles_dir = Path("etc/profiles")
+    profiles_dir = args.base_directory / "etc" / "profiles"
 
     if args.list_profiles:
         # List profile names and exit
@@ -610,9 +611,11 @@ async def print_downloads(args: argparse.Namespace) -> None:
         profile_name = yaml_path.stem
         if profile_name not in profile_names:
             # Skip file
+            _LOGGER.debug("Skipping %s (not in %s)", yaml_path, profile_names)
             continue
 
         # Load YAML
+        _LOGGER.debug("Loading %s", yaml_path)
         with open(yaml_path, "r") as yaml_file:
             files_yaml = yaml.safe_load(yaml_file)
 
@@ -698,8 +701,7 @@ async def show_documentation(args: argparse.Namespace, core: Voice2JsonCore) -> 
     import http.server
     import socketserver
 
-    voice2json_dir = Path(os.environ.get("voice2json_dir", os.getcwd()))
-    site_dir = voice2json_dir / "site"
+    site_dir = args.base_directory / "site"
 
     os.chdir(site_dir)
     Handler = http.server.SimpleHTTPRequestHandler
