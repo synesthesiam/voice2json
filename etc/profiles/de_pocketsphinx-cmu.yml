@@ -27,6 +27,13 @@ default:
   base_dictionary.txt.gz:
     bytes: 264226
     sha256: 9b1156c13db366ac5c79b3aed0943c36d21c690d71032146677952f0d5d41ba4
+    file-name: base_dictionary.txt
+  profile.yml:
+    bytes: 473
+    sha256: 09e7cc09ce267dc35b6fb71a03d797a4a4234d6177cb4608f3e3de98739692a9
+  slot_programs/rhasspy/number:
+    bytes: 651
+    sha256: d1f10ccea552c2c9ba2a59dd69705f8e82545592c7db5ca7078b462ed9d08387
   stop_words.txt:
     bytes: 1357
     sha256: c5cd6233fe22514361b6bd2ba174195ed17c7a0626ca58fec662ac8914afde2b
@@ -36,18 +43,21 @@ grapheme-to-phoneme:
   g2p.fst.gz:
     bytes: 4248814
     sha256: c3e13d35bc01ebc3b3be05a3b0383b86295b9e6b04f1ebf19f32969642b763cf
+    file-name: g2p.fst
 
 # Files needed for open transcription (pre-built model)
 open-transcription:
    base_language_model.txt.gz:
     bytes: 35798869
     sha256: 0a6cba7fcadc1481dc266a6f4e921e79886389b6745dd1ff5c99586f0e843241
+    file-name: base_language_model.fst
 
 # Files needed for mixed language modeling (pre-built + custom)
 mixed-language-model:
   base_language_model.fst.gz:
     bytes: 46294275
     sha256: ed84ae50db690c057b9f1e2024d94fbc004edc0ac819cf3ec64dcd9fef6bdcd1
+    file-name: base_language_model.txt
 
 # Files needed for text to speech
 text-to-speech:
@@ -60,3 +70,12 @@ text-to-speech:
   marytts/voice-bits1-hsmm-5.2.jar:
     bytes: 1361946
     sha256: 4507c1e3bf429fb0fa985841680f71a571020bbb519281c07cee7f38dfa825f7
+
+# Sample sentences, etc.
+examples:
+  custom_words.txt:
+    bytes: 90
+    sha256: 8fef96cabf05265d849254909df60cea424e7dcdcd3230f1229e15d22d240816
+  sentences.ini:
+    bytes: 326
+    sha256: be7ec036ee001e026d455966db34868edb3559acfb6a64c9a18f19784d560d48

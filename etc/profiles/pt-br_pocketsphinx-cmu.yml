@@ -24,6 +24,12 @@ default:
   base_dictionary.txt.gz:
     bytes: 409151
     sha256: 30005834fa6bcc55c90c292aac64757debc45c72d8db5a2d4aa5e805cf927af9
+  profile.yml:
+    bytes: 448
+    sha256: c64bc7c0e3aa65d671ef9558430bfa26eef3bd6ccf1d959099ca61cce9cdf862
+  slot_programs/rhasspy/number:
+    bytes: 651
+    sha256: d1f10ccea552c2c9ba2a59dd69705f8e82545592c7db5ca7078b462ed9d08387
   stop_words.txt:
     bytes: 1267
     sha256: 5f305fac1d830620eeb9b2a68a1b96bf26f65c2e9257d56c8413d6fb36ed6cac
@@ -45,3 +51,12 @@ mixed-language-model:
   base_language_model.fst.gz:
     bytes: 1576373
     sha256: 0d5060914b9ca3b535a6cc2623616d4756995558fa73912e7c6f22fe84aed74a
+
+# Sample sentences, etc.
+examples:
+  custom_words.txt:
+    bytes: 67
+    sha256: 1f7bf0f944451bcf036158ea2124f9732fd3a85399157c3dc3058c93c03852a2
+  sentences.ini:
+    bytes: 449
+    sha256: 76a7145fb7dfbc97425e939b62576e1c103391b64d1d49b1af7308ba9cc1d364

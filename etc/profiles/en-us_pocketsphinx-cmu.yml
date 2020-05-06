@@ -34,6 +34,9 @@ default:
   "profile.yml":
     bytes: 594
     sha256: 4d03b85c245668ae0cc96c3f786661b6f80d1c968b399902064e66d403f0d0eb
+  "slot_programs/rhasspy/number":
+    bytes: 651
+    sha256: d1f10ccea552c2c9ba2a59dd69705f8e82545592c7db5ca7078b462ed9d08387
   "stop_words.txt":
     bytes: 530
     sha256: c70d3a9220951c0d80c3bc83e751618a7384308162e52544f786b3406547d00b

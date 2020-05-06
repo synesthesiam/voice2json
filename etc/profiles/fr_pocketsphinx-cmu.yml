@@ -34,6 +34,9 @@ default:
   profile.yml:
     bytes: 479
     sha256: 29e45e9f6668a99ef99b05bc6cdcfb1fc51a83ee98b802afc50acb3c55de1d85
+  slot_programs/rhasspy/number:
+    bytes: 651
+    sha256: d1f10ccea552c2c9ba2a59dd69705f8e82545592c7db5ca7078b462ed9d08387
   stop_words.txt:
     bytes: 805
     sha256: 6ca60ffd4257c35cc3981d0e923881c3d8b85c8c0f6ef7a6697bd4ae97200fd8
@@ -70,3 +73,12 @@ text-to-speech:
   marytts/voice-upmc-pierre-hsmm-5.2.jar:
     bytes: 1558945
     sha256: 14b320fd7c8808eace209471982ecd24e8db223e85bfa87d5ebfad45131b14a8
+
+# Sample sentences, etc.
+examples:
+  custom_words.txt:
+    bytes: 37
+    sha256: 0a177acaf089ceb8c3a2cbef36b73e507679e2bf8a07a054b3544ad954c14e97
+  sentences.ini:
+    bytes: 462
+    sha256: 0647a3ade5a0c246fc4d51028871440e82a0292db51c199fba6018066757e7d2

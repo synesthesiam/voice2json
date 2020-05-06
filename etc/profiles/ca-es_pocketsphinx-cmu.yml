@@ -29,8 +29,11 @@ default:
     sha256: f20a16a27cce5d453664604451b78f209789ced3fd140c106513b56097a8e411
     file-name: base_dictionary.txt
   profile.yml:
-    bytes: 342
-    sha256: 3781d1016a04360beac60526a5d0708f2e9ce8aaf146bbd6fcd0271ffddeadfd
+    bytes: 445
+    sha256: 6e4105307c07152262136732a8891002c393a728f759b6f7f794aa1c19f7f72f
+  slot_programs/rhasspy/number:
+    bytes: 651
+    sha256: d1f10ccea552c2c9ba2a59dd69705f8e82545592c7db5ca7078b462ed9d08387
   stop_words.txt:
     bytes: 4532
     sha256: 69c43ce97fdc651aa01d3a5bb8aa98d7bfcdea9cfa9823b624dcc4360bff2a3a
