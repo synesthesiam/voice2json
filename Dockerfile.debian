@@ -94,6 +94,13 @@ RUN . /.vars && \
     mv /tmp/voice2json ${DEBIAN_DIR}/usr/bin/ && \
     mv /tmp/sox ${DEBIAN_DIR}${APP_DIR}/bin/
 
+# Remove remnants of virtual environment
+RUN . /.vars && \
+    rm -rf \
+        ${DEBIAN_DIR}${APP_DIR}/bin/pip* \
+        ${DEBIAN_DIR}${APP_DIR}/bin/python* \
+        ${DEBIAN_DIR}${APP_DIR}/lib/python*
+
 RUN . /.vars && \
     cd ${BUILD_DIR} && \
     fakeroot dpkg --build ${PACKAGE_NAME}

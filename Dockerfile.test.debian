@@ -1,0 +1,20 @@
+FROM ubuntu:eoan as base
+
+ENV LANG C.UTF-8
+
+RUN apt-get update && \
+    apt-get install --yes --no-install-recommends \
+        python3 dpkg-dev \
+        libportaudio2 libatlas3-base libgfortran4 \
+        ca-certificates \
+        perl sox alsa-utils espeak jq
+
+COPY dist/ /dist/
+COPY VERSION /
+
+RUN export DEBIAN_ARCH="$(dpkg-architecture | grep DEB_BUILD_ARCH= | sed -e 's/[^=]\+=//')" && \
+    export VERSION="$(cat ${BUILD_DIR}/VERSION)" && \
+    cd /dist && \
+    apt install ./voice2json_${VERSION}_${DEBIAN_ARCH}.deb
+
+ENTRYPOINT ["voice2json"]

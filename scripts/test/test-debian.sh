@@ -32,6 +32,14 @@ fi
 
 # -----------------------------------------------------------------------------
 
+docker buildx build "${src_dir}" \
+       -f "${src_dir}/Dockerfile.test.debian" \
+       --platform "${platforms[@]}" \
+       --tag "${DOCKER_REGISTRY}/synesthesiam/voice2json-debian-test" \
+       --push
+
+# -----------------------------------------------------------------------------
+
 # Create a temporary directory for testing
 temp_dir="$(mktemp -d)"
 
@@ -56,7 +64,7 @@ for platform in "${platforms[@]}"; do
 
     docker pull  \
            --platform "${platform}" \
-           "${DOCKER_REGISTRY}/synesthesiam/voice2json:${version}"
+           "${DOCKER_REGISTRY}/synesthesiam/voice2json-debian-test"
 
     target_dir="${temp_dir}/${target}"
     rm -rf "${target_dir}"
@@ -69,7 +77,7 @@ docker run -i \
         -v "${HOME}:${HOME}" \
         -e "HOME=${HOME}" \
         --user "$(id -u):$(id -g)" \
-        "${DOCKER_REGISTRY}/synesthesiam/voice2json:${voice2json_version}" "$@"
+        "${DOCKER_REGISTRY}/synesthesiam/voice2json-debian-test" "$@"
 ' > "${target_dir}/voice2json"
     chmod +x "${target_dir}/voice2json"
 
