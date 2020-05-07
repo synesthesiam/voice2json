@@ -9,13 +9,11 @@ version="$(cat "${src_dir}/VERSION")"
 
 # -----------------------------------------------------------------------------
 
-# if [[ -z "$1" ]]; then
-#     targets=('amd64' 'armv7' 'arm64')
-# else
-#     targets=("$@")
-# fi
-
-platforms=('linux/amd64' 'linux/arm/v7' 'linux/arm64')
+if [[ -z "$1" ]]; then
+    platforms=('linux/amd64' 'linux/arm/v7' 'linux/arm64')
+else
+    platforms=("$@")
+fi
 
 # -----------------------------------------------------------------------------
 

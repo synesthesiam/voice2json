@@ -4,4 +4,4 @@ docker run -i \
        -w "$(pwd)" \
        -e "HOME=${HOME}" \
        --user "$(id -u):$(id -g)" \
-       amd64/voice2json:0.2.0 "$@"
+       synesthesiam/voice2json:2.0.0 "$@"
