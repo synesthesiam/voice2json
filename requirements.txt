@@ -7,7 +7,7 @@ doit
 openfst==1.6.9
 networkx
 pyinstaller
-mkdocs>=1.0.4
+mkdocs
 mkdocs-material
 requests
 numpy
