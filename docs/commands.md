@@ -23,6 +23,8 @@ The following commands are available:
 * [record-examples](#record-examples) - Generate and record speech examples
 * [test-examples](#test-examples) - Test recorded speech examples
 * [show-documentation](#show-documentation) - Run HTTP server locally with documentation
+* [print-downloads](#print-downloads) - Print profile file download information
+* [print-files](#print-files) - Print user profile files for backup
 * print-version - Print `voice2json` version and exit
     
 ---
@@ -299,6 +301,8 @@ $ voice2json transcribe-stream
 ```
 
 Like [`transcribe-wav`](#transcribe-wav), `transcribe-stream` accepts a `--open` argument for [open transcription](#open-transcription).
+
+Like [`wait-wake`](#wait-wake), `transcribe-stream` also accepts a [`--exit-count` argument](#exit-count) for exiting once a specific number of voice commands have been recorded and transcribed.
 
 ### Stream Events
 
@@ -684,3 +688,101 @@ $ voice2json show-documentation --port 8000
 The documentation should now be accessible at [http://localhost:8000](http://localhost:8000)
 
 If you're running `voice2json` inside [Docker](install.md#docker-image), make sure you use `-p` to expose the correct port via `docker run`.
+
+## print-downloads
+
+Prints download information for profile files. Outputs a single line of [jsonl](http://jsonlines.org) for each file. Can be used to download missing profile files and verify them.
+
+```bash
+$ voice2json print-downloads [OPTIONS] <PROFILE> [<PROFILE>] ...
+```
+
+### Downloading a New Profile
+
+The most common use case for `print-downloads` is to download the required files for a [specific profile](https://github.com/synesthesiam/voice2json-profiles#supported-languages). Rather than downloading the full `.tar.gz` for a profile (100's of MB at least), you can exclude files you don't need using these options:
+
+* `--no-mixed-language-model`
+    * Exclude files needed for [language model mixing](#language-model-mixing)
+* `--no-open-transcription`
+    * Exclude files needed for [open transcription](#open-transcription)
+* `--no-grapheme-to-phoneme`
+    * Exclude files needed for [guessing word pronunciations](#unknown-words)
+* `--no-text-to-speech`
+    * Exclude files needed for [text to speech](#speak-sentence)
+    
+The `--with-examples` option **includes** example `sentences.ini` and `custom_words.txt` files in the download list.
+
+If you only plan to use `voice2json` for custom voice commands, the following command will print the required files (with examples) for the [U.S. English Pocketsphinx profile](https://github.com/synesthesiam/en-us_pocketsphinx-cmu):
+
+```bash
+$ voice2json print-downloads \
+    --no-mixed-language-model \
+    --no-open-transcription \
+    --with-examples \
+    en-us_pocketsphinx-cmu
+    
+{"bytes": 1537, "sha256": "49181202f2b991d25f6cac8cd1705994494b9600d4311794ecbb9fcf8b188aef", "file": "LICENSE", "profile": "en-us_pocketsphinx-cmu", "url": "https://github.com/synesthesiam/en-us_pocketsphinx-cmu/raw/master/LICENSE", "profile-directory": "/home/hansenm/.config/voice2json"}
+...
+```
+
+Using the [information provided](#download-format) in each line, a small Bash script can be used to actually download the files (requires `curl` and `jq`):
+
+```bash
+$ voice2json print-downloads \
+    --no-mixed-language-model \
+    --no-open-transcription \
+    --with-examples \
+    en-us_pocketsphinx-cmu | \
+while read -r json; do
+    # Source URL
+    url="$(echo "${json}" | jq --raw-output .url)"
+
+    # Destination directory and file path
+    profile_dir="$(echo "${json}" | jq --raw-output '.["profile-directory"]')"
+    dest_file="$(echo "${json}" | jq --raw-output .file)"
+    dest_file="${profile_dir}/${dest_file}"
+
+    # Directory of destination file
+    dest_dir="$(dirname "${dest_file}")"
+
+    echo "${url} => ${dest_file}"
+
+    # Create destination directory and download file
+    mkdir -p "${dest_dir}"
+    curl -sSfL -o "${dest_file}" "${url}"
+done
+```
+
+This will download about half as many bytes as are needed for the [complete `.tar.gz`](https://github.com/synesthesiam/en-us_pocketsphinx-cmu/releases)
+
+**Note:** the script above overwrites any existing files and does not verify the download sizes/SHA256 sums.
+
+Use the `--only-missing` flag to only print download information for profile files that do not already exist.
+
+### Download Format
+
+Each line from `print-downloads` is a JSON object with the following fields:
+
+* `bytes` - expected size of the file in bytes (number)
+* `sha256` - expected SHA256 sum of the file (string)
+* `url` - URL to download the file (string)
+* `file` - path of the file relative to the profile directory (string)
+* `profile` - name of the profile (string)
+* `profile-directory` - directory of the profile (string)
+
+## print-files
+
+Prints absolute paths to user-created files in your profile that should be backed up.
+
+You can back up to a `.tar.gz` like this:
+
+```bash
+$ voice2json print-files | tar -czf /path/to/profile_backup.tar.gz -T -
+```
+
+Includes:
+
+* [Training sentences](sentences.md) (`sentences.ini`) and [slot files](sentences.md#slot-references) (`slots/`)
+* Custom word pronunciations (`custom_words.txt`)
+* [Slot programs](sentences.md#slot-programs) (`slot_programs/`)
+* [Converters](sentences.md#converters) (`converters/`)

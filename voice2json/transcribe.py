@@ -195,6 +195,9 @@ async def transcribe_stream(args: argparse.Namespace, core: Voice2JsonCore) -> N
     # Number of events for pending voice command
     event_count = 0
 
+    # Number of transcriptions that have happened
+    num_transcriptions = 0
+
     try:
         chunk = await audio_source.read(args.chunk_size)
         while chunk:
@@ -231,6 +234,15 @@ async def transcribe_stream(args: argparse.Namespace, core: Voice2JsonCore) -> N
                     _LOGGER.debug(
                         "Wrote %s (%s byte(s))", args.wav_sink, len(wav_bytes)
                     )
+
+                num_transcriptions += 1
+
+                # Check exit count
+                if (args.exit_count is not None) and (
+                    num_transcriptions >= args.exit_count
+                ):
+                    _LOGGER.debug("Exit count reached")
+                    break
 
                 recorder.start()
             else:

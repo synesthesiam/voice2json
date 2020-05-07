@@ -142,20 +142,11 @@ See `./configure --help` for additional options.
 
 ## Download Profile
 
-`voice2json` must have a [profile](profiles.md) in order to do speech/intent recognition. Because the artifacts for each language/locale can be quite large (~100MB or more), `voice2json` does not include them in its [Debian package](#debian-package), [Docker image](#docker-image), or [source repository](#from-source).
-
-### Back Up Your Profile
-
-If you have an existing `voice2json` profile, it is highly recommended you **regularly back up** the following files:
-
-* `sentences.ini` - your custom voice commands
-* `custom_words.txt` - your custom pronunciations
-* `profile.yml` - your custom settings
-* `slots` - directory with custom slot values
-* `slot_programs` - directory with custom slot programs
-* `converters` - directory with custom conversion programs
+`voice2json` must have a [profile](profiles.md) in order to do speech/intent recognition. Because the artifacts for each language/locale can be quite large (100's of MB or more), `voice2json` does not include them in its [Debian package](#debian-package), [Docker image](#docker-image), or [source repository](#from-source).
 
 Profiles for each of the supported languages/locales are available for [download on Github](https://github.com/synesthesiam/voice2json-profiles). You should download the appropriate `.tar.gz` and extract it to `$HOME/.config/voice2json` (any other directory will require a `--profile` argument to be passed to `voice2json`). If everything is in the right place, `$HOME/.config/voice2json/profile.yml` will exist.
+
+The [`print-downloads`](commands.md#print-downloads) command can be used to avoid downloading unnecessary files if you know how you plan to use `voice2json`.
 
 ### English Example
 
@@ -183,13 +174,77 @@ $ curl -SL \
 Now you should be able to train your profile:
 
 ```bash
-$ voice2json train-profile
+$ voice2json --debug train-profile
 ```
 
 If you extracted the profile files to a directory other than `$HOME/.config/voice2json`, you will need to pass a `--profile` argument to `voice2json`:
 
 ```bash
-$ voice2json --profile /path/to/profile/files/ train-profile
-``
+$ voice2json --profile /path/to/profile/files/ --debug train-profile
+```
 
 **Note**: The first time you train your profile may take a long time, especially on Raspberry Pi (SD card). This is because `voice2json` is decompressing and re-combining split files from GitHub.
+
+### Test Your Profile
+
+Once you've trained your profile, you can quickly test it out with:
+
+```bash
+$ voice2json transcribe-stream
+```
+
+The [`transcribe-stream`](commands.md#transcribe-stream) will record from your microphone (using `arecord` and the default device), wait for you to speak a voice command, and then output a transcription (hit CTRL + C to exit).
+
+If you're using the default English sentences, try saying "turn on the living room lamp" and wait for the output. Getting intents out is as easy as:
+
+```bash
+$ voice2json transcribe-stream | \
+    voice2json recognize-intent
+```
+
+Speaking a voice command should now output a line of JSON with the recognized intent. For example, "what time is it" outputs something like:
+
+```json
+{
+  "text": "what time is it",
+  "likelihood": 0.025608657540496446,
+  "transcribe_seconds": 1.4270143630001257,
+  "wav_seconds": 0.0043125,
+  "tokens": [
+    "what",
+    "time",
+    "is",
+    "it"
+  ],
+  "timeout": false,
+  "intent": {
+    "name": "GetTime",
+    "confidence": 1
+  },
+  "entities": [],
+  "raw_text": "what time is it",
+  "recognize_seconds": 0.00019677899945236277,
+  "raw_tokens": [
+    "what",
+    "time",
+    "is",
+    "it"
+  ],
+  "speech_confidence": null,
+  "wav_name": null,
+  "slots": {}
+}
+```
+
+### Back Up Your Profile
+
+If you have an existing `voice2json` profile, it is highly recommended you **regularly back up** the following files:
+
+* `sentences.ini` - your custom voice commands
+* `custom_words.txt` - your custom pronunciations
+* `profile.yml` - your custom settings
+* `slots` - directory with custom slot values
+* `slot_programs` - directory with custom slot programs
+* `converters` - directory with custom conversion programs
+
+See the [`print-files`](commands.md#print-files) for an easy way to automate backups.

@@ -23,6 +23,8 @@
 * [Number ranges](sentences.md#number-ranges), [slot programs](sentences.md#slot-programs), and [converters](sentences.md#converters) to template language.
 * `--intent-filter` for [`recognize-intent`](commands.md#recognize-intent) command.
 * `--certfile` and `--keyfile` arguments for SSL support.
+* [`print-downloads`](commands.md#print-downloads) command (download only necessary files).
+* [`print-files`](commands.md#print-files) command (for backups).
 * `print-version` command (or `--version`).
 
 #### Changed

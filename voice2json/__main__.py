@@ -172,6 +172,14 @@ def get_args() -> argparse.Namespace:
     downloads_parser.set_defaults(func=print_downloads)
 
     # -------------
+    # print-files
+    # -------------
+    print_files_parser = sub_parsers.add_parser(
+        "print-files", help="Print paths to profile files for backup"
+    )
+    print_files_parser.set_defaults(func=print_files)
+
+    # -------------
     # train-profile
     # -------------
     train_parser = sub_parsers.add_parser(
@@ -227,6 +235,12 @@ def get_args() -> argparse.Namespace:
         "-o",
         action="store_true",
         help="Use large pre-built model for transcription",
+    )
+    transcribe_stream_parser.add_argument(
+        "--exit-count",
+        "-c",
+        type=int,
+        help="Exit after some number of voice commands have been recorded/transcribed",
     )
     transcribe_stream_parser.add_argument(
         "--chunk-size",
@@ -584,6 +598,27 @@ async def print_version(args: argparse.Namespace) -> None:
 async def print_profile(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     """Print all settings as JSON."""
     json.dump(core.profile, sys.stdout, indent=4)
+
+
+# -----------------------------------------------------------------------------
+
+
+async def print_files(args: argparse.Namespace, core: Voice2JsonCore) -> None:
+    """Print paths to user profile files for backup."""
+    backup_paths = (
+        [
+            core.profile_file,
+            core.profile_dir / "sentences.ini",
+            core.profile_dir / "custom_words.txt",
+        ]
+        + list((core.profile_dir / "slots").rglob("*"))
+        + list((core.profile_dir / "slot_programs").rglob("*"))
+        + list((core.profile_dir / "converters").rglob("*"))
+    )
+
+    for backup_path in backup_paths:
+        if backup_path.is_file():
+            print(backup_path.absolute())
 
 
 # -----------------------------------------------------------------------------
