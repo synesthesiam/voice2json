@@ -10,8 +10,9 @@ A `voice2json` <strong>profile</strong> contains everything necessary to recogni
     * A template file describing all of your voice commands
 * Speech/intent models
     * `acoustic_model` - a directory with the speech model artifacts
-        * [Kaldi](https://kaldi-asr.org) models typically have a large pre-trained `HCLG.fst` in `acoustic_model/model/graph`
-    * `intent.fst` - a [finite state transducer](http://www.openfst.org) generated during [training](commands.md#train-profile)
+        * [Kaldi](https://kaldi-asr.org) profiles typically have a large pre-trained `HCLG.fst` in `acoustic_model/model/graph`
+        * [DeepSpeech](https://github.com/mozilla/DeepSpeech) profiles have an output graph in `model`
+    * `intent.pickle.gz` - a directed graph generated during [training](commands.md#train-profile) that is converted to a [finite state transducer](http://www.openfst.org)
     * See [the whitepaper](whitepaper.md) for more details
 * Pronunciation dictionaries
     * How `voice2json` expects words to be pronounced. You can [customize any word](commands.md#pronounce-word).
@@ -22,6 +23,7 @@ A `voice2json` <strong>profile</strong> contains everything necessary to recogni
     * Captures statistics about [which words follow others](whitepaper.md#language-model) in your voice commands
     * `base_language_model.txt` - large, pre-built [ARPA language model](https://cmusphinx.github.io/wiki/arpaformat/) for profile language
         * Used in [open transcription](commands.md#open-transcription) and [language model mixing](commands.md#language-model-mixing)
+        * [DeepSpeech](https://github.com/mozilla/DeepSpeech)-based profiles may have an `lm.binary` file instead
         * [Julius](https://github.com/julius-speech/julius)-based profiles may have a pre-compiled `base_language_model.bin` file instead
     * `language_model.txt` - custom language model generated generated during [training](commands.md#train-profile)
 * Grapheme to phoneme models
@@ -61,9 +63,11 @@ The default values for all profile settings are stored in `etc/profile.defaults.
 ```yaml
 speech-to-text:
   # Path to pre-built acoustic model directory
+  # For deepspeech: $profile_dir/model/output_graph.pbmm
   acoustic-model: !env "${profile_dir}/acoustic_model"
   
   # Path to custom ARPA language model
+  # For deepspeech: $profile_dir/lm.binary
   language-model: !env "${profile_dir}/language_model.txt"
   
   # Path to custom pronunciation dictionary
@@ -92,14 +96,22 @@ speech-to-text:
   julius:
     adinnet-port: 5530
 
+  # Mozilla DeepSpeech-specific settings
+  deepspeech:
+    # Path to trie generate from sentences.ini
+    trie: !env "${profile_dir}/trie"
+
+    # Path to large, pre-built binary language model (open transcription)
+    base-language-model: !env "${profile_dir}/model/lm.binary"
+
+    # Path to large, pre-built trie (open transcription)
+    base-true: !env "${profile_dir}/model/true"
+
 # -----------------------------------------------------------------------------
 
 intent-recognition:
-  # Path to custom intent finite state transducer
-  intent-fst: !env "${profile_dir}/intent.fst"
-  
-  # True if words outside of sentences.ini should be ignored
-  skip-unknown: true
+  # Path to custom intent graph (stored as a gzipped networkx pickle)
+  intent-graph: !env "${profile_dir}/intent.pickle.gz"
   
   # True if text should not be strictly matched
   fuzzy: true
@@ -111,7 +123,7 @@ intent-recognition:
 
 training:
   # Type of acoustic model.
-  # One of: pocketsphinx, kaldi, julius.
+  # One of: pocketsphinx, kaldi, julius, deepspeech.
   acoustic-model-type: "pocketsphinx"
 
   # Path to pre-built acoustic model directory
@@ -126,6 +138,12 @@ training:
 
   # Directory containing text files, one for each $slot referenced in sentences.ini
   slots-directory: !env "${profile_dir}/slots"
+  
+  # Directory containing programs, one for each $slot referenced in sentences.ini
+  slot-programs-directory: !env "${profile_dir}/slot_programs"
+  
+  # Directory containing programs, one for each !converter referenced in sentences.ini
+  converters-directory: !env "${profile_dir}/converters"
   
   # Path to write custom intent finite state transducer
   intent-fst: !env "${profile_dir}/intent.fst"
@@ -183,17 +201,15 @@ wake-word:
   # Sensitivity (0-1)
   sensitivity: 0.5
 
-  # Porcupine-specific settings
-  porcupine:
-      # Path to porcupine shared object library
-      library-file: !env "${voice2json_dir}/etc/porcupine/lib/${machine}/libpv_porcupine.so"
+  # Mycroft Precise settings
+  precise:
+      # Path to precise-engine executable.
+      # Use $PATH if empty.
+      engine-executable: ""
 
-      # Path to porcupine params file
-      params-file: !env "${voice2json_dir}/etc/porcupine/lib/common/porcupine_params.pv"
+      # Path to model .pb file
+      model-file: !env "${voice2json_dir}/etc/precise/hey-mycroft-2.pb"
 
-      # Path to procupine keyword file
-      keyword-file: !env "${voice2json_dir}/etc/porcupine/keyword_files/porcupine_${machine}.ppn"
-  
 # -----------------------------------------------------------------------------
 
 voice-command:
@@ -210,7 +226,10 @@ voice-command:
   silence-seconds: 0.5
 
   # Seconds of audio before voice command starts to retain in output
-  before-seconds: 0.25
+  before-seconds: 0.5
+
+  # Seconds of audio to ignore before voice command
+  skip-seconds: 0.0
 
   # webrtcvad specific settings
   webrtcvad:
@@ -232,17 +251,8 @@ text-to-speech:
     speak-command: "espeak-ng --stdout \"{sentence}\""
 
   marytts:
-    # Command to run MaryTTS server
-    server-command: !env "java -cp \"${voice2json_dir}/marytts/*:${profile_dir}/marytts/*\" -Dmary.base=\"${profile_dir}/marytts\" marytts.server.Mary"
-
     # URL to do GET requests
     process-url: "http://localhost:59125/process"
-
-    # Number of times to retry server connection
-    max-retries: 15
-
-    # Seconds between retries
-    retry-seconds: 0.5
 
     # Path to map between dictionary and MaryTTS phonemes
     phoneme-map: !env "${profile_dir}/marytts_phonemes.txt"

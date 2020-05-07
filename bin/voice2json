@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+this_dir="$( cd "$( dirname "$0" )" && pwd )"
+src_dir="$(realpath "${this_dir}/..")"
+
+export voice2json_dir="${src_dir}"
+
+: "${PYTHON=python3}"
+
+venv="${src_dir}/.venv"
+
+if [[ -d "${venv}" ]]; then
+    # Use virtual environment
+    source "${venv}/bin/activate"
+    PYTHON="${venv}/bin/python"
+fi
+
+export LD_LIBRARY_PATH="${venv}/lib:${LD_LIBRARY_PATH}"
+export PATH="${venv}/bin:${PATH}"
+export KALDI_DIR="${venv}/lib/kaldi"
+
+export PYTHONPATH="${src_dir}:${PYTHONPATH}"
+"${PYTHON}" -m voice2json "$@"

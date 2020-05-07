@@ -1,0 +1,75 @@
+---
+default:
+  LICENSE:
+    bytes: 1621
+    sha256: dbc4656536419530472f36052573252fcfc6c81f69225b991333ab399cfe6ca9
+  acoustic_model/feat.params:
+    bytes: 110
+    sha256: f66875cab13a64323b8288cab70025ad77cb24d0ef4d584669cf0b3e8b71b453
+  acoustic_model/feature_transform:
+    bytes: 5660
+    sha256: 0a37abbe8dafa9f99a2da5355ce52e1a591bfed0c45b49cf2de20cbb335b4cdb
+  acoustic_model/mdef:
+    bytes: 9025339
+    sha256: 219d8589f96c92687f37ba239fd1da50a42161cd4afb80cc712d7348eb8970fd
+  acoustic_model/means:
+    bytes: 23675972
+    sha256: 9e859fd5f9ff805bba58034b27f770d80fc0ad5255d8d201c00a40833b5c3de7
+  acoustic_model/mixture_weights:
+    bytes: 657728
+    sha256: 2f4aeb2b876d1a8085d2024067845e1b21869a72cc297b7322e525c2715c4495
+  acoustic_model/noisedict:
+    bytes: 28
+    sha256: 062078d7f77ce73f1c5afdb9f70d1fc9dc20f64f9675447ea873966e5514b737
+  acoustic_model/transition_matrices:
+    bytes: 2272
+    sha256: 917bb37a32f86a004c5a9c89524bffa3d010d43300f2a07e102109678b411cde
+  acoustic_model/variances:
+    bytes: 23675972
+    sha256: 39563ec27626c813526bdbf4fe376c70a1d035be8d470c4dae01bc872bc666cb
+  base_dictionary.txt.gz:
+    bytes: 1585994
+    file-name: base_dictionary.txt
+    sha256: a52f36f8dae70ca281d05a361676db33f3470a306a1804306766b70f41715b7d
+  profile.yml:
+    bytes: 448
+    sha256: 2a24fdd51df6f5bac21756048c921f43a6189c813916daf9c125fb23a74aa804
+  slot_programs/rhasspy/number:
+    bytes: 651
+    sha256: d1f10ccea552c2c9ba2a59dd69705f8e82545592c7db5ca7078b462ed9d08387
+  stop_words.txt:
+    bytes: 530
+    sha256: c70d3a9220951c0d80c3bc83e751618a7384308162e52544f786b3406547d00b
+
+# Files needed to guess word pronunciations
+grapheme-to-phoneme:
+  g2p.fst.gz:
+    bytes: 18830007
+    file-name: g2p.fst
+    sha256: de57d66731ba94201d3ec3ed64bc6ade8dd340d77d718cb637f1f83a21726c81
+
+# Files needed for open transcription (pre-built model)
+open-transcription:
+  base_language_model.txt.gz:
+    bytes: 33456672
+    file-name: base_language_model.txt
+    sha256: c354a19b53b2e5bdef1736fb713c0ce632bcca675da967604fc8b140dcb616ee
+
+# Files needed for mixed language modeling (pre-built + custom)
+mixed-language-model:
+  base_language_model.fst.gz:
+    bytes: 37267042
+    file-name: base_language_model.fst
+    sha256: 49053b0d02d3edcc84974d9a6fcf10b773a52a7cdb815a450b61733ac452d37d
+
+# Files needed for text to speech
+text-to-speech:
+  espeak_phonemes.txt:
+    bytes: 219
+    sha256: bd994fa117d0fe5880da761d36ad5ef3ec67115dcc9a6d6bb8d00399c9cfe24c
+
+# Sample sentences, etc.
+examples:
+  sentences.ini:
+    bytes: 538
+    sha256: 839b4f949ab5248401920bf4290e8f13a479f17f37626cb5306d4db5d76faf6c

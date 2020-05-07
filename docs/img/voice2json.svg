@@ -9,13 +9,16 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="93.691544mm"
-   height="20.111898mm"
-   viewBox="0 0 93.691543 20.111898"
+   width="89.613297mm"
+   height="17.091038mm"
+   viewBox="0 0 89.613296 17.091037"
    version="1.1"
    id="svg8"
    sodipodi:docname="voice2json.svg"
-   inkscape:version="0.92.3 (2405546, 2018-03-11)">
+   inkscape:version="0.92.3 (2405546, 2018-03-11)"
+   inkscape:export-filename="./voice2json.png"
+   inkscape:export-xdpi="119.958"
+   inkscape:export-ydpi="119.958">
   <defs
      id="defs2">
     <marker
@@ -41,17 +44,17 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="3.959798"
-     inkscape:cx="170.35923"
-     inkscape:cy="41.820339"
+     inkscape:zoom="2.8"
+     inkscape:cx="207.19398"
+     inkscape:cy="71.189266"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
      inkscape:snap-global="false"
-     inkscape:window-width="2560"
-     inkscape:window-height="1372"
+     inkscape:window-width="1440"
+     inkscape:window-height="832"
      inkscape:window-x="0"
-     inkscape:window-y="0"
+     inkscape:window-y="300"
      inkscape:window-maximized="1"
      fit-margin-top="0"
      fit-margin-left="0"
@@ -65,7 +68,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -73,7 +76,7 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(-17.51392,-88.884522)">
+     transform="translate(-17.13892,-90.394952)">
     <path
        inkscape:tile-y0="34.274052"
        inkscape:tile-x0="74.56954"
@@ -153,19 +156,35 @@
        style="font-style:normal;font-weight:normal;font-size:medium;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#66ff00;fill-opacity:1;stroke:none;stroke-width:0.26458332"
        d="m 98.827117,93.117184 v -0.368992 h 0.630902 c 0.272436,0 0.455156,0.06308 0.548161,0.189858 0.0919,0.126782 0.13786,0.378453 0.13786,0.755835 v 4.400179 c 0,0.257979 0.0295,0.436483 0.0886,0.535512 0.0591,0.09903 0.1663,0.148858 0.32165,0.148858 h 0.10012 v 0.365839 h -0.10012 c -0.15644,0 -0.26367,0.05046 -0.32165,0.145705 -0.0591,0.09903 -0.0886,0.276271 -0.0886,0.530466 v 4.335756 c 0,0.37719 -0.0459,0.62823 -0.13786,0.75325 -0.09301,0.12678 -0.276075,0.19086 -0.548161,0.20184 l -0.630902,-0.0126 v -0.36583 h 0.640761 c 0.154257,0 0.254907,-0.0379 0.301977,-0.11291 0.0471,-0.0751 0.0706,-0.23338 0.0706,-0.47433 v -4.356252 c 0,-0.268072 0.025,-0.462976 0.0755,-0.584081 0.0493,-0.121105 0.134075,-0.203103 0.254385,-0.245995 -0.12144,-0.04415 -0.206795,-0.129305 -0.256045,-0.251041 -0.0493,-0.121105 -0.0739,-0.314747 -0.0739,-0.581557 v -4.423138 c 0,-0.240949 -0.0234,-0.399269 -0.0706,-0.474329 -0.0471,-0.07506 -0.14772,-0.112906 -0.301978,-0.112906 z"
        sodipodi:nodetypes="ccscssssccscsscsccsssscccssscc" />
-    <text
-       xml:space="preserve"
-       style="font-style:normal;font-weight:normal;font-size:8.63051987px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
-       x="17.256859"
-       y="101.31258"
-       id="text839"><tspan
-         sodipodi:role="line"
-         id="tspan837"
+    <g
+       id="g881">
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-weight:normal;font-size:8.63051987px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:none;fill-opacity:1;stroke:#c6e9af;stroke-width:0.5;"
          x="17.256859"
          y="101.31258"
-         style="stroke-width:0.26458332">voice<tspan
-   style="fill:#008000"
-   id="tspan839">2</tspan>json</tspan></text>
+         id="text850"><tspan
+           sodipodi:role="line"
+           id="tspan848"
+           x="17.256859"
+           y="101.31258"
+           style="fill:none;stroke:#c6e9af;stroke-width:0.5;">voice<tspan
+   style="fill:none;stroke:#c6e9af;stroke-width:0.5;"
+   id="tspan846">2</tspan>json</tspan></text>
+      <text
+         id="text839"
+         y="101.31258"
+         x="17.256859"
+         style="font-style:normal;font-weight:normal;font-size:8.63051987px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+         xml:space="preserve"><tspan
+           style="stroke-width:0.26458332"
+           y="101.31258"
+           x="17.256859"
+           id="tspan837"
+           sodipodi:role="line">voice<tspan
+   id="tspan839"
+   style="fill:#008000">2</tspan>json</tspan></text>
+    </g>
     <path
        style="fill:none;stroke:#225500;stroke-width:0.38058069;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="M 97.47858,90.394952 V 107.48599"

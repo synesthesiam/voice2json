@@ -1,0 +1,169 @@
+---
+default:
+  LICENSE:
+    bytes: 53
+    sha256: a08a72ad31ae39d7a1ba77ff50411e321252c4e653df5b5a3c161b190d3bc71c
+  acoustic_model/dnn.jconf:
+    bytes: 613
+    sha256: 93de2f32958e13b461f3cc6b081fed8f39b7d7045edb602671e4ee0531f5a81a
+  acoustic_model/julius.jconf:
+    bytes: 259
+    sha256: 5edffb4442c95860147a39d07c6d5a57afc1a9e1b73e2b70f193228c338c4bf6
+  acoustic_model/model.am.gz.part-00:
+    bytes: 26214400
+    file-name: model.am
+    sha256: 52fae733d17855e27bfaa59324b3c35c2f076d0c1e54892dbc146b1a30a78cb3
+  acoustic_model/model.am.gz.part-01:
+    bytes: 25597332
+    file-name: model.am
+    sha256: c11afa601d7f74f179b631d8d4f432534dbf1be8bd2d308bd33ce1d8c4da51ad
+  acoustic_model/model.layer2_bias.npy:
+    bytes: 6224
+    sha256: 76b78d3ea13d39e513a6969d855ce74cf83e9abdbd1de0226827d62a705f7421
+  acoustic_model/model.layer2_weight.npy:
+    bytes: 3244112
+    sha256: 6fc9c40076c2cde7fdaf43233be78a57ddf811b6e8f4e1c9c6790f3b466f9f1e
+  acoustic_model/model.layer3_bias.npy:
+    bytes: 6224
+    sha256: 67e44e328735aa29b81fdd8faae32a6dc0a7ba7daf76a204775b72b135a8852e
+  acoustic_model/model.layer3_weight.npy:
+    bytes: 9437264
+    sha256: e1640f2602c78b00a780ce062bcdccf34bfd9e20464f1bb90412d5c18cc3b32e
+  acoustic_model/model.layer4_bias.npy:
+    bytes: 6224
+    sha256: dc4398e8699dbf03d954ee6ffa4b141f4de4e8ed18887f1b4a7ea8ac015a1315
+  acoustic_model/model.layer4_weight.npy:
+    bytes: 9437264
+    sha256: 02735063e08031a474946371a3df7fa3e6f2e4f450d91ca9398d1b76ce5ada62
+  acoustic_model/model.layer5_bias.npy:
+    bytes: 6224
+    sha256: 9fcdec3d6e7738f615df22870110dcf12a5a855cb613fd7474fc964c1a4d9510
+  acoustic_model/model.layer5_weight.npy:
+    bytes: 9437264
+    sha256: f4bc6ae6f2703bd62fb3cced8f376532d9acaaf90c4512018439c390550459ee
+  acoustic_model/model.layer6_bias.npy:
+    bytes: 6224
+    sha256: de4efbece1f77cdb4518bc9ab66b8554bb2afa63cd7db95e14a648dd22483078
+  acoustic_model/model.layer6_weight.npy:
+    bytes: 9437264
+    sha256: afa29ff0ffd7d45ff2cc02e72bb2fa990281c45f35da366349bfe6682240e1ae
+  acoustic_model/model.layerout_bias.npy:
+    bytes: 39308
+    sha256: 867d8787b9dc1443b6bdd050bfc76c7b718de4503529d6b456a11b045df16024
+  acoustic_model/model.layerout_weight.npy.gz.part-00:
+    bytes: 26214400
+    file-name: model.layerout_weight.npy
+    sha256: 901e4e9ffa2439ff28fd5b92ff6ff410919daaf7983bc2c053ad078795078763
+  acoustic_model/model.layerout_weight.npy.gz.part-01:
+    bytes: 26214400
+    file-name: model.layerout_weight.npy
+    sha256: 1a1b999b535adde11f22b1463de01243b145b590ae49875f78e9289dac17a3eb
+  acoustic_model/model.layerout_weight.npy.gz.part-02:
+    bytes: 3345635
+    file-name: model.layerout_weight.npy
+    sha256: 7b69655cde4f9a66eedc3e3cc8183f8da69875a73a82f3468eab595218ed4d71
+  acoustic_model/model.mfc:
+    bytes: 665
+    sha256: ccafb3ab4d5051866636eb19c11bd58fb4011337015f7524622fba18890c1602
+  acoustic_model/model.norm:
+    bytes: 868
+    sha256: 4af94e71e33dee4284d5af72027fcbe0715529b760cefb7fb4462f56b2b5f2f6
+  acoustic_model/model.phn:
+    bytes: 1454246
+    sha256: 4c7e2f8bda31a064ceee7ed8435ec750aad3fcad186465661adbab9ba7d5214a
+  acoustic_model/model.prior:
+    bytes: 194016
+    sha256: a8ae62ba9c458236bf12cd6334ab9a15bc4911c529626e7ec0e8c4ff175080c5
+  acoustic_model/wav_config:
+    bytes: 198
+    sha256: dcfc3b6c820c2960d90a378759a985bef3de57d1b09697d43c7102043dd45680
+  base_dictionary.txt.gz:
+    bytes: 2333312
+    file-name: base_dictionary.txt
+    sha256: 22c29f1943585aeea9cdd96596bb0cc4bea38c45285aae1aa8f66f7803274b09
+  profile.yml:
+    bytes: 693
+    sha256: b9734614386731ac0a34678e48623d671de495f4c93bd16d81b3f0f152a609cc
+  slot_programs/rhasspy/number:
+    bytes: 651
+    sha256: d1f10ccea552c2c9ba2a59dd69705f8e82545592c7db5ca7078b462ed9d08387
+  stop_words.txt:
+    bytes: 2016
+    sha256: cf503834e5f967116b5b351c04c29df76fc40785e09849d613bf1baf61b29215
+
+# Files needed to guess word pronunciations
+grapheme-to-phoneme:
+  g2p.fst.gz:
+    bytes: 21330068
+    file-name: g2p.fst
+    sha256: 54c0f6a6325491ebc69eee7bf5fbb2560a09e6e6099d43ea40817693e8712437
+
+# Files needed for open transcription (pre-built model)
+open-transcription:
+  base_language_model.bin.gz.part-00:
+    bytes: 26214400
+    file-name: base_language_model.bin
+    sha256: beaa503112e7892f63bb1faf99beb8621cfbc5fe4e34a1c139ff8eec663f1b08
+  base_language_model.bin.gz.part-01:
+    bytes: 26214400
+    file-name: base_language_model.bin
+    sha256: a4455458f6fab2008da0d62ee2f4b3977dae76fa742264282f3cda2c71d20121
+  base_language_model.bin.gz.part-02:
+    bytes: 26214400
+    file-name: base_language_model.bin
+    sha256: 734972be5cb0b4864189aae3dd2c2b02cb5d96ad6483f8397fa6ad87c4253bae
+  base_language_model.bin.gz.part-03:
+    bytes: 26214400
+    file-name: base_language_model.bin
+    sha256: 6d50f9f2de6e9cd75c6ac268c04c31772c32cbacd20cd6e36c629615278b8960
+  base_language_model.bin.gz.part-04:
+    bytes: 26214400
+    file-name: base_language_model.bin
+    sha256: f5b53a51a1a5382014312f4d1c7563ffdd105a05a34c5d0babca7a180d2d3cf8
+  base_language_model.bin.gz.part-05:
+    bytes: 26214400
+    file-name: base_language_model.bin
+    sha256: 63b6048c1441b348ab35af1d430b0ebfbae94356b277e43c8d328677561d6b60
+  base_language_model.bin.gz.part-06:
+    bytes: 26214400
+    file-name: base_language_model.bin
+    sha256: cda189bff63bb5d279a00f378861ae1047a57d3bd6f9d394b5fbe312a12c5b9e
+  base_language_model.bin.gz.part-07:
+    bytes: 26214400
+    file-name: base_language_model.bin
+    sha256: 418bec94ac33cdd19fe0773d975fffffe79fdc06566aee940802793c4dc2fc2f
+  base_language_model.bin.gz.part-08:
+    bytes: 16521408
+    file-name: base_language_model.bin
+    sha256: ff06c412ccf204e04121d395474cf7be8fa39192ac6af28b9801820c5974a6fd
+
+# Files needed for mixed language modeling (pre-built + custom)
+# mixed-language-model:
+#   base_language_model.fst.gz:
+#     bytes: 37267066
+#     file-name: base_language_model.fst
+#     sha256: 8e016f27d7c55a4759a0b0e7031b96ee2cbc74a6b6f33138a15950281937e886
+
+# Files needed for text to speech
+text-to-speech:
+  espeak_phonemes.txt:
+    bytes: 137
+    sha256: a6350fbbb56dd8a07f79f04cb597476b408119148e6505beffae6a4d796a990f
+  marytts/marytts-lang-pl-0.1.0.jar:
+    bytes: 3009
+    sha256: a4aca9bed26a9c90309e4cc97a4b46556871603ef910acc289d80e087c369114
+  marytts/marytts-lexicon-pl-0.1.0.jar:
+    bytes: 94971
+    sha256: 56404df78ae768ec794f3fc57890e79479867f9515bf219c2d6317970ea1b87a
+  marytts/voice-amu-waldek-hsmm-0.1.0.jar:
+    bytes: 505378
+    sha256: 6de8befa163ddcf8878c5253c255d595df3e0681e7cb1a3a834ffb5bf0b01665
+
+# Sample sentences, etc.
+examples:
+  custom_words.txt:
+    bytes: 138
+    sha256: 9038532ae6ff4b748c7df50c3e1667c499997186fc9a3229c4feda14931e2a89
+  sentences.ini:
+    bytes: 306
+    sha256: eb84528c4c9cfa53bd5e694b3afc591d5904d7c35e3cfcdc69e5d87b8412b11e

@@ -1,0 +1,65 @@
+---
+default:
+  LICENSE:
+    bytes: 17993
+    sha256: e1aa57b16350b3f421e49bd8b9401252d2b667616def1718c72576286249ae4f
+  acoustic_model/feat.params:
+    bytes: 86
+    sha256: 0e10ccb900bff1f17991481a7085febb7185c2d19c6e139fb19a5bf610475e59
+  acoustic_model/mdef:
+    bytes: 4821459
+    sha256: 4c482fc5a413d656277a5a928ce22741a6fecc89679b56f3079afb00aaa5c184
+  acoustic_model/means:
+    bytes: 1468958
+    sha256: 01ecb2595b8d6a3e0d12c5220c57fa382a5174dd206a0fffe1c40d52c861f5f6
+  acoustic_model/mixture_weights:
+    bytes: 37722
+    sha256: dc862b62007a5cc1c0bd56f041a536fa9c6ab70b695628f661f66493c834afd1
+  acoustic_model/noisedict:
+    bytes: 27
+    sha256: e5ba928c9f8950b4afce4ea84e6be0d219e878b1f926e5edcc5ca329d06eecc9
+  acoustic_model/transition_matrices:
+    bytes: 2890
+    sha256: 6f654dc9778515cb4ae80007fba3381a339b82d46d6e8b9dbbd6e7781a47ed0c
+  acoustic_model/variances:
+    bytes: 1468958
+    sha256: 84b4af7d01f88aef0d535d47c992146258ea6de64d55c843482f43a2fc156ef5
+  base_dictionary.txt.gz:
+    bytes: 55657
+    file-name: base_dictionary.txt
+    sha256: f55b7e4d087f555260e22b80fb4127fe730b5ef3cd59f2c4ab8aaf08a7b8ac00
+  profile.yml:
+    bytes: 385
+    sha256: 0f2e1a43c9cf52696078681da8e8de3d70df9143a8b9fd4813bf46b8ca6472da
+  slot_programs/rhasspy/number:
+    bytes: 651
+    sha256: d1f10ccea552c2c9ba2a59dd69705f8e82545592c7db5ca7078b462ed9d08387
+  stop_words.txt:
+    bytes: 0
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+
+# Files needed to guess word pronunciations
+grapheme-to-phoneme:
+  g2p.fst.gz:
+    bytes: 969336
+    file-name: g2p.fst
+    sha256: bef52289248bd358893dadb64b9a957e88754c524cb3875043b1e876ca57c335
+
+# Files needed for open transcription (pre-built model)
+open-transcription:
+  base_language_model.txt.gz:
+    bytes: 340008
+    file-name: base_language_model.txt
+    sha256: 4dd30cd547671f1bba0dbb0ed5231beaf95209b845f8e784400d0f01bbaf3178
+
+# Files needed for text to speech
+text-to-speech:
+  espeak_phonemes.txt:
+    bytes: 0
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+
+# Sample sentences, etc.
+examples:
+  sentences.ini:
+    bytes: 174
+    sha256: b4dde8267f67ad66be058e1cba48c4ece0cf7255ad40b5425cc043b400a27889

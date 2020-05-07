@@ -1,6 +1,6 @@
 ![voice2json logo](docs/img/voice2json.svg)
 
-`voice2json` is a collection of [command-line tools](https://voice2json.org/commands.html) for <strong>offline speech/intent recognition</strong> on Linux. It is free, open source, and [supports 15 languages](https://voice2json.org/index.html#supported-languages). 
+`voice2json` is a collection of [command-line tools](https://voice2json.org/commands.html) for <strong>offline speech/intent recognition</strong> on Linux. It is free, open source ([MIT](https://opensource.org/licenses/MIT)), and [supports 16 human languages](https://voice2json.org/index.html#supported-languages). 
 
 * [Getting Started](https://voice2json.org/#getting-started)
 * [Commands](https://voice2json.org/comands.html)
@@ -50,6 +50,13 @@ It can be used to:
 * Provide basic [voice assistant functionality](https://voice2json.org/recipes.html#set-and-run-timers) completely offline on modest hardware
 * Bootstrap more [sophisticated speech/intent recognition systems](https://voice2json.org/recipes.html#train-a-rasa-nlu-bot)
 
+Supported speech to text systems include:
+
+* CMU's [pocketsphinx](https://github.com/cmusphinx/pocketsphinx)
+* Dan Povey's [Kaldi](https://kaldi-asr.org)
+* Mozilla's [DeepSpeech](https://github.com/mozilla/DeepSpeech) 0.6
+* Kyoto University's [Julius](https://github.com/julius-speech/julius)
+
 ---
 
 ## Unique Features
@@ -58,7 +65,7 @@ It can be used to:
 
 * Training produces **both** a speech and intent recognizer. By describing your voice commands with `voice2json`'s [templating language](https://voice2json.org/sentences.html), you get [more than just transcriptions](https://voice2json.org/formats.html#intents) for free.
 * Re-training is **fast enough** to be done at runtime (usually < 5s), even up to [millions of possible voice commands](https://voice2json.org/recipes.html#set-and-run-times). This means you can change [referenced slot](https://voice2json.org/sentences.html#slot-references) values or [add/remove intents](https://voice2json.org/commands.html#intent-whitelist) on the fly.
-* All of the [available commands](#commands) are designed to work well in Unix pipelines, typically consuming/emitting plaintext or [newline-delimited JSON](http://jsonlines.org). Audio input/output is [file-based](https://voice2json.org/commands.html#audio-sources), so you receive audio from [any source](https://voice2json.org/recipes.html#stream-microphone-audio-over-a-network).
+* All of the [available commands](#commands) are designed to work well in Unix pipelines, typically consuming/emitting plaintext or [newline-delimited JSON](http://jsonlines.org). Audio input/output is [file-based](https://voice2json.org/commands.html#audio-sources), so you can receive audio from [any source](https://voice2json.org/recipes.html#stream-microphone-audio-over-a-network).
 
 ## Commands
 
@@ -72,5 +79,4 @@ It can be used to:
 * [generate-examples](https://voice2json.org/commands.html#generate-examples) - Generate random intents
 * [record-examples](https://voice2json.org/commands.html#record-examples) - Generate and record speech examples
 * [test-examples](https://voice2json.org/commands.html#test-examples) - Test recorded speech examples
-* [tune-examples](https://voice2json.org/commands.html#tune-examples) - Tune acoustic model using recorded speech examples
 * [show-documentation](https://voice2json.org/commands.html#show-documentation) - Run HTTP server locally with documentation

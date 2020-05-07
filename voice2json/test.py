@@ -1,200 +1,180 @@
-#!/usr/bin/env python3
-import io
-import os
-import re
-import sys
-import json
-import tempfile
-import unittest
-import logging
+"""Methods for testing recorded examples."""
 import argparse
-import subprocess
+import asyncio
+import dataclasses
+import json
+import logging
+import shlex
+import shutil
+import tempfile
+import typing
 from pathlib import Path
 
-logging.basicConfig(level=logging.DEBUG)
+from .core import Voice2JsonCore
+from .utils import print_json
 
-global voice2json_dir
-profile_dirs = []
-
-# -----------------------------------------------------------------------------
-
-
-class Voice2JsonTestCase(unittest.TestCase):
-    def __init__(self, *args, **kwargs):
-        self.test_dir = voice2json_dir / "etc" / "test"
-        unittest.TestCase.__init__(self, *args, **kwargs)
-
-    def test_wait_wake(self):
-        """Tests the wait-wake command."""
-        correct_wav = self.test_dir / "porcupine.wav"
-        incorrect_wav = self.test_dir / "what_time_is_it.wav"
-        wake_cmd = ["voice2json", "wait-wake", "--audio-source", "-"]
-
-        # Check WAV with keyword
-        correct_output = (
-            subprocess.check_output(wake_cmd, input=correct_wav.read_bytes())
-            .decode()
-            .strip()
-        )
-
-        self.assertTrue(len(correct_output) > 0)
-
-        # { "keyword": "...", "detect_seconds": ... }
-        correct_json = json.loads(correct_output)
-        self.assertIn("keyword", correct_json)
-        self.assertIn("detect_seconds", correct_json)
-
-        # Check WAV without keyword
-        incorrect_output = (
-            subprocess.check_output(wake_cmd, input=incorrect_wav.read_bytes())
-            .decode()
-            .strip()
-        )
-
-        # No output expected
-        self.assertTrue(len(incorrect_output) == 0)
-
-    def test_record_command(self):
-        """Tests the record-command command."""
-        command_wav = self.test_dir / "turn_on_living_room_lamp.wav"
-        command_output = (
-            subprocess.check_output(
-                [
-                    "voice2json",
-                    "record-command",
-                    "--wav-sink",
-                    "/dev/null",
-                    "--audio-source",
-                    "-",
-                ],
-                input=command_wav.read_bytes(),
-            )
-            .decode()
-            .strip()
-        )
-
-        self.assertTrue(len(command_output) > 0)
-
-        # Check events
-        start_seconds = None
-        stop_seconds = None
-        with io.StringIO(command_output) as command_file:
-            for line in command_file:
-                event = json.loads(line)
-                if event["event"] == "started":
-                    start_seconds = event["time_seconds"]
-                elif event["event"] == "stopped":
-                    stop_seconds = event["time_seconds"]
-
-        self.assertIsNotNone(start_seconds, "Missing started")
-        self.assertIsNotNone(stop_seconds, "Missing stopped")
-
-        # Stop time should be later
-        self.assertGreater(stop_seconds, start_seconds)
-
+_LOGGER = logging.getLogger("voice2json.test")
 
 # -----------------------------------------------------------------------------
 
 
-class ProfileTestCase(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        # Train all profiles before running tests
-        for profile_dir in profile_dirs:
-            subprocess.check_call(
-                ["voice2json", "--profile", str(profile_dir), "train-profile"]
-            )
+async def test_examples(args: argparse.Namespace, core: Voice2JsonCore) -> None:
+    """Test speech/intent recognition against a directory of expected results."""
+    from rhasspynlu.evaluate import evaluate_intents
+    from rhasspynlu.intent import Recognition
 
-    # -------------------------------------------------------------------------
+    # Make sure profile has been trained
+    assert core.check_trained(), "Not trained"
 
-    def _get_report(self, profile_dir):
-        """Use test-examples command to generate a transcription/recognition report."""
-        return json.loads(
-            subprocess.check_output(
-                [
-                    "voice2json",
-                    "--profile",
-                    str(profile_dir),
-                    "test-examples",
-                    "--directory",
-                    str(profile_dir / "test" / "perfect"),
-                ]
-            )
-        )
+    # Expected/actual intents
+    expected: typing.Dict[str, Recognition] = {}
+    actual: typing.Dict[str, Recognition] = {}
 
-    def test_examples(self):
-        """Check transcriptions and recognized intents for test WAV file(s)."""
-        for profile_dir in profile_dirs:
-            with self.subTest(profile_dir):
-                report = self._get_report(profile_dir)
-                stats = report["statistics"]
+    if args.expected:
+        _LOGGER.debug("Loading expected intents from %s", args.expected)
 
-                # Should be perfect
-                self.assertEqual(1, stats["intent_entity_accuracy"])
+        # Load expected results from jsonl file.
+        # Each line is an intent with a wav_name key.
+        with open(args.expected, "r") as expected_file:
+            for line in expected_file:
+                expected_intent = Recognition.from_dict(json.loads(line))
+                assert expected_intent.wav_name, f"No wav_name for {line}"
+                expected[expected_intent.wav_name] = expected_intent
+    else:
+        # Load expected results from examples directory
+        assert args.directory, "Examples directory required if no --expected"
+        examples_dir = Path(args.directory)
+        _LOGGER.debug("Loading expected intents from %s", examples_dir)
+        for wav_path in examples_dir.glob("*.wav"):
+            json_path = wav_path.with_suffix(".json")
+            text_path = wav_path.with_suffix(".txt")
 
-    # -------------------------------------------------------------------------
+            if json_path.is_file():
+                # JSON file with expected intent and transcripion
+                with open(json_path, "r") as json_file:
+                    expected[wav_path.name] = Recognition.from_dict(
+                        json.load(json_file)
+                    )
+            elif text_path.is_file():
+                # Text file with expected transcripion only
+                transcription = text_path.read_text().strip()
+                expected[wav_path.name] = Recognition(text=transcription)
+            else:
+                _LOGGER.warning("No JSON or text file for %s", wav_path)
 
-    def _get_phonemes(self, profile_dir, word):
-        """Use pronounce-word command to get actual or guessed phonemes for a word."""
-        # word P1 P2 P3...
-        return re.split(
-            r"\s+",
-            subprocess.check_output(
-                [
-                    "voice2json",
-                    "--profile",
-                    str(profile_dir),
-                    "pronounce-word",
-                    "--quiet",
-                    "--nbest",
-                    "1",
-                    word,
-                ]
-            )
-            .decode()
-            .strip(),
-            maxsplit=1,
-        )[1]
+    if not expected:
+        _LOGGER.fatal("No expected examples provided")
+        return
 
-    def test_g2p(self):
-        """Test dictionary lookup with known word and grapheme-to-phoneme model with unknown word."""
-        for profile_dir in profile_dirs:
-            with self.subTest(profile_dir):
-                test_dir = profile_dir / "test"
+    temp_dir = None
+    try:
+        if not args.actual:
+            # Generate actual results from examples directory
+            assert args.directory, "Examples directory required if no --expected"
+            examples_dir = Path(args.directory)
+            _LOGGER.debug("Generating actual intents from %s", examples_dir)
 
-                # { "known": { "word": "...", "phonemes": "..." },
-                #   "unknown": { "word": "...", "phonemes": "..." } }
-                with open(test_dir / "g2p.json", "r") as g2p_test_file:
-                    g2p_test = json.load(g2p_test_file)
-
-                # Check known word
-                known_phonemes = self._get_phonemes(
-                    profile_dir, g2p_test["known"]["word"]
+            # Use voice2json and GNU parallel
+            assert shutil.which("parallel"), "GNU parallel is required"
+            if args.results:
+                # Save results to user-specified directory
+                results_dir = Path(args.results)
+                results_dir.mkdir(parents=True, exist_ok=True)
+                _LOGGER.debug("Saving results to %s", results_dir)
+            else:
+                # Save resuls to temporary directory
+                temp_dir = tempfile.TemporaryDirectory()
+                results_dir = Path(temp_dir.name)
+                _LOGGER.debug(
+                    "Saving results to temporary directory (use --results to specify)"
                 )
-                self.assertEqual(g2p_test["known"]["phonemes"], known_phonemes)
 
-                # Check unknown word
-                unknown_phonemes = self._get_phonemes(
-                    profile_dir, g2p_test["unknown"]["word"]
-                )
-                self.assertEqual(g2p_test["unknown"]["phonemes"], unknown_phonemes)
+            # Transcribe WAV files
+            actual_wavs_path = results_dir / "actual_wavs.txt"
+            actual_transcriptions_path = results_dir / "actual_transcriptions.jsonl"
 
+            # Write list of WAV files to a text file
+            with open(actual_wavs_path, "w") as actual_wavs_file:
+                for wav_path in examples_dir.glob("*.wav"):
+                    print(str(wav_path.absolute()), file=actual_wavs_file)
 
-# -----------------------------------------------------------------------------
+            # Transcribe in parallel
+            transcribe_args = ["--stdin-files"]
+            if args.open:
+                transcribe_args.append("--open")
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--voice2json", help="Directory with voice2json source code")
-    parser.add_argument(
-        "--profile", "-p", action="append", default=[], help="Include profile in test"
-    )
-    prog_name = sys.argv[0]
-    args, rest = parser.parse_known_args()
+            transcribe_command = (
+                [
+                    "parallel",
+                    "-k",
+                    "--pipe",
+                    "-n",
+                    str(args.threads),
+                    "voice2json",
+                    "-p",
+                    shlex.quote(str(core.profile_file)),
+                    "transcribe-wav",
+                ]
+                + transcribe_args
+                + ["<", str(actual_wavs_path), ">", str(actual_transcriptions_path)]
+            )
 
-    voice2json_dir = Path(args.voice2json or os.getcwd())
+            _LOGGER.debug(transcribe_command)
 
-    for profile_dir in args.profile:
-        profile_dirs.append(Path(profile_dir))
+            transcribe_process = await asyncio.create_subprocess_shell(
+                " ".join(transcribe_command)
+            )
 
-    argv = [prog_name] + rest
-    unittest.main(argv=argv)
+            await transcribe_process.wait()
+            assert transcribe_process.returncode == 0, "Transcription failed"
+
+            # Recognize intents from transcriptions in parallel
+            actual_intents_path = results_dir / "actual_intents.jsonl"
+            recognize_command = [
+                "parallel",
+                "-k",
+                "--pipe",
+                "-n",
+                str(args.threads),
+                "voice2json",
+                "-p",
+                shlex.quote(str(core.profile_file)),
+                "recognize-intent",
+                "<",
+                str(actual_transcriptions_path),
+                ">",
+                str(actual_intents_path),
+            ]
+
+            _LOGGER.debug(recognize_command)
+
+            recognize_process = await asyncio.create_subprocess_shell(
+                " ".join(recognize_command)
+            )
+
+            await recognize_process.wait()
+            assert recognize_process.returncode == 0, "Recognition failed"
+
+            # Load actual intents
+            args.actual = actual_intents_path
+
+        assert args.actual, "No actual intents to load"
+        _LOGGER.debug("Loading actual intents from %s", args.actual)
+
+        # Load actual results from jsonl file
+        with open(args.actual, "r") as actual_file:
+            for line in actual_file:
+                actual_intent = Recognition.from_dict(json.loads(line))
+                assert actual_intent.wav_name, f"No wav_name for {line}"
+                actual[actual_intent.wav_name] = actual_intent
+
+        if not actual:
+            _LOGGER.fatal("No actual examples provided")
+            return
+
+        report = evaluate_intents(expected, actual)
+        print_json(dataclasses.asdict(report))
+    finally:
+        # Delete temporary directory
+        if temp_dir:
+            temp_dir.cleanup()

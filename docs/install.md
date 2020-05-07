@@ -16,21 +16,27 @@ After installation:
 
 ---
 
+## Supported Hardware
+
+| Category           | Name                                                            | amd64    | armv7    | arm64    |
+| --------           | ------                                                          | -------  | -------  | -------  |
+| **Wake Word**      | [Mycroft Precise](https://github.com/MycroftAI/mycroft-precise) | &#x2713; | &#x2713; | &#x2713; |
+| **Speech to Text** | [Pocketsphinx](https://github.com/cmusphinx/pocketsphinx)       | &#x2713; | &#x2713; | &#x2713; |
+|                    | [Kaldi](https://kaldi-asr.org)                                  | &#x2713; | &#x2713; | &#x2713; |
+|                    | [DeepSpeech](https://github.com/mozilla/DeepSpeech)             | &#x2713; | &#x2713; |          |
+|                    | [Julius](https://github.com/julius-speech/julius)               | &#x2713; | &#x2713; | &#x2713; |
+
+---
+
 ## Debian Package
 
-Pre-compiled packages are available for Debian-based distributions (Ubuntu, Linux Mint, etc.) on `amd64`, `armhf`, and `aarch64` architectures. These packages are built using [PyInstaller](https://www.pyinstaller.org) and `dpkg`.
-
-Before installing `voice2json`, you will need to install a few dependencies:
-
-```bash
-$ sudo apt-get install sox jq alsa-utils espeak-ng sphinxtrain perl
-```
+Pre-compiled packages are available for Debian-based distributions (Ubuntu, Linux Mint, etc.) on `amd64`, `armhf`, and `arm64` (`aarch64`) architectures. These packages are built using Docker and `dpkg`.
 
 Next, download the appropriate `.deb` file for your CPU architecture:
 
-* [amd64](https://github.com/synesthesiam/voice2json/releases/download/v1.0-beta/voice2json_1.0_amd64.deb) - Desktops, laptops, and servers
-* [armhf](https://github.com/synesthesiam/voice2json/releases/download/v1.0-beta/voice2json_1.0_armhf.deb) - Raspberry Pi 1, 2, and 3
-* [aarch64](https://github.com/synesthesiam/voice2json/releases/download/v1.0-beta/voice2json_1.0_aarch64.deb) - Raspberry Pi 3+, 4
+* [amd64](https://github.com/synesthesiam/voice2json/releases/download/v2.0/voice2json_2.0_amd64.deb) - Desktops, laptops, and servers
+* [armhf](https://github.com/synesthesiam/voice2json/releases/download/v2.0/voice2json_2.0_armhf.deb) - Raspberry Pi 1, 2, and 3 (armv7)
+* [arm64](https://github.com/synesthesiam/voice2json/releases/download/v2.0/voice2json_2.0_arm64.deb) - Raspberry Pi 3+, 4
 
 If you're unsure about your architecture, run:
 
@@ -50,7 +56,7 @@ Next, install the `.deb` file:
 $ sudo apt install /path/to/voice2json_<VERSION>_<ARCH>.deb
 ```
 
-where where `<VERSION>` is `voice2json`'s version (probably 1.0) and `<ARCH>` is your build architecture.
+where where `<VERSION>` is `voice2json`'s version (probably 2.0) and `<ARCH>` is your build architecture.
 
 After [downloading a profile](#download-profile), you should now be able to run any of the example `voice2json` commands in the documentation.
 
@@ -58,7 +64,7 @@ After [downloading a profile](#download-profile), you should now be able to run 
 
 ## Docker Image
 
-The easiest way to try out `voice2json` is with [Docker](https://docker.com). Pre-built images are available for `amd64`, `armhf`, and `aarch64` CPU architectures. To get started, make sure you have [Docker installed](https://docs.docker.com/install/):
+The easiest way to try out `voice2json` is with [Docker](https://docker.com). Pre-built images are available for `amd64`, `armhf`, and `arm64` (`aarch64`) CPU architectures. To get started, make sure you have [Docker installed](https://docs.docker.com/install/):
 
 ```bash
 $ curl -sSL https://get.docker.com | sh
@@ -98,60 +104,61 @@ After [downloading a profile](#download-profile), you should now be able to run 
 
 ## From Source
 
-If you'd like to modify `voice2json`, you should clone [the repository](https://github.com/synesthesiam/voice2json) and run the [install script](https://github.com/synesthesiam/voice2json/blob/master/install.sh):
+`voice2json` uses [autoconf](https://www.gnu.org/software/autoconf/) to facilitate building from source. You will need Python 3.7 and some common build tools like `gcc`.
+
+Once you've cloned the [the repository](https://github.com/synesthesiam/voice2json), the build steps should be familiar:
 
 ```bash
 $ git clone https://github.com/synesthesiam/voice2json
 $ cd voice2json
-$ ./install.sh
+$ ./configure
+$ make
+$ make install
 ```
 
-Installing may take a **long time** and requires an Internet connection to download dependencies (cached in `voice2json/download`). The `install.sh` script does the following:
+This will install `voice2json` inside a virtual environment at `$PWD/.venv` by default with **all** of the supported speech to text engines and supporting tools. When installation is finished, copy `voice2json.sh` somewhere in your `PATH` and rename it to `voice2json`.
 
-1. Installs required packages (assumes Debian)
-2. Creates a Python virtual environment at `voice2json/.venv_<CPU_ARCH>`
-    * `CPU_ARCH="$(lscpu | awk '/^Architecture/{print $2}')"`
-    * Override location with `--venv <DIR>`
-    * Avoid re-creating virtual environment with `--nocreate`
-3. Downloads and compiles these libraries in `voice2json/build_<CPU_ARCH>`:
-    * [openfst](http://www.openfst.org) - takes **forever** to compile
-        * Speed up compilation with `--make-threads 8`
-    * [opengrm](http://www.opengrm.org/twiki/bin/view/GRM/NGramLibrary)
-    * [phonetisaurus](https://github.com/AdolfVonKleist/Phonetisaurus)
-    * [Kaldi](https://kaldi-asr.org) - disable with `--nokaldi`
-    * [Julius](https://github.com/julius-speech/julius) - disable with `--nojulius`
-4. Installs Python dependencies into virtual environment
-    * Disable with `--nopython`
+### Customizing Installation
 
-If `install.sh` succeeds, you will be able to run the `voice2json.sh` script in the root of the repository in place of any `voice2json` example command.
+You can pass additional information to `configure` to avoid installing parts of `voice2json` that you won't use. For example, if you only plan to use the French language profiles, set the `VOICE2JSON_LANGUAGE` environment variable to `fr` when configuring your installation:
+
+```bash
+$ ./configure VOICE2JSON_LANGUAGE=fr
+```
+
+The installation will now be configured to install only Kaldi (if supported). If instead you want a specific speech to text system, use `VOICE2JSON_SPEECH_SYSTEM` like:
+
+```bash
+$ ./configure VOICE2JSON_SPEECH_SYSTEM=deepspeech
+```
+
+which will only enable DeepSpeech.
+
+To force the supporting tools to be built from source instead of downloading pre-compiled binaries, use `--disable-precompiled-binaries`. Dependencies will be compiled in a `build` directory (override with `$BUILD_DIR` during `make`), and bundled for installation in `download` (override with `$DOWNLOAD_DIR`).
+
+See `./configure --help` for additional options.
 
 ---
 
 ## Download Profile
 
-`voice2json` must have a [profile](profiles.md) in order to do speech/intent recognition. Because the artifacts for each language/locale can be quite large (~100MB or more), `voice2json` does not include them in its [Debian package](#debian-package), [Docker image](#docker-image), or [source repository](#from-source).
-
-### Back Up Your Profile
-
-If you have an existing `voice2json` profile, it is highly recommended you **regularly back up** the following files:
-
-* `sentences.ini` - your custom voice commands
-* `custom_words.txt` - your custom pronunciations
-* `profile.yml` - your custom settings
-* `slots` - directory with custom slot values
-
+`voice2json` must have a [profile](profiles.md) in order to do speech/intent recognition. Because the artifacts for each language/locale can be quite large (100's of MB or more), `voice2json` does not include them in its [Debian package](#debian-package), [Docker image](#docker-image), or [source repository](#from-source).
 
 Profiles for each of the supported languages/locales are available for [download on Github](https://github.com/synesthesiam/voice2json-profiles). You should download the appropriate `.tar.gz` and extract it to `$HOME/.config/voice2json` (any other directory will require a `--profile` argument to be passed to `voice2json`). If everything is in the right place, `$HOME/.config/voice2json/profile.yml` will exist.
 
+The [`print-downloads`](commands.md#print-downloads) command can be used to avoid downloading unnecessary files if you know how you plan to use `voice2json`.
+
 ### English Example
 
-For [English](https://github.com/synesthesiam/voice2json-profiles/tree/master/english), there are three available profiles:
+For [English](https://github.com/synesthesiam/voice2json-profiles/tree/master/english), there are five available profiles:
 
 1. [en-us_pocketsphinx-cmu](https://github.com/synesthesiam/en-us_pocketsphinx-cmu)
 2. [en-us_kaldi-zamia](https://github.com/synesthesiam/en-us_kaldi-zamia)
-3. [en-in_pocketsphinx-cmu](https://github.com/synesthesiam/en-in_pocketsphinx-cmu)
+3. [en-us_deepspeech-mozilla](https://github.com/synesthesiam/en-us_deepspeech-mozilla)
+4. [en-us_julius-github](https://github.com/synesthesiam/en-us_julius-github)
+5. [en-in_pocketsphinx-cmu](https://github.com/synesthesiam/en-in_pocketsphinx-cmu)
 
-The first two profiles are for U.S. English (`en-us`), while the third is for Indian English (`en-in`). For U.S. English, you will probably want to start with the [en-us_pocketsphinx-cmu](https://github.com/synesthesiam/en-us_pocketsphinx-cmu) profile, which is based on [pocketsphinx](https://github.com/cmusphinx/pocketsphinx). This profile provides good accuracy and is typically faster than [en-us_kaldi-zamia](https://github.com/synesthesiam/en-us_kaldi-zamia), though the latter tends to be more accurate, *especially* with [open transcription](commands.md#open-transcription).
+The first four profiles are for U.S. English (`en-us`), while the third is for Indian English (`en-in`). For U.S. English, you will probably want to start with the [en-us_pocketsphinx-cmu](https://github.com/synesthesiam/en-us_pocketsphinx-cmu) profile, which is based on [pocketsphinx](https://github.com/cmusphinx/pocketsphinx). This profile provides a good balance of accuracy and speed. For [open transcription](commands.md#open-transcription), however [en-us_kaldi-zamia](https://github.com/synesthesiam/en-us_kaldi-zamia) and [en-us_deepspeech-mozilla](https://github.com/synesthesiam/en-us_deepspeech-mozilla) are much better options.
 
 Downloading and installing the [en-us_pocketsphinx-cmu](https://github.com/synesthesiam/en-us_pocketsphinx-cmu) is straightforward from the command-line:
 
@@ -167,12 +174,77 @@ $ curl -SL \
 Now you should be able to train your profile:
 
 ```bash
-$ voice2json train-profile
+$ voice2json --debug train-profile
 ```
 
 If you extracted the profile files to a directory other than `$HOME/.config/voice2json`, you will need to pass a `--profile` argument to `voice2json`:
 
 ```bash
-$ voice2json --profile /path/to/profile/files/ train-profile
+$ voice2json --profile /path/to/profile/files/ --debug train-profile
 ```
 
+**Note**: The first time you train your profile may take a long time, especially on Raspberry Pi (SD card). This is because `voice2json` is decompressing and re-combining split files from GitHub.
+
+### Test Your Profile
+
+Once you've trained your profile, you can quickly test it out with:
+
+```bash
+$ voice2json transcribe-stream
+```
+
+The [`transcribe-stream`](commands.md#transcribe-stream) will record from your microphone (using `arecord` and the default device), wait for you to speak a voice command, and then output a transcription (hit CTRL + C to exit).
+
+If you're using the default English sentences, try saying "turn on the living room lamp" and wait for the output. Getting intents out is as easy as:
+
+```bash
+$ voice2json transcribe-stream | \
+    voice2json recognize-intent
+```
+
+Speaking a voice command should now output a line of JSON with the recognized intent. For example, "what time is it" outputs something like:
+
+```json
+{
+  "text": "what time is it",
+  "likelihood": 0.025608657540496446,
+  "transcribe_seconds": 1.4270143630001257,
+  "wav_seconds": 0.0043125,
+  "tokens": [
+    "what",
+    "time",
+    "is",
+    "it"
+  ],
+  "timeout": false,
+  "intent": {
+    "name": "GetTime",
+    "confidence": 1
+  },
+  "entities": [],
+  "raw_text": "what time is it",
+  "recognize_seconds": 0.00019677899945236277,
+  "raw_tokens": [
+    "what",
+    "time",
+    "is",
+    "it"
+  ],
+  "speech_confidence": null,
+  "wav_name": null,
+  "slots": {}
+}
+```
+
+### Back Up Your Profile
+
+If you have an existing `voice2json` profile, it is highly recommended you **regularly back up** the following files:
+
+* `sentences.ini` - your custom voice commands
+* `custom_words.txt` - your custom pronunciations
+* `profile.yml` - your custom settings
+* `slots` - directory with custom slot values
+* `slot_programs` - directory with custom slot programs
+* `converters` - directory with custom conversion programs
+
+See the [`print-files`](commands.md#print-files) for an easy way to automate backups.

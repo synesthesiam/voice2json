@@ -1,57 +1,41 @@
 # -*- mode: python -*-
 import os
-import platform
+import site
 from pathlib import Path
 
 from PyInstaller.utils.hooks import copy_metadata
 
 block_cipher = None
 
-# Use either virtual environment or lib/bin dirs from environment variables
-venv = Path.cwd() / f".venv_{platform.machine()}"
-bin_dir = Path(os.environ.get("spec_bin_dir", venv / "bin"))
-lib_dir = Path(os.environ.get("spec_lib_dir", venv / "lib"))
+prefix = Path("/usr/lib/voice2json")
 
-site_dir = os.environ.get("spec_site_dir", None)
-if site_dir is None:
-    venv_lib = venv / "lib"
-    for dir_path in venv_lib.glob("python*"):
-        if dir_path.is_dir() and (dir_path / "site-packages").exists():
-            site_dir = dir_path / "site-packages"
-            break
+site_dirs = site.getsitepackages()
+lib_dir = prefix / "lib"
+for lib_python_dir in lib_dir.glob("python*"):
+    site_dir = lib_python_dir / "site-packages"
+    if site_dir.is_dir():
+        site_dirs.append(site_dir)
 
-assert site_dir is not None, "Missing site-packages directory"
-site_dir = Path(site_dir)
+# Look for compiled artifacts
+artifacts = ["_webrtcvad.*.so"]
+found_artifacts = {}
+for site_dir in site_dirs:
+    site_dir = Path(site_dir)
+    for artifact in artifacts:
+        artifact_paths = list(site_dir.glob(artifact))
+        if artifact_paths:
+            found_artifacts[artifact] = artifact_paths[0]
+            continue
 
-# Need to specially handle these snowflakes
-pywrapfst_path = list(site_dir.glob("pywrapfst.*.so"))[0]
-webrtcvad_path = list(site_dir.glob("_webrtcvad.*.so"))[0]
+missing_artifacts = set(artifacts) - set(found_artifacts)
+assert not missing_artifacts, missing_artifacts
 
 a = Analysis(
-    [Path.cwd() / "voice2json" "/__main__.py"],
+    [Path.cwd() / "__main__.py"],
     pathex=["."],
-    binaries=[
-        (pywrapfst_path, "."),
-        (webrtcvad_path, "."),
-        (lib_dir / "libfstfarscript.so.13", "."),
-        (lib_dir / "libfstscript.so.13", "."),
-        (lib_dir / "libfstfar.so.13", "."),
-        (lib_dir / "libfst.so.13", "."),
-        (lib_dir / "libngram.so.134", "."),
-        (bin_dir / "ngramread", "."),
-        (bin_dir / "ngramcount", "."),
-        (bin_dir / "ngrammake", "."),
-        (bin_dir / "ngrammerge", "."),
-        (bin_dir / "ngramprint", "."),
-        (bin_dir / "ngramsymbols", "."),
-        (bin_dir / "ngramperplexity", "."),
-        (bin_dir / "farcompilestrings", "."),
-        (bin_dir / "phonetisaurus-apply", "."),
-        (bin_dir / "phonetisaurus-g2pfst", "."),
-        (bin_dir / "julius", "."),
-    ],
+    binaries=[(p, ".") for p in found_artifacts.values()],
     datas=copy_metadata("webrtcvad"),
-    hiddenimports=["doit", "dbm.gnu", "networkx", "numbers"],
+    hiddenimports=["networkx"],
     hookspath=[],
     runtime_hooks=[],
     excludes=[],
@@ -69,10 +53,10 @@ exe = EXE(
     name="voice2json",
     debug=False,
     bootloader_ignore_signals=False,
-    strip=False,
+    strip=True,
     upx=True,
     console=True,
 )
 coll = COLLECT(
-    exe, a.binaries, a.zipfiles, a.datas, strip=False, upx=True, name="voice2json"
+    exe, a.binaries, a.zipfiles, a.datas, strip=True, upx=True, name="voice2json"
 )

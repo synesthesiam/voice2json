@@ -1,0 +1,68 @@
+---
+default:
+  acoustic_model/feat.params:
+    bytes: 110
+    sha256: 6ad725f620b3f0c1d82bba878498630e8be4fa1f0b0bf035a7fe9ffb36f5a735
+  acoustic_model/mdef:
+    bytes: 3946962
+    sha256: d85f99257959f313d98aa978be35bd53658b6498490fb444897c2cbfbc81d594
+  acoustic_model/means:
+    bytes: 50369348
+    sha256: 110f88685a46f912357cd675c3565ad01383d8e81eddf4a29974d380875138df
+  acoustic_model/mixture_weights:
+    bytes: 1291584
+    sha256: c49eb7b1cdeded79a9db3dbf6aaaf9aff60f6e8e29669b9b5b03714d1d3a04a3
+  acoustic_model/noisedict:
+    bytes: 60
+    sha256: f9f30e70167dfb43605a1d68f86e15c0874655055e0488e34251789b668cf819
+  acoustic_model/transition_matrices:
+    bytes: 1504
+    sha256: c42587630dde772ef349fea9c050cdd8adcb360b919cfc460c3a18749b08ec24
+  acoustic_model/variances:
+    bytes: 50369348
+    sha256: 1df4e4583458cf744fdf0787dfd52afb4270637787010fce2438a2bbc3a29f01
+  base_dictionary.txt.gz:
+    bytes: 1824883
+    sha256: 08241ba28cb89eed45575e897754918ab70f62834701439002d9729e58720350
+  profile.yml:
+    bytes: 455
+    sha256: 83bc4255a0e939f1d5fd641a7aaf588d0454bdb5ab8b3d04834f32e7bb260a7d
+  slot_programs/rhasspy/number:
+    bytes: 651
+    sha256: d1f10ccea552c2c9ba2a59dd69705f8e82545592c7db5ca7078b462ed9d08387
+  stop_words.txt:
+    bytes: 2178
+    sha256: 7450c1f7196c161d9a4e537de43f88bd55cdb64028c808e14587bd7a6ac7be3d
+
+# Files needed to guess word pronunciations
+grapheme-to-phoneme:
+  g2p.fst.gz:
+    bytes: 2010314
+    sha256: 8ca3d13386ec214288125543142ad5a87d9312ee8ae61de4f276823413b9f543
+
+# Files needed for open transcription (pre-built model)
+open-transcription:
+  base_language_model.txt.gz:
+    bytes: 23391433
+    sha256: 3a5426601c24eaaf6658734d078f6fed4bb1a38b6521f2feecf2bfa755e350b4
+
+# Files needed for mixed language modeling (pre-built + custom)
+mixed-language-model:
+  base_language_model.fst.gz:
+    bytes: 25525538
+    sha256: 74a0a00e4f1cceac02a058aaa0fc98e0c307c1a47296b392e769899695591fc2
+
+# Files needed for text to speech
+text-to-speech:
+  espeak_phonemes.txt:
+    bytes: 142
+    sha256: 67bc9f2f8797a99f9023d8368993ad30b6543eec6afbcfcbd744bf460bdb7718
+
+# Sample sentences, etc.
+examples:
+  custom_words.txt:
+    bytes: 82
+    sha256: 6294114c9169771da6bc98b85cbe48291ca907bc789c5d3bda6ec0f9d47a3f70
+  sentences.ini:
+    bytes: 317
+    sha256: 5942f84939e5a7ccc4f062726defae82628d5e6d899d485eeb8e77f9c44a2a20

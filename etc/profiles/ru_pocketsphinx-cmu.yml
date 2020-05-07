@@ -1,0 +1,114 @@
+---
+default:
+  LICENSE:
+    bytes: 475
+    sha256: 06b65d41d760018d20e81777cfdf2078ec64ed4cd10b85c289add974d63d2693
+  acoustic_model/feat.params:
+    bytes: 128
+    sha256: 1f2f06f7a7400bc3a890d1944b9c3b5d768c8925a5040f43ea550ad40daf9752
+  acoustic_model/feature_transform:
+    bytes: 5660
+    sha256: 46fbfd07e2cc07c852021a86b4008afe42d5acd1f0b62ef06345f21130a5d9b9
+  acoustic_model/mdef:
+    bytes: 14135693
+    sha256: d86194aba8a4956efcb36d879f4dca24fc8e1aefb9f2735182b7b40453d441a4
+  acoustic_model/means:
+    bytes: 23717444
+    sha256: f747d6027430d59c185be21e6ef658da6e05d186c22221682e26e69a38d9ad65
+  acoustic_model/mixture_weights:
+    bytes: 658880
+    sha256: 9b73e3e6ba4ead3243b0970fea4ab4a947a9cc73365382c775c9fdcbfad25e5f
+  acoustic_model/noisedict:
+    bytes: 27
+    sha256: af281d8c53f0a24ace7193e014dcb876e4e517f96b34791d5cd3e71fc69fc83b
+  acoustic_model/transition_matrices:
+    bytes: 2416
+    sha256: b8d5dd0aa55e765f715ecf218060ab4c8f921220d0ba0f6ab851bc0d06725348
+  acoustic_model/variances:
+    bytes: 23717444
+    sha256: 294fa8bf88f6371d490cbcea3f6eef49e18d6f6cbb18db69e125e54054596926
+  base_dictionary.txt.gz:
+    bytes: 3901055
+    file-name: base_dictionary.txt
+    sha256: 4843b95d233d89565c4539390e60b4f12c9a45c4b6ad84829f63ba5933236375
+  profile.yml:
+    bytes: 477
+    sha256: 401ff004f28171d69bee474ada1b78d27fe20f20a398a21f5683344b7ca3d30d
+  stop_words.txt:
+    bytes: 1235
+    sha256: 1743191192b4a4f77fcc216499455dc00c1b8626fdd407076a8deefff80e3d59
+
+# Files needed to guess word pronunciations
+grapheme-to-phoneme:
+  g2p.fst.gz:
+    bytes: 33185095
+    file-name: g2p.fst
+    sha256: 230b436f1fb7d47f2fa0339df36fa2b2eac0173f69b64d8ff3c091c044f9784b
+
+# Files needed for open transcription (pre-built model)
+open-transcription:
+  base_language_model.txt.gz.part-00:
+    bytes: 26214400
+    file-name: base_language_model.txt
+    sha256: 46833f7bbf708a7570ba8e43c3f736a3db2790eb829f0521280c68a531c029c2
+  base_language_model.txt.gz.part-01:
+    bytes: 26214400
+    file-name: base_language_model.txt
+    sha256: 6a29698de220e9bf667921ae424c5494a8f2e5031f22e93973fa9588db93f5ca
+  base_language_model.txt.gz.part-02:
+    bytes: 26214400
+    file-name: base_language_model.txt
+    sha256: 379bbd7fd52ff00ee4e1e96648a290e15e7bc548fcb1bf0ede427ce405dc5d1d
+  base_language_model.txt.gz.part-03:
+    bytes: 26214400
+    file-name: base_language_model.txt
+    sha256: a2efdde9df7396cc12c1fa5270eb0188c86e5b42ac253e6ab86316cbde9691d9
+  base_language_model.txt.gz.part-04:
+    bytes: 4015297
+    file-name: base_language_model.txt
+    sha256: ee05a8993f53558840f0fcb85d052bbf653a46d1b31bcd1bddda5085c8278668
+
+# Files needed for mixed language modeling (pre-built + custom)
+mixed-language-model:
+  base_language_model.fst.gz.part-00:
+    bytes: 26214400
+    file-name: base_language_model.fst
+    sha256: 9c292ace6ff6de20ab09b925bd3b4d53d99a28960ae63b74d68c49085208e1bc
+  base_language_model.fst.gz.part-01:
+    bytes: 26214400
+    file-name: base_language_model.fst
+    sha256: 9ce5890127c3e5f07046c24cdc09ea8b7faad1292cbcfed99c5484774ee2327f
+  base_language_model.fst.gz.part-02:
+    bytes: 26214400
+    file-name: base_language_model.fst
+    sha256: c26f3726c89df35ea7a62461fd8aa33953bf848bc076b49c475d1255e532f677
+  base_language_model.fst.gz.part-03:
+    bytes: 26214400
+    file-name: base_language_model.fst
+    sha256: c8c8c03508d0c274a26a7d39af961b36ca623499662f13ba71c675f140202dab
+  base_language_model.fst.gz.part-04:
+    bytes: 26214400
+    file-name: base_language_model.fst
+    sha256: 858b29be5b3ce276cb3e65d85260e8b52fd261f7b7b977d0cde3007f88ab188c
+  base_language_model.fst.gz.part-05:
+    bytes: 4324833
+    file-name: base_language_model.fst
+    sha256: a950d39843d3ceaa13d95d9c0bfdd64569d73cde5bc5c08aac9dec3c07ed1d76
+
+# Files needed for text to speech
+text-to-speech:
+  espeak_phonemes.txt:
+    bytes: 233
+    sha256: 80f5efc5c6b827fbe849dd418263b4b7f48c581dcd91d8922b687ccf09e76186
+  marytts/marytts-lang-ru-5.2.jar:
+    bytes: 67343
+    sha256: 9d1befc9d1ed0074f8e03caac97c020a1dc379c4bf5d98273e75e95f35f30a89
+  marytts/voice-ac-irina-hsmm-5.2.jar:
+    bytes: 2454758
+    sha256: 4da847b83b42ffbd013505845b9ad401f232f820fd64a42e781915467f94a867
+
+# Sample sentences, etc.
+examples:
+  sentences.ini:
+    bytes: 399
+    sha256: c1349e71641bebe1f52b81e209f1cd6a32a5fa9d3c38da47fde6e4bbc12d1520
