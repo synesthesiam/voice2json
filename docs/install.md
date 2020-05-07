@@ -34,9 +34,9 @@ Pre-compiled packages are available for Debian-based distributions (Ubuntu, Linu
 
 Next, download the appropriate `.deb` file for your CPU architecture:
 
-* [amd64](https://github.com/synesthesiam/voice2json/releases/download/v2.0/voice2json_2.0_amd64.deb) - Desktops, laptops, and servers
-* [armhf](https://github.com/synesthesiam/voice2json/releases/download/v2.0/voice2json_2.0_armhf.deb) - Raspberry Pi 1, 2, and 3 (armv7)
-* [arm64](https://github.com/synesthesiam/voice2json/releases/download/v2.0/voice2json_2.0_arm64.deb) - Raspberry Pi 3+, 4
+* [amd64](https://github.com/synesthesiam/voice2json/releases/download/v2.0-beta/voice2json_2.0.0_amd64.deb) - Desktops, laptops, and servers
+* [armhf](https://github.com/synesthesiam/voice2json/releases/download/v2.0-beta/voice2json_2.0.0_armhf.deb) - Raspberry Pi 1, 2, and 3 (armv7)
+* [arm64](https://github.com/synesthesiam/voice2json/releases/download/v2.0-beta/voice2json_2.0.0_arm64.deb) - Raspberry Pi 3+, 4
 
 If you're unsure about your architecture, run:
 
@@ -89,7 +89,7 @@ docker run -i \
        -w "$(pwd)" \
        -e "HOME=${HOME}" \
        --user "$(id -u):$(id -g)" \
-       synesthesiam/voice2json "$@"
+       synesthesiam/voice2json:2.0.0 "$@"
 ```
 
 Mark it as executable with `chmod +x /path/to/voice2json` and try it out:
