@@ -569,7 +569,7 @@ def get_core(args: argparse.Namespace) -> Voice2JsonCore:
                 # Machine match: override settings
                 for key, value in machine_settings.items():
                     _LOGGER.debug("Overriding %s (machine=%s)", key, args.machine)
-                    profile[key] = value
+                    recursive_update(profile[key], value)
 
     # Override with user settings
     for setting_path, setting_value in args.setting:
