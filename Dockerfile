@@ -30,7 +30,7 @@ COPY etc/profile.defaults.yml ${BUILD_DIR}/etc/
 COPY etc/precise/ ${BUILD_DIR}/etc/precise/
 COPY site/ ${BUILD_DIR}/site/
 
-COPY README.md LICENSE ${BUILD_DIR}/
+COPY VERSION README.md LICENSE ${BUILD_DIR}/
 COPY voice2json/ ${BUILD_DIR}/voice2json/
 
 RUN cd ${BUILD_DIR} && \
@@ -55,7 +55,6 @@ RUN apt-get update && \
 
 ENV APP_DIR=/usr/lib/voice2json
 COPY --from=build ${APP_DIR}/ ${APP_DIR}/
-COPY VERSION ${APP_DIR}/share/voice2json/
 
 RUN cp ${APP_DIR}/bin/voice2json /usr/bin/ && \
     voice2json --version
