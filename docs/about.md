@@ -6,6 +6,7 @@
 
 ![Mike head](img/mike-head.png)
 
+* [Changes](#version-changes)
 * [License](#license)
 * [Supporting Tools](#supporting-tools)
 * [History](#history)
