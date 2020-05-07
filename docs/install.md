@@ -28,9 +28,9 @@ $ sudo apt-get install sox jq alsa-utils espeak-ng sphinxtrain perl
 
 Next, download the appropriate `.deb` file for your CPU architecture:
 
-* [amd64](https://github.com/synesthesiam/voice2json/releases/download/v1.0-beta/voice2json_1.0_amd64.deb) - Desktops, laptops, and servers
-* [armhf](https://github.com/synesthesiam/voice2json/releases/download/v1.0-beta/voice2json_1.0_armhf.deb) - Raspberry Pi 1, 2, and 3
-* [aarch64](https://github.com/synesthesiam/voice2json/releases/download/v1.0-beta/voice2json_1.0_aarch64.deb) - Raspberry Pi 3+, 4
+* [amd64](https://github.com/synesthesiam/voice2json/releases/download/v1.0/voice2json_1.0_amd64.deb) - Desktops, laptops, and servers
+* [armhf](https://github.com/synesthesiam/voice2json/releases/download/v1.0/voice2json_1.0_armhf.deb) - Raspberry Pi 1, 2, 3 and 4 with 32 bit kernel
+* [aarch64](https://github.com/synesthesiam/voice2json/releases/download/v1.0/voice2json_1.0_aarch64.deb) - Raspberry Pi 3+, 4 with experimental 64 bit kernel
 
 If you're unsure about your architecture, run:
 
