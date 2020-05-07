@@ -1,6 +1,6 @@
 ![voice2json logo](docs/img/voice2json.svg)
 
-`voice2json` is a collection of [command-line tools](https://voice2json.org/commands.html) for <strong>offline speech/intent recognition</strong> on Linux. It is free, open source ([MIT](https://opensource.org/licenses/MIT)), and [supports 16 human languages](https://voice2json.org/index.html#supported-languages). 
+`voice2json` is a collection of [command-line tools](https://voice2json.org/commands.html) for <strong>offline speech/intent recognition</strong> on Linux. It is free, open source ([MIT](https://opensource.org/licenses/MIT)), and [supports 17 human languages](https://voice2json.org/index.html#supported-languages). 
 
 * [Getting Started](https://voice2json.org/#getting-started)
 * [Commands](https://voice2json.org/comands.html)
