@@ -27,7 +27,13 @@ async def wake(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     if not engine_path:
         engine_path = shutil.which("precise-engine")
 
-    model_path = core.ppath("wake-word.precise.model-file", "precise/hey-mycroft-2.pb")
+    if args.model:
+        model_path = Path(args.model)
+    else:
+        model_path = core.ppath(
+            "wake-word.precise.model-file", "precise/hey-mycroft-2.pb"
+        )
+
     sensitivity = float(pydash.get(core.profile, "wake-word.sensitivity", 0.5))
     trigger_level = int(pydash.get(core.profile, "wake-word.precise.trigger-level", 3))
 

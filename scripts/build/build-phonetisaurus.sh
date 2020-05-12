@@ -31,8 +31,8 @@ tar -C "${phonetisaurus_build}" --strip-components=1 -xf "${phonetisaurus_src}"
 cd "${phonetisaurus_build}" && \
     mkdir -p build && \
      ./configure "--prefix=${phonetisaurus_build}/build" \
-                 "--with-openfst-includes=-I${openfst_build}/build/include" \
-                 "--with-openfst-libs=-L${openfst_build}/build/lib" && \
+                 "--with-openfst-includes=${openfst_build}/build/include" \
+                 "--with-openfst-libs=${openfst_build}/build/lib" && \
     make -j "${MAKE_THREADS}" && \
     make install
 

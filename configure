@@ -4820,6 +4820,11 @@ else
   $as_echo "  kaldi: ${is_kaldi_enabled}"
 fi
 
+if test "x$is_julius_enabled" = xyes; then :
+  $as_echo "  julius: ${is_julius_enabled} (${julius_arch}, ${julius_from})"
+else
+  $as_echo "  julius: ${is_julius_enabled}"
+fi
 
 if test "x$is_deepspeech_enabled" = xyes; then :
   $as_echo "  deepspeech: ${is_deepspeech_enabled} (${deepspeech_arch}, ${deepspeech_from})"

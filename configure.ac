@@ -501,6 +501,9 @@ AS_IF([test "x$is_kaldi_enabled" = xyes],
 AS_ECHO(["  kaldi: ${is_kaldi_enabled} (${kaldi_arch}, ${kaldi_from})"]),
 AS_ECHO(["  kaldi: ${is_kaldi_enabled}"]))
 
+AS_IF([test "x$is_julius_enabled" = xyes],
+AS_ECHO(["  julius: ${is_julius_enabled} (${julius_arch}, ${julius_from})"]),
+AS_ECHO(["  julius: ${is_julius_enabled}"]))
 
 AS_IF([test "x$is_deepspeech_enabled" = xyes],
 AS_ECHO(["  deepspeech: ${is_deepspeech_enabled} (${deepspeech_arch}, ${deepspeech_from})"]),

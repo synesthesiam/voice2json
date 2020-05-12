@@ -333,6 +333,7 @@ def get_args() -> argparse.Namespace:
     wake_parser.add_argument(
         "--audio-source", "-a", help="File to read raw 16-bit 16Khz mono audio from"
     )
+    wake_parser.add_argument("--model", help="Override model in profile")
     wake_parser.add_argument(
         "--chunk-size",
         type=int,

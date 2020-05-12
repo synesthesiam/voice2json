@@ -210,7 +210,7 @@ install-phonetisaurus:
 endif # ENABLE_PHONETISAURUS
 
 $(PHONETISAURUS_SRC_FILE):
-	$(DO_DOWNLOAD) "$(PHONETISAURUS_SRC_FILE)" 'https://github.com/synesthesiam/docker-phonetisaurus/blob/master/download/phonetisaurus-2019.tar.gz?raw=true'
+	$(DO_DOWNLOAD) "$(PHONETISAURUS_SRC_FILE)" 'https://github.com/synesthesiam/docker-phonetisaurus/raw/master/download/phonetisaurus-2019.tar.gz'
 
 # -----------------------------------------------------------------------------
 # Mycroft Precise: wake word detection
@@ -242,7 +242,7 @@ ifeq ($(ENABLE_POCKETSPHINX),yes)
 pocketsphinx: $(POCKETSPHINX_FILE)
 
 install-pocketsphinx: $(POCKETSPHINX_FILE)
-	"$(INSTALL_PYTHON)" -m pip install "$(POCKETSPHINX_FILE)"
+	"$(INSTALL_PYTHON)" -m pip install $(PIP_INSTALL_ARGS) "$(POCKETSPHINX_FILE)"
 else # ENABLE_POCKETSPHINX
 pocketsphinx:
 
@@ -278,7 +278,7 @@ install-kaldi:
 endif # ENABLE_KALDI
 
 $(KALDI_SRC_FILE):
-	$(DO_DOWNLOAD) "$(KALDI_SRC_FILE)" 'https://github.com/synesthesiam/docker-kaldi/blob/master/download/kaldi-2020.tar.gz?raw=true'
+	$(DO_DOWNLOAD) "$(KALDI_SRC_FILE)" 'https://github.com/synesthesiam/docker-kaldi/raw/master/download/kaldi-2020.tar.gz'
 
 # -----------------------------------------------------------------------------
 # Julius: speech to text
@@ -306,7 +306,7 @@ install-julius:
 endif # ENABLE_JULIUS
 
 $(JULIUS_SRC_FILE):
-	$(DO_DOWNLOAD) "$(JULIUS_SRC_FILE)" 'https://github.com/synesthesiam/docker-julius/blob/master/download/julius-2019.tar.gz?raw=true'
+	$(DO_DOWNLOAD) "$(JULIUS_SRC_FILE)" 'https://github.com/synesthesiam/docker-julius/raw/master/download/julius-2019.tar.gz'
 
 
 # -----------------------------------------------------------------------------
@@ -355,10 +355,10 @@ install-kenlm:
 endif # ENABLE_KENLM
 
 $(KENLM_SRC_FILE):
-	$(DO_DOWNLOAD) "$(KENLM_SRC_FILE)" 'https://github.com/synesthesiam/docker-kenlm/blob/master/download/kenlm-20200308.tar.gz?raw=true'
+	$(DO_DOWNLOAD) "$(KENLM_SRC_FILE)" 'https://github.com/synesthesiam/docker-kenlm/raw/master/download/kenlm-20200308.tar.gz'
 
 $(EIGEN_SRC_FILE):
-	$(DO_DOWNLOAD) "$(EIGEN_SRC_FILE)" 'https://github.com/synesthesiam/docker-kenlm/blob/master/download/eigen-3.2.8.tar.bz2?raw=true'
+	$(DO_DOWNLOAD) "$(EIGEN_SRC_FILE)" 'https://github.com/synesthesiam/docker-kenlm/raw/master/download/eigen-3.2.8.tar.bz2'
 
 # -----------------------------------------------------------------------------
 
