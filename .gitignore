@@ -20,6 +20,7 @@ __pycache__/
 /setup.py
 /Makefile
 /voice2json.sh
+/voice2json.spec
 
 /autom4te.cache/
 /config.log

@@ -1,5 +1,5 @@
 Package: voice2json
-Version: 2.0
+Version: @VERSION@
 Section: utils
 Priority: optional
 Depends: sox,alsa-utils,espeak,jq,libstdc++6,perl,libportaudio2,libatlas3-base

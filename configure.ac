@@ -10,6 +10,7 @@ dnl Template files to write
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([setup.py])
 AC_CONFIG_FILES([voice2json.sh])
+AC_CONFIG_FILES([voice2json.spec])
 
 AC_CANONICAL_HOST
 AC_PROG_INSTALL
@@ -142,8 +143,8 @@ AS_CASE([$host_cpu],
         is_kaldi_enabled=yes
         kaldi_arch=arm64
 
-        is_julius_enabled=no
-        julius_from=source
+        is_julius_enabled=yes
+        julius_arch=arm64
 
         is_deepspeech_enabled=no
         deepspeech_from=NONE

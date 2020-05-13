@@ -43,7 +43,7 @@ RUN . /.vars && \
 COPY debian/control.in /
 
 RUN . /.vars && \
-    sed -e "s/@DEBIAN_ARCH@/${DEBIAN_ARCH}/" < /control.in > ${DEBIAN_DIR}/DEBIAN/control
+    sed -e s"/@VERSION@/${VERSION}/" -e "s/@DEBIAN_ARCH@/${DEBIAN_ARCH}/" < /control.in > ${DEBIAN_DIR}/DEBIAN/control
 
 # Directory of prebuilt tools
 COPY download/ ${BUILD_DIR}/download/
@@ -51,8 +51,7 @@ COPY download/ ${BUILD_DIR}/download/
 COPY m4/ ${BUILD_DIR}/m4/
 COPY configure config.sub config.guess \
      install-sh missing aclocal.m4 \
-     Makefile.in setup.py.in voice2json.sh.in \
-     requirements.txt \
+     Makefile.in setup.py.in voice2json.sh.in voice2json.spec.in \
      ${BUILD_DIR}/
 
 RUN cd ${BUILD_DIR} && \

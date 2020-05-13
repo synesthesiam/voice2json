@@ -19,7 +19,11 @@ mkdir -p "${openfst_build}"
 tar -C "${openfst_build}" --strip-components=1 -xf "${openfst_src}"
 cd "${openfst_build}" && \
     mkdir -p build && \
-    ./configure "--prefix=${openfst_build}/build" --enable-far && \
+    ./configure "--prefix=${openfst_build}/build" \
+                --enable-static \
+                --enable-shared \
+                --enable-far \
+                --enable-ngram-fsts && \
     make -j "${MAKE_THREADS}" && \
     make install
 
