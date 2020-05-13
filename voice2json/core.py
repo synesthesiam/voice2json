@@ -444,11 +444,28 @@ class Voice2JsonCore:
                     "Recording raw 16-bit 16Khz mono audio from stdin", file=sys.stderr
                 )
 
-            # Will not work on Windows
-            audio_source = "/dev/stdin"
+            return AsyncStdinReader()
 
         # File source
         import aiofiles
 
         _LOGGER.debug("Recording raw 16-bit 16Khz mono audio from %s", audio_source)
-        return await aiofiles.open(audio_source, "rb", buffering=0)
+        return await aiofiles.open(audio_source, "rb")
+
+
+# -----------------------------------------------------------------------------
+
+
+class AsyncStdinReader:
+    """Wrap sys.stdin.buffer in an async reader."""
+
+    def __init__(self, loop: typing.Optional[asyncio.AbstractEventLoop] = None):
+        if loop is None:
+            loop = asyncio.get_event_loop()
+
+        self.loop = loop
+
+    async def read(self, n: int = -1) -> bytes:
+        """Some bytes from stdin buffer."""
+        data = await self.loop.run_in_executor(None, sys.stdin.buffer.read, n)
+        return data
