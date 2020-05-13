@@ -21,7 +21,7 @@ FROM base as base-arm64
 
 ARG TARGETARCH
 ARG TARGETVARIANT
-FROM base-$TARGETARCH$TARGETVARIANT
+FROM base-$TARGETARCH$TARGETVARIANT as debian
 
 ENV APP_DIR=/usr/lib/voice2json
 ENV BUILD_DIR=/build
@@ -103,3 +103,9 @@ RUN . /.vars && \
 RUN . /.vars && \
     cd ${BUILD_DIR} && \
     fakeroot dpkg --build ${PACKAGE_NAME}
+
+# -----------------------------------------------------------------------------
+
+FROM base
+
+COPY --from=debian /build/*.deb /build/
