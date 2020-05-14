@@ -3,6 +3,7 @@ import argparse
 import asyncio
 import logging
 import shutil
+import typing
 import time
 from pathlib import Path
 
@@ -18,14 +19,12 @@ _LOGGER = logging.getLogger("voice2json.wake")
 
 async def wake(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     """Wait for wake word in audio stream."""
-    # from precise_runner import PreciseEngine, PreciseRunner, ReadWriteStream
-
-    # loop = asyncio.get_event_loop()
-
     # Load settings
     engine_path = pydash.get(core.profile, "wake-word.precise.engine-executable")
     if not engine_path:
         engine_path = shutil.which("precise-engine")
+
+    model_path: typing.Optional[Path] = None
 
     if args.model:
         model_path = Path(args.model)
@@ -33,6 +32,8 @@ async def wake(args: argparse.Namespace, core: Voice2JsonCore) -> None:
         model_path = core.ppath(
             "wake-word.precise.model-file", "precise/hey-mycroft-2.pb"
         )
+
+    assert model_path, "No model path"
 
     sensitivity = float(pydash.get(core.profile, "wake-word.sensitivity", 0.5))
     trigger_level = int(pydash.get(core.profile, "wake-word.precise.trigger-level", 3))

@@ -37,8 +37,18 @@ async def recognize(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     )
     intent_graph_path = core.ppath("training.intent-graph", "intent.pickle.gz")
     converters_dir = core.ppath("training.converters-directory", "converters")
-    # stop_words_path = core.ppath("intent-recognition.stop-words", "stop_words.txt")
+    stop_words_path = core.ppath("intent-recognition.stop-words", "stop_words.txt")
     fuzzy = pydash.get(core.profile, "intent-recognition.fuzzy", True)
+
+    # Load stop words
+    stop_words: typing.Optional[typing.Set[str]] = None
+    if stop_words_path and stop_words_path.is_file():
+        stop_words = set()
+        with open(stop_words_path, "r") as stop_words_file:
+            for line in stop_words_file:
+                line = line.strip()
+                if line:
+                    stop_words.add(line)
 
     # Load converters
     extra_converters: typing.Optional[typing.Dict[str, typing.Any]] = {}
@@ -102,6 +112,7 @@ async def recognize(args: argparse.Namespace, core: Voice2JsonCore) -> None:
                 tokens,
                 intent_graph,
                 fuzzy=fuzzy,
+                # stop_words=stop_words,
                 word_transform=word_transform,
                 extra_converters=extra_converters,
                 intent_filter=intent_filter,
