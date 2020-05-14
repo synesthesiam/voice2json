@@ -43,17 +43,13 @@ RUN export DEBIAN_ARCH="$(dpkg-architecture | grep DEB_BUILD_ARCH= | sed -e 's/[
     export VERSION="$(cat ${BUILD_DIR}/VERSION)" && \
     export PACKAGE_NAME=voice2json_${VERSION}_${DEBIAN_ARCH} && \
     export DEBIAN_DIR=${BUILD_DIR}/${PACKAGE_NAME} && \
-    echo "export PACKAGE_NAME=${PACKAGE_NAME}" > /.vars && \
+    echo "export VERSION=${VERSION}" > /.vars && \
+    echo "export PACKAGE_NAME=${PACKAGE_NAME}" >> /.vars && \
     echo "export DEBIAN_ARCH=${DEBIAN_ARCH}" >> /.vars && \
     echo "export DEBIAN_DIR=${DEBIAN_DIR}" >> /.vars
 
 RUN . /.vars && \
     mkdir -p ${DEBIAN_DIR}/DEBIAN
-
-COPY debian/control.in /
-
-RUN . /.vars && \
-    sed -e s"/@VERSION@/${VERSION}/" -e "s/@DEBIAN_ARCH@/${DEBIAN_ARCH}/" < /control.in > ${DEBIAN_DIR}/DEBIAN/control
 
 # Directory of prebuilt tools
 COPY download/ ${BUILD_DIR}/download/
@@ -110,6 +106,13 @@ RUN . /.vars && \
         ${DEBIAN_DIR}${APP_DIR}/bin/pip* \
         ${DEBIAN_DIR}${APP_DIR}/bin/python* \
         ${DEBIAN_DIR}${APP_DIR}/lib/python*
+
+# Build Debian package
+COPY debian/control.in /
+
+RUN . /.vars && \
+    sed -e s"/@VERSION@/${VERSION}/" -e "s/@DEBIAN_ARCH@/${DEBIAN_ARCH}/" < /control.in > ${DEBIAN_DIR}/DEBIAN/control
+
 
 RUN . /.vars && \
     cd ${BUILD_DIR} && \
