@@ -132,7 +132,6 @@ async def wake(args: argparse.Namespace, core: Voice2JsonCore) -> None:
             await audio_source.close()
             engine_proc.terminate()
             await engine_proc.wait()
-            # runner.stop()
         except Exception:
             pass
 
