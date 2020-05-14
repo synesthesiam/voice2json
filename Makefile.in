@@ -134,14 +134,19 @@ install-dependencies: install-opengrm \
                       install-deepspeech \
                       install-kenlm
 
-install-voice2json:
+.PHONY: docs
+install-voice2json: docs
 	"$(INSTALL_PYTHON)" -m pip install $(PIP_INSTALL_ARGS) "$(srcdir)"
-	chmod +x "${srcdir}/voice2json.sh"
-	install -D "${srcdir}/voice2json.sh" "$(DESTDIR)$(prefix)/bin/voice2json"
-	install -D "--target-directory=$(DESTDIR)$(prefix)/share/voice2json/etc" "${srcdir}/etc/profile.defaults.yml"
-	install -D "--target-directory=$(DESTDIR)$(prefix)/share/voice2json/etc/precise" "${srcdir}/etc/precise"/*
+	chmod +x "$(srcdir)/voice2json.sh"
+	install -D "$(srcdir)/voice2json.sh" "$(DESTDIR)$(prefix)/bin/voice2json"
+	install -D "--target-directory=$(DESTDIR)$(prefix)/share/voice2json/etc" "$(srcdir)/etc/profile.defaults.yml"
+	install -D "--target-directory=$(DESTDIR)$(prefix)/share/voice2json/etc/precise" "$(srcdir)/etc/precise"/*
 	install -D "--target-directory=$(DESTDIR)$(prefix)/share/voice2json" VERSION README.md LICENSE
-	cp -fR "${srcdir}/site" "$(DESTDIR)$(prefix)/share/voice2json/"
+	cp -fR "$(srcdir)/site" "$(DESTDIR)$(prefix)/share/voice2json/"
+
+docs:
+	"$(INSTALL_PYTHON)" -m pip install $(PIP_INSTALL_ARGS) -r "$(srcdir)/docs/requirements.txt"
+	"$(src_dir)/scripts/build-docs.sh"
 
 # -----------------------------------------------------------------------------
 
