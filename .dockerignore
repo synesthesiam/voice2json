@@ -23,6 +23,6 @@
 
 !debian/sox
 !debian/control.in
+!voice2json.spec.in
 !debian/voice2json
-!voice2json.spec
 !__main__.py
