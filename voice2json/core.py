@@ -469,3 +469,7 @@ class AsyncStdinReader:
         """Some bytes from stdin buffer."""
         data = await self.loop.run_in_executor(None, sys.stdin.buffer.read, n)
         return data
+
+    async def close(self):
+        """Do nothing."""
+        pass
