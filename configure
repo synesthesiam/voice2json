@@ -2409,6 +2409,8 @@ ac_config_files="$ac_config_files setup.py"
 
 ac_config_files="$ac_config_files voice2json.sh"
 
+ac_config_files="$ac_config_files voice2json.spec"
+
 
 ac_aux_dir=
 for ac_dir in "$srcdir" "$srcdir/.." "$srcdir/../.."; do
@@ -3806,8 +3808,8 @@ case $host_cpu in #(
         is_kaldi_enabled=yes
         kaldi_arch=arm64
 
-        is_julius_enabled=no
-        julius_from=source
+        is_julius_enabled=yes
+        julius_arch=arm64
 
         is_deepspeech_enabled=no
         deepspeech_from=NONE
@@ -5626,6 +5628,7 @@ do
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "setup.py") CONFIG_FILES="$CONFIG_FILES setup.py" ;;
     "voice2json.sh") CONFIG_FILES="$CONFIG_FILES voice2json.sh" ;;
+    "voice2json.spec") CONFIG_FILES="$CONFIG_FILES voice2json.spec" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac
