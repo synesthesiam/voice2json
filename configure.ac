@@ -122,10 +122,10 @@ AS_CASE([$host_cpu],
         deepspeech_arch=rpi3
 
         is_opengrm_enabled=yes
-        opengrm_arch=armhf
+        opengrm_arch=armv7
 
         is_phonetisaurus_enabled=yes
-        phonetisaurus_arch=armhf
+        phonetisaurus_arch=armv7
 
         is_kenlm_enabled=yes
         kenlm_arch=armv7
@@ -150,13 +150,13 @@ AS_CASE([$host_cpu],
         deepspeech_from=NONE
 
         is_opengrm_enabled=yes
-        opengrm_arch=aarch64
+        opengrm_arch=arm64
 
         is_phonetisaurus_enabled=yes
         phonetisaurus_arch=arm64
 
-        is_kenlm_enabled=no
-        kenlm_from=source
+        is_kenlm_enabled=yes
+        kenlm_arch=arm64
     ],
     [x86_64],[
         dnl x86_64 compatible
