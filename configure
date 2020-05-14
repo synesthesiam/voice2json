@@ -3752,20 +3752,20 @@ case $host_cpu in #(
         is_kaldi_enabled=no
         kaldi_from=NONE
 
-        is_julius_enabled=no
-        julius_from=source
+        is_julius_enabled=yes
+        julius_arch=armv6
 
         is_deepspeech_enabled=no
         deepspeech_from=NONE
 
         is_opengrm_enabled=yes
-        opengrm_arch=armv6l
+        opengrm_arch=armv6
 
         is_phonetisaurus_enabled=yes
-        phonetisaurus_arch=armv6l
+        phonetisaurus_arch=armv6
 
-        is_kenlm_enabled=no
-        kenlm_from=source
+        is_kenlm_enabled=yes
+        kenlm_arch=armv6
      ;; #(
   armv7l) :
 
