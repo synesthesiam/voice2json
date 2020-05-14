@@ -1,12 +1,49 @@
-FROM ubuntu:eoan as build
+FROM ubuntu:eoan as build-amd64
 
 ENV LANG C.UTF-8
 
 RUN apt-get update && \
-    apt-get install --yes --no-install-recommends \
-        build-essential \
-        python3 python3-dev python3-pip python3-setuptools python3-venv \
-        swig portaudio19-dev libatlas-base-dev
+    apt-get install --no-install-recommends --yes \
+        python3 python3-dev python3-setuptools python3-pip python3-venv \
+        build-essential swig libatlas-base-dev portaudio19-dev
+
+# -----------------------------------------------------------------------------
+
+FROM ubuntu:eoan as build-armv7
+
+ENV LANG C.UTF-8
+
+RUN apt-get update && \
+    apt-get install --no-install-recommends --yes \
+        python3 python3-dev python3-setuptools python3-pip python3-venv \
+        build-essential swig libatlas-base-dev portaudio19-dev
+
+# -----------------------------------------------------------------------------
+
+FROM ubuntu:eoan as build-arm64
+
+ENV LANG C.UTF-8
+
+RUN apt-get update && \
+    apt-get install --no-install-recommends --yes \
+        python3 python3-dev python3-setuptools python3-pip python3-venv \
+        build-essential swig libatlas-base-dev portaudio19-dev
+
+# -----------------------------------------------------------------------------
+
+FROM balenalib/raspberry-pi-debian-python:3.7-buster-build as build-armv6
+
+ENV LANG C.UTF-8
+
+RUN apt-get update && \
+    apt-get install --no-install-recommends --yes \
+        swig libatlas-base-dev portaudio19-dev
+
+# -----------------------------------------------------------------------------
+
+ARG TARGETARCH
+ARG TARGETVARIANT
+FROM build-$TARGETARCH$TARGETVARIANT as build
 
 ENV APP_DIR=/usr/lib/voice2json
 ENV BUILD_DIR=/build
@@ -17,7 +54,7 @@ COPY download/ ${BUILD_DIR}/download/
 COPY m4/ ${BUILD_DIR}/m4/
 COPY configure config.sub config.guess \
      install-sh missing aclocal.m4 \
-     Makefile.in setup.py.in voice2json.sh.in \
+     Makefile.in setup.py.in voice2json.sh.in voice2json.spec.in \
      requirements.txt \
      ${BUILD_DIR}/
 
@@ -53,10 +90,32 @@ RUN apt-get update && \
         ca-certificates \
         perl sox alsa-utils espeak jq
 
+# -----------------------------------------------------------------------------
+
+FROM run as run-amd64
+
+FROM run as run-armv7
+
+FROM run as run-arm64
+
+FROM balenalib/raspberry-pi-debian-python:3.7-buster-run as run-armv6
+
+ENV LANG C.UTF-8
+
+RUN install_packages \
+        libportaudio2 libatlas3-base libgfortran4 \
+        ca-certificates \
+        perl sox alsa-utils espeak jq
+
+# -----------------------------------------------------------------------------
+
+ARG TARGETARCH
+ARG TARGETVARIANT
+FROM run-$TARGETARCH$TARGETVARIANT
+
 ENV APP_DIR=/usr/lib/voice2json
 COPY --from=build ${APP_DIR}/ ${APP_DIR}/
 
-RUN cp ${APP_DIR}/bin/voice2json /usr/bin/ && \
-    voice2json --version
+RUN cp ${APP_DIR}/bin/voice2json /usr/bin/
 
 ENTRYPOINT ["bash", "/usr/bin/voice2json"]
