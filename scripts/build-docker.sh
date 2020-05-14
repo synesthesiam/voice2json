@@ -9,14 +9,14 @@ version="$(cat "${src_dir}/VERSION")"
 
 # -----------------------------------------------------------------------------
 
-platforms='linux/amd64,linux/arm/v7,linux/arm64'
+: "${PLATFORMS=linux/amd64,linux/arm/v7,linux/arm64,linux/arm/v6}"
 
 : "${DOCKER_REGISTRY=docker.io}"
 
 docker buildx build \
         "${src_dir}" \
-        "--platform=${platforms}" \
-        --build-arg "DOCKER_REGISTRY=${DOCKER_REGISTRY}" \
+        "--platform=${PLATFORMS}" \
         --tag "${DOCKER_REGISTRY}/synesthesiam/voice2json:${version}" \
         --tag "${DOCKER_REGISTRY}/synesthesiam/voice2json" \
-        --push
+        --push \
+        "$@"
