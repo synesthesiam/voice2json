@@ -293,6 +293,11 @@ def get_args() -> argparse.Namespace:
         nargs="+",
         help="Intent names that allowed to be recognized",
     )
+    recognize_parser.add_argument(
+        "--transcription-property",
+        default="text",
+        help="JSON property containing transcription text (default: text)",
+    )
 
     # --------------
     # record-command

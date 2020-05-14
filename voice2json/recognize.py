@@ -96,7 +96,7 @@ async def recognize(args: argparse.Namespace, core: Voice2JsonCore) -> None:
             else:
                 # Input is JSON
                 sentence_object = json.loads(sentence)
-                text = sentence_object.get("text", "")
+                text = sentence_object.get(args.transcription_property, "")
 
             # Tokenize
             text = text.strip()
@@ -112,7 +112,7 @@ async def recognize(args: argparse.Namespace, core: Voice2JsonCore) -> None:
                 tokens,
                 intent_graph,
                 fuzzy=fuzzy,
-                # stop_words=stop_words,
+                stop_words=stop_words,
                 word_transform=word_transform,
                 extra_converters=extra_converters,
                 intent_filter=intent_filter,
