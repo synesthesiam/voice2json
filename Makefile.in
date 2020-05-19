@@ -141,7 +141,7 @@ install-voice2json: docs
 
 docs:
 	"$(INSTALL_PYTHON)" -m pip install $(PIP_INSTALL_ARGS) -r "$(srcdir)/docs/requirements.txt"
-	"$(src_dir)/scripts/build-docs.sh"
+	"$(srcdir)/scripts/build-docs.sh"
 
 # -----------------------------------------------------------------------------
 
