@@ -14,6 +14,7 @@
 !download/
 !dist/
 !requirements.txt
+!docs/
 !scripts/
 !voice2json/*.py
 !VERSION
