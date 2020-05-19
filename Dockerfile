@@ -62,11 +62,10 @@ RUN cd ${BUILD_DIR} && \
     ./configure --prefix=${APP_DIR}
 
 COPY scripts/install/ ${BUILD_DIR}/scripts/install/
-COPY scripts/build-docs.sh ${BUILD_DIR}/scripts/
 
 COPY etc/profile.defaults.yml ${BUILD_DIR}/etc/
 COPY etc/precise/ ${BUILD_DIR}/etc/precise/
-COPY docs/ ${BUILD_DIR}/docs/
+COPY site/ ${BUILD_DIR}/site/
 
 COPY VERSION README.md LICENSE ${BUILD_DIR}/
 COPY voice2json/ ${BUILD_DIR}/voice2json/

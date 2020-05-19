@@ -129,8 +129,7 @@ install-dependencies: install-opengrm \
                       install-deepspeech \
                       install-kenlm
 
-.PHONY: docs
-install-voice2json: docs
+install-voice2json:
 	"$(INSTALL_PYTHON)" -m pip install $(PIP_INSTALL_ARGS) "$(srcdir)"
 	chmod +x "$(srcdir)/voice2json.sh"
 	install -D "$(srcdir)/voice2json.sh" "$(DESTDIR)$(prefix)/bin/voice2json"
@@ -138,10 +137,6 @@ install-voice2json: docs
 	install -D "--target-directory=$(DESTDIR)$(prefix)/share/voice2json/etc/precise" "$(srcdir)/etc/precise"/*
 	install -D "--target-directory=$(DESTDIR)$(prefix)/share/voice2json" VERSION README.md LICENSE
 	cp -fR "$(srcdir)/site" "$(DESTDIR)$(prefix)/share/voice2json/"
-
-docs:
-	"$(INSTALL_PYTHON)" -m pip install $(PIP_INSTALL_ARGS) -r "$(srcdir)/docs/requirements.txt"
-	"$(srcdir)/scripts/build-docs.sh"
 
 # -----------------------------------------------------------------------------
 

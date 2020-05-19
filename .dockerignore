@@ -14,13 +14,12 @@
 !download/
 !dist/
 !requirements.txt
-!docs/
 !scripts/
 !voice2json/*.py
 !VERSION
 !README.md
 !LICENSE
-!site
+!site/
 
 !debian/sox
 !debian/control.in
