@@ -43,11 +43,9 @@ is_pocketsphinx_enabled=UNKNOWN
 pocketsphinx_from=source
 
 is_kaldi_enabled=UNKNOWN
-kaldi_arch=NONE
 kaldi_from=prebuilt
 
 is_julius_enabled=UNKNOWN
-julius_arch=NONE
 julius_from=prebuilt
 
 is_deepspeech_enabled=UNKNOWN
@@ -61,15 +59,12 @@ dnl --------------
 is_training_enabled=yes
 
 is_opengrm_enabled=UNKNOWN
-opengrm_arch=NONE
 opengrm_from=prebuilt
 
 is_phonetisaurus_enabled=UNKNOWN
-phonetisaurus_arch=NONE
 phonetisaurus_from=prebuilt
 
 is_kenlm_enabled=UNKNOWN
-kenlm_arch=NONE
 kenlm_from=prebuilt
 
 dnl Set architectures based on host CPU
@@ -88,19 +83,15 @@ AS_CASE([$host_cpu],
         kaldi_from=NONE
 
         is_julius_enabled=yes
-        julius_arch=armv6
 
         is_deepspeech_enabled=no
         deepspeech_from=NONE
 
         is_opengrm_enabled=yes
-        opengrm_arch=armv6
 
         is_phonetisaurus_enabled=yes
-        phonetisaurus_arch=armv6
 
         is_kenlm_enabled=yes
-        kenlm_arch=armv6
     ],
     [armv7l],[
         dnl ARM 32-bit v7 (Pi 2/3/4)
@@ -113,22 +104,17 @@ AS_CASE([$host_cpu],
         pocketsphinx_from=source
 
         is_kaldi_enabled=yes
-        kaldi_arch=armv7
 
         is_julius_enabled=yes
-        julius_arch=armv7
 
         is_deepspeech_enabled=yes
         deepspeech_arch=rpi3
 
         is_opengrm_enabled=yes
-        opengrm_arch=armv7
 
         is_phonetisaurus_enabled=yes
-        phonetisaurus_arch=armv7
 
         is_kenlm_enabled=yes
-        kenlm_arch=armv7
     ],
     [aarch64],[
         dnl ARM 64-bit (Pi 3/4)
@@ -141,22 +127,18 @@ AS_CASE([$host_cpu],
         pocketsphinx_from=source
 
         is_kaldi_enabled=yes
-        kaldi_arch=arm64
 
         is_julius_enabled=yes
-        julius_arch=arm64
 
         is_deepspeech_enabled=no
         deepspeech_from=NONE
 
         is_opengrm_enabled=yes
-        opengrm_arch=arm64
 
         is_phonetisaurus_enabled=yes
-        phonetisaurus_arch=arm64
 
-        is_kenlm_enabled=yes
-        kenlm_arch=arm64
+        dnl Don't bother since DeepSpeech is not supported
+        is_kenlm_enabled=no
     ],
     [x86_64],[
         dnl x86_64 compatible
@@ -169,22 +151,17 @@ AS_CASE([$host_cpu],
         pocketsphinx_from=source
 
         is_kaldi_enabled=yes
-        kaldi_arch=amd64
 
         is_julius_enabled=yes
-        julius_arch=amd64
 
         is_deepspeech_enabled=yes
         deepspeech_arch=amd64
 
         is_opengrm_enabled=yes
-        opengrm_arch=amd64
 
         is_phonetisaurus_enabled=yes
-        phonetisaurus_arch=amd64
 
         is_kenlm_enabled=yes
-        kenlm_arch=amd64
     ])
 
 dnl ---------------------------------------------------------------------------
@@ -499,11 +476,11 @@ AS_ECHO(["  pocketsphinx: ${is_pocketsphinx_enabled} (${pocketsphinx_from})"]),
 AS_ECHO(["  pocketsphinx: ${is_pocketsphinx_enabled}"]))
 
 AS_IF([test "x$is_kaldi_enabled" = xyes],
-AS_ECHO(["  kaldi: ${is_kaldi_enabled} (${kaldi_arch}, ${kaldi_from})"]),
+AS_ECHO(["  kaldi: ${is_kaldi_enabled} (${kaldi_from})"]),
 AS_ECHO(["  kaldi: ${is_kaldi_enabled}"]))
 
 AS_IF([test "x$is_julius_enabled" = xyes],
-AS_ECHO(["  julius: ${is_julius_enabled} (${julius_arch}, ${julius_from})"]),
+AS_ECHO(["  julius: ${is_julius_enabled} (${julius_from})"]),
 AS_ECHO(["  julius: ${is_julius_enabled}"]))
 
 AS_IF([test "x$is_deepspeech_enabled" = xyes],
@@ -514,15 +491,15 @@ AS_ECHO(["
 training:"])
 
 AS_IF([test "x$is_opengrm_enabled" = xyes],
-AS_ECHO(["  opengrm: ${is_opengrm_enabled} (${opengrm_arch}, ${opengrm_from})"]),
+AS_ECHO(["  opengrm: ${is_opengrm_enabled} (${opengrm_from})"]),
 AS_ECHO(["  opengrm: ${is_opengrm_enabled}"]))
 
 AS_IF([test "x$is_phonetisaurus_enabled" = xyes],
-AS_ECHO(["  phonetisaurus: ${is_phonetisaurus_enabled} (${phonetisaurus_arch}, ${phonetisaurus_from})"]),
+AS_ECHO(["  phonetisaurus: ${is_phonetisaurus_enabled} (${phonetisaurus_from})"]),
 AS_ECHO(["  phonetisaurus: ${is_phonetisaurus_enabled}"]))
 
 AS_IF([test "x$is_kenlm_enabled" = xyes],
-AS_ECHO(["  kenlm: ${is_kenlm_enabled} (${kenlm_arch}, ${kenlm_from})"]),
+AS_ECHO(["  kenlm: ${is_kenlm_enabled} (${kenlm_from})"]),
 AS_ECHO(["  kenlm: ${is_kenlm_enabled}"]))
 
 AS_ECHO([""])
@@ -542,11 +519,9 @@ AC_SUBST([PRECISE_FROM], [$precise_from])
 AC_SUBST([ENABLE_POCKETSPHINX], [$is_pocketsphinx_enabled])
 AC_SUBST([POCKETSPHINX_FROM], [$pocketsphinx_from])
 
-AC_SUBST([KALDI_ARCH], [$kaldi_arch])
 AC_SUBST([ENABLE_KALDI], [$is_kaldi_enabled])
 AC_SUBST([KALDI_FROM], [$kaldi_from])
 
-AC_SUBST([JULIUS_ARCH], [$julius_arch])
 AC_SUBST([ENABLE_JULIUS], [$is_julius_enabled])
 AC_SUBST([JULIUS_FROM], [$julius_from])
 
@@ -554,15 +529,12 @@ AC_SUBST([DEEPSPEECH_ARCH], [$deepspeech_arch])
 AC_SUBST([ENABLE_DEEPSPEECH], [$is_deepspeech_enabled])
 AC_SUBST([DEEPSPEECH_FROM], [$deepspeech_from])
 
-AC_SUBST([OPENGRM_ARCH], [$opengrm_arch])
 AC_SUBST([ENABLE_OPENGRM], [$is_opengrm_enabled])
 AC_SUBST([OPENGRM_FROM], [$opengrm_from])
 
-AC_SUBST([PHONETISAURUS_ARCH], [$phonetisaurus_arch])
 AC_SUBST([ENABLE_PHONETISAURUS], [$is_phonetisaurus_enabled])
 AC_SUBST([PHONETISAURUS_FROM], [$phonetisaurus_from])
 
-AC_SUBST([KENLM_ARCH], [$kenlm_arch])
 AC_SUBST([ENABLE_KENLM], [$is_kenlm_enabled])
 AC_SUBST([KENLM_FROM], [$kenlm_from])
 

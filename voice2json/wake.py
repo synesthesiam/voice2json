@@ -3,8 +3,8 @@ import argparse
 import asyncio
 import logging
 import shutil
-import typing
 import time
+import typing
 from pathlib import Path
 
 import pydash
