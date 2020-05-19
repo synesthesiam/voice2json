@@ -626,22 +626,17 @@ ac_subst_vars='LTLIBOBJS
 LIBOBJS
 KENLM_FROM
 ENABLE_KENLM
-KENLM_ARCH
 PHONETISAURUS_FROM
 ENABLE_PHONETISAURUS
-PHONETISAURUS_ARCH
 OPENGRM_FROM
 ENABLE_OPENGRM
-OPENGRM_ARCH
 DEEPSPEECH_FROM
 ENABLE_DEEPSPEECH
 DEEPSPEECH_ARCH
 JULIUS_FROM
 ENABLE_JULIUS
-JULIUS_ARCH
 KALDI_FROM
 ENABLE_KALDI
-KALDI_ARCH
 POCKETSPHINX_FROM
 ENABLE_POCKETSPHINX
 PRECISE_FROM
@@ -3712,11 +3707,9 @@ is_pocketsphinx_enabled=UNKNOWN
 pocketsphinx_from=source
 
 is_kaldi_enabled=UNKNOWN
-kaldi_arch=NONE
 kaldi_from=prebuilt
 
 is_julius_enabled=UNKNOWN
-julius_arch=NONE
 julius_from=prebuilt
 
 is_deepspeech_enabled=UNKNOWN
@@ -3727,15 +3720,12 @@ deepspeech_from=prebuilt
 is_training_enabled=yes
 
 is_opengrm_enabled=UNKNOWN
-opengrm_arch=NONE
 opengrm_from=prebuilt
 
 is_phonetisaurus_enabled=UNKNOWN
-phonetisaurus_arch=NONE
 phonetisaurus_from=prebuilt
 
 is_kenlm_enabled=UNKNOWN
-kenlm_arch=NONE
 kenlm_from=prebuilt
 
 case $host_cpu in #(
@@ -3753,19 +3743,15 @@ case $host_cpu in #(
         kaldi_from=NONE
 
         is_julius_enabled=yes
-        julius_arch=armv6
 
         is_deepspeech_enabled=no
         deepspeech_from=NONE
 
         is_opengrm_enabled=yes
-        opengrm_arch=armv6
 
         is_phonetisaurus_enabled=yes
-        phonetisaurus_arch=armv6
 
         is_kenlm_enabled=yes
-        kenlm_arch=armv6
      ;; #(
   armv7l) :
 
@@ -3778,22 +3764,17 @@ case $host_cpu in #(
         pocketsphinx_from=source
 
         is_kaldi_enabled=yes
-        kaldi_arch=armv7
 
         is_julius_enabled=yes
-        julius_arch=armv7
 
         is_deepspeech_enabled=yes
         deepspeech_arch=rpi3
 
         is_opengrm_enabled=yes
-        opengrm_arch=armv7
 
         is_phonetisaurus_enabled=yes
-        phonetisaurus_arch=armv7
 
         is_kenlm_enabled=yes
-        kenlm_arch=armv7
      ;; #(
   aarch64) :
 
@@ -3806,22 +3787,17 @@ case $host_cpu in #(
         pocketsphinx_from=source
 
         is_kaldi_enabled=yes
-        kaldi_arch=arm64
 
         is_julius_enabled=yes
-        julius_arch=arm64
 
         is_deepspeech_enabled=no
         deepspeech_from=NONE
 
         is_opengrm_enabled=yes
-        opengrm_arch=arm64
 
         is_phonetisaurus_enabled=yes
-        phonetisaurus_arch=arm64
 
-        is_kenlm_enabled=yes
-        kenlm_arch=arm64
+                is_kenlm_enabled=no
      ;; #(
   x86_64) :
 
@@ -3834,22 +3810,17 @@ case $host_cpu in #(
         pocketsphinx_from=source
 
         is_kaldi_enabled=yes
-        kaldi_arch=amd64
 
         is_julius_enabled=yes
-        julius_arch=amd64
 
         is_deepspeech_enabled=yes
         deepspeech_arch=amd64
 
         is_opengrm_enabled=yes
-        opengrm_arch=amd64
 
         is_phonetisaurus_enabled=yes
-        phonetisaurus_arch=amd64
 
         is_kenlm_enabled=yes
-        kenlm_arch=amd64
      ;; #(
   *) :
      ;;
@@ -4817,13 +4788,13 @@ else
 fi
 
 if test "x$is_kaldi_enabled" = xyes; then :
-  $as_echo "  kaldi: ${is_kaldi_enabled} (${kaldi_arch}, ${kaldi_from})"
+  $as_echo "  kaldi: ${is_kaldi_enabled} (${kaldi_from})"
 else
   $as_echo "  kaldi: ${is_kaldi_enabled}"
 fi
 
 if test "x$is_julius_enabled" = xyes; then :
-  $as_echo "  julius: ${is_julius_enabled} (${julius_arch}, ${julius_from})"
+  $as_echo "  julius: ${is_julius_enabled} (${julius_from})"
 else
   $as_echo "  julius: ${is_julius_enabled}"
 fi
@@ -4838,19 +4809,19 @@ $as_echo "
 training:"
 
 if test "x$is_opengrm_enabled" = xyes; then :
-  $as_echo "  opengrm: ${is_opengrm_enabled} (${opengrm_arch}, ${opengrm_from})"
+  $as_echo "  opengrm: ${is_opengrm_enabled} (${opengrm_from})"
 else
   $as_echo "  opengrm: ${is_opengrm_enabled}"
 fi
 
 if test "x$is_phonetisaurus_enabled" = xyes; then :
-  $as_echo "  phonetisaurus: ${is_phonetisaurus_enabled} (${phonetisaurus_arch}, ${phonetisaurus_from})"
+  $as_echo "  phonetisaurus: ${is_phonetisaurus_enabled} (${phonetisaurus_from})"
 else
   $as_echo "  phonetisaurus: ${is_phonetisaurus_enabled}"
 fi
 
 if test "x$is_kenlm_enabled" = xyes; then :
-  $as_echo "  kenlm: ${is_kenlm_enabled} (${kenlm_arch}, ${kenlm_from})"
+  $as_echo "  kenlm: ${is_kenlm_enabled} (${kenlm_from})"
 else
   $as_echo "  kenlm: ${is_kenlm_enabled}"
 fi
@@ -4876,14 +4847,10 @@ ENABLE_POCKETSPHINX=$is_pocketsphinx_enabled
 POCKETSPHINX_FROM=$pocketsphinx_from
 
 
-KALDI_ARCH=$kaldi_arch
-
 ENABLE_KALDI=$is_kaldi_enabled
 
 KALDI_FROM=$kaldi_from
 
-
-JULIUS_ARCH=$julius_arch
 
 ENABLE_JULIUS=$is_julius_enabled
 
@@ -4897,21 +4864,15 @@ ENABLE_DEEPSPEECH=$is_deepspeech_enabled
 DEEPSPEECH_FROM=$deepspeech_from
 
 
-OPENGRM_ARCH=$opengrm_arch
-
 ENABLE_OPENGRM=$is_opengrm_enabled
 
 OPENGRM_FROM=$opengrm_from
 
 
-PHONETISAURUS_ARCH=$phonetisaurus_arch
-
 ENABLE_PHONETISAURUS=$is_phonetisaurus_enabled
 
 PHONETISAURUS_FROM=$phonetisaurus_from
 
-
-KENLM_ARCH=$kenlm_arch
 
 ENABLE_KENLM=$is_kenlm_enabled
 
