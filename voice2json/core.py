@@ -5,9 +5,11 @@ import asyncio
 import io
 import logging
 import os
+import queue
 import shlex
 import ssl
 import sys
+import threading
 import typing
 import wave
 from pathlib import Path
@@ -460,16 +462,25 @@ class AsyncStdinReader:
     """Wrap sys.stdin.buffer in an async reader."""
 
     def __init__(self, loop: typing.Optional[asyncio.AbstractEventLoop] = None):
-        if loop is None:
-            loop = asyncio.get_event_loop()
+        self.loop = loop or asyncio.get_event_loop()
+        self.read_n_queue: "queue.Queue[int]" = queue.Queue()
+        self.read_result_queue: "asyncio.Queue[bytes]" = asyncio.Queue()
+        self.read_thread = threading.Thread(target=self._read_stdin, daemon=True)
+        self.read_thread.start()
 
-        self.loop = loop
-
-    async def read(self, n: int = -1) -> bytes:
+    async def read(self, n: int) -> bytes:
         """Some bytes from stdin buffer."""
-        data = await self.loop.run_in_executor(None, sys.stdin.buffer.read, n)
+        self.read_n_queue.put(n)
+        data = await self.read_result_queue.get()
         return data
 
     async def close(self):
         """Do nothing."""
-        pass
+        self.read_n_queue.put(None)
+
+    def _read_stdin(self):
+        n = self.read_n_queue.get()
+        while n is not None:
+            result = sys.stdin.buffer.read(n)
+            self.loop.call_soon_threadsafe(self.read_result_queue.put, result)
+            n = self.read_n_queue.get()
