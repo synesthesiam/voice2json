@@ -482,5 +482,5 @@ class AsyncStdinReader:
         n = self.read_n_queue.get()
         while n is not None:
             result = sys.stdin.buffer.read(n)
-            self.loop.call_soon_threadsafe(self.read_result_queue.put, result)
+            self.loop.call_soon_threadsafe(self.read_result_queue.put_nowait, result)
             n = self.read_n_queue.get()

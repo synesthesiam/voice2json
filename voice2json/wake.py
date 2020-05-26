@@ -3,6 +3,7 @@ import argparse
 import asyncio
 import logging
 import shutil
+import subprocess
 import time
 import typing
 from pathlib import Path
@@ -54,8 +55,8 @@ async def wake(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     )
 
     precise_cmd = [str(engine_path), str(model_path), str(args.chunk_size)]
-    engine_proc = await asyncio.create_subprocess_exec(
-        *precise_cmd, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE
+    engine_proc = subprocess.Popen(
+        precise_cmd, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE
     )
 
     chunk_stream = engine_proc.stdin
@@ -71,42 +72,28 @@ async def wake(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 
     detector = TriggerDetector(args.chunk_size, sensitivity, trigger_level)
     activation_count = 0
-    chunks_left = 0
 
     start_time = time.perf_counter()
 
     # Create audio source and start listening
     audio_source = await core.make_audio_source(args.audio_source)
 
-    async def write_chunks():
-        nonlocal chunks_left
-
-        while True:
-            chunk = await audio_source.read(args.chunk_size)
-            if chunk:
-                chunk_stream.write(chunk)
-                await chunk_stream.drain()
-                chunks_left += 1
-            else:
-                _LOGGER.debug("Received empty audio chunk")
-
-                # Ensure one more prediction
-                chunk_stream.write(b"\0" * args.chunk_size)
-                await chunk_stream.drain()
-                break
-
-    asyncio.create_task(write_chunks())
+    # Audio data buffer
+    chunk = bytes()
 
     try:
         while True:
-            if args.exit_timeout is None:
-                # No timeout
-                prob_bytes = await prob_stream.readline()
+            chunk += await audio_source.read(args.chunk_size)
+            if len(chunk) >= args.chunk_size:
+                chunk_stream.write(chunk[: args.chunk_size])
+                chunk_stream.flush()
+                chunk = chunk[args.chunk_size :]
             else:
-                # With timeout
-                prob_bytes = await asyncio.wait_for(
-                    prob_stream.readline(), timeout=args.exit_timeout
-                )
+                # Need more data before writing chunk
+                continue
+
+            # Wait for prediction
+            prob_bytes = prob_stream.readline()
 
             prob_str = prob_bytes.decode().strip()
             _LOGGER.debug("Prediction: %s", prob_str)
@@ -121,10 +108,6 @@ async def wake(args: argparse.Namespace, core: Voice2JsonCore) -> None:
                     }
                 )
 
-            chunks_left -= 1
-            if chunks_left <= 0:
-                break
-
             # Check exit count
             if (args.exit_count is not None) and (activation_count >= args.exit_count):
                 break
@@ -132,7 +115,7 @@ async def wake(args: argparse.Namespace, core: Voice2JsonCore) -> None:
         try:
             await audio_source.close()
             engine_proc.terminate()
-            await engine_proc.wait()
+            engine_proc.wait()
         except Exception:
             pass
 

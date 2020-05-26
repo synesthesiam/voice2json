@@ -351,11 +351,6 @@ def get_args() -> argparse.Namespace:
         type=int,
         help="Exit after the wake word has been spoken some number of times",
     )
-    wake_parser.add_argument(
-        "--exit-timeout",
-        type=float,
-        help="Seconds to wait for predictions before exiting",
-    )
     wake_parser.set_defaults(func=wake)
 
     # --------------
