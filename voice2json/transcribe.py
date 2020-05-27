@@ -63,7 +63,9 @@ async def transcribe_wav(args: argparse.Namespace, core: Voice2JsonCore) -> None
                     result["wav_name"] = wav_path.name
                 else:
                     # Make relative to some directory
-                    result["wav_name"] = str(wav_path.relative_to(relative_dir))
+                    result["wav_name"] = str(
+                        wav_path.absolute().relative_to(relative_dir.absolute())
+                    )
 
                 print_json(result)
         else:
