@@ -8,5 +8,5 @@ pyyaml==5.3
 rhasspy-asr-deepspeech==0.1.1
 rhasspy-asr-kaldi==0.1.5
 rhasspy-asr-pocketsphinx==0.1.6
-rhasspy-nlu==0.1.8
+rhasspy-nlu==0.1.9
 rhasspy-silence==0.1.2
