@@ -397,10 +397,11 @@ $ voice2json wait-wake
 Once the wake word is spoken, `voice2json` will output:
 
 ```json
-{ "keyword": "/path/to/model_file.pb", "detect_seconds": 1.2345 }
+{ "keyword": "/path/to/model_file.pb", "detect_seconds": 1.2345, "detect_timestamp": 1234567890 }
 ```
 
 where `keyword` is the path to the detected keyword file and `detect_seconds` is the time of detection relative to when `voice2json` was started.
+The `detect_timestamp` field is computed with [`time.time()`](https://docs.python.org/3/library/time.html#time.time)
 
 ### Custom Wake Word
 
