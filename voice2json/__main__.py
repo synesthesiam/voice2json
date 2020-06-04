@@ -574,7 +574,14 @@ def get_core(args: argparse.Namespace) -> Voice2JsonCore:
 
     # Override with user settings
     for setting_path, setting_value in args.setting:
-        setting_value = json.loads(setting_value)
+        try:
+            setting_value = json.loads(setting_value)
+        except json.JSONDecodeError:
+            _LOGGER.warning(
+                f"Interpreting setting for {setting_path} as a string. Surround with quotes to avoid this warning."
+            )
+            pass
+
         _LOGGER.debug("Overriding %s with %s", setting_path, setting_value)
         pydash.set_(profile, setting_path, setting_value)
 
