@@ -63,6 +63,9 @@ async def train_profile(
     # -------------------
     base_dictionary = ppath("training.base-dictionary", "base_dictionary.txt")
     custom_words = ppath("training.custom-words-file", "custom_words.txt")
+    custom_words_action = pydash.get(
+        profile, "training.custom-words-action", "overwrite"
+    )
 
     acoustic_model = ppath("training.acoustic-model", "acoustic_model")
     acoustic_model_type = AcousticModelType(
@@ -239,7 +242,9 @@ async def train_profile(
 
             _LOGGER.debug("Loading base dictionary from %s", dict_path)
             with open(dict_path, "r") as dict_file:
-                rhasspynlu.g2p.read_pronunciations(dict_file, word_dict=pronunciations)
+                rhasspynlu.g2p.read_pronunciations(
+                    dict_file, word_dict=pronunciations, action=custom_words_action
+                )
 
     g2p_word_transform = None
     if g2p_word_casing == WordCasing.UPPER:

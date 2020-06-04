@@ -97,6 +97,10 @@ training:
   # Path to extra word pronunciations outside of base dictionary
   custom-words-file: !env "${profile_dir}/custom_words.txt"
 
+  # Action to take when multiple pronunciations for a word are available.
+  # One of: "append", "overwrite_once", "overwrite_always".
+  custom-words-action: "append"
+
   # Path to write words without any known pronunciation
   unknown-words-file: !env "${profile_dir}/unknown_words.txt"
 
