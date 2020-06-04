@@ -18,25 +18,28 @@ After installation:
 
 ## Supported Hardware
 
-| Category           | Name                                                            | amd64    | armv7    | arm64    |
-| --------           | ------                                                          | -------  | -------  | -------  |
-| **Wake Word**      | [Mycroft Precise](https://github.com/MycroftAI/mycroft-precise) | &#x2713; | &#x2713; | &#x2713; |
-| **Speech to Text** | [Pocketsphinx](https://github.com/cmusphinx/pocketsphinx)       | &#x2713; | &#x2713; | &#x2713; |
-|                    | [Kaldi](https://kaldi-asr.org)                                  | &#x2713; | &#x2713; | &#x2713; |
-|                    | [DeepSpeech](https://github.com/mozilla/DeepSpeech)             | &#x2713; | &#x2713; |          |
-|                    | [Julius](https://github.com/julius-speech/julius)               | &#x2713; | &#x2713; | &#x2713; |
+`voice2json` is supported on typical desktops/laptops as well as the Raspberry Pi, including the Pi Zero (`armel`).
+
+| Category           | Name                                                            | amd64    | armv7    | arm64    | armel    |
+| --------           | ------                                                          | -------  | -------  | -------  | -------  |
+| **Wake Word**      | [Mycroft Precise](https://github.com/MycroftAI/mycroft-precise) | &#x2713; | &#x2713; | &#x2713; |          |
+| **Speech to Text** | [Pocketsphinx](https://github.com/cmusphinx/pocketsphinx)       | &#x2713; | &#x2713; | &#x2713; | &#x2713; |
+|                    | [Kaldi](https://kaldi-asr.org)                                  | &#x2713; | &#x2713; | &#x2713; |          |
+|                    | [DeepSpeech](https://github.com/mozilla/DeepSpeech)             | &#x2713; | &#x2713; |          |          |
+|                    | [Julius](https://github.com/julius-speech/julius)               | &#x2713; | &#x2713; | &#x2713; | &#x2713; |
 
 ---
 
 ## Debian Package
 
-Pre-compiled packages are available for Debian-based distributions (Ubuntu, Linux Mint, etc.) on `amd64`, `armhf`, and `arm64` (`aarch64`) architectures. These packages are built using Docker and `dpkg`.
+Pre-compiled packages are available for Debian-based distributions (Ubuntu, Linux Mint, etc.) on `amd64`, `armhf`, `armel`, and `arm64` (`aarch64`) architectures. These packages are built using Docker and `dpkg`.
 
 Next, download the appropriate `.deb` file for your CPU architecture:
 
-* [amd64](https://github.com/synesthesiam/voice2json/releases/download/v2.0-beta/voice2json_2.0.0_amd64.deb) - Desktops, laptops, and servers
-* [armhf](https://github.com/synesthesiam/voice2json/releases/download/v2.0-beta/voice2json_2.0.0_armhf.deb) - Raspberry Pi 1, 2, and 3 (armv7)
-* [arm64](https://github.com/synesthesiam/voice2json/releases/download/v2.0-beta/voice2json_2.0.0_arm64.deb) - Raspberry Pi 3+, 4
+* [amd64](https://github.com/synesthesiam/voice2json/releases/download/v2.0/voice2json_2.0.0_amd64.deb) - Desktops, laptops, and servers
+* [armhf](https://github.com/synesthesiam/voice2json/releases/download/v2.0/voice2json_2.0.0_armhf.deb) - Raspberry Pi 2, and 3 (armv7)
+* [arm64](https://github.com/synesthesiam/voice2json/releases/download/v2.0/voice2json_2.0.0_arm64.deb) - Raspberry Pi 3+, 4
+* [armel](https://github.com/synesthesiam/voice2json/releases/download/v2.0/voice2json_2.0.0_armel.deb) - Raspberry Pi 0, 1
 
 If you're unsure about your architecture, run:
 
@@ -64,7 +67,7 @@ After [downloading a profile](#download-profile), you should now be able to run 
 
 ## Docker Image
 
-The easiest way to try out `voice2json` is with [Docker](https://docker.com). Pre-built images are available for `amd64`, `armhf`, and `arm64` (`aarch64`) CPU architectures. To get started, make sure you have [Docker installed](https://docs.docker.com/install/):
+The easiest way to try out `voice2json` is with [Docker](https://docker.com). Pre-built images are available for `amd64`, `armhf`, `armel`, and `arm64` (`aarch64`) CPU architectures. To get started, make sure you have [Docker installed](https://docs.docker.com/install/):
 
 ```bash
 $ curl -sSL https://get.docker.com | sh
@@ -89,7 +92,7 @@ docker run -i \
        -w "$(pwd)" \
        -e "HOME=${HOME}" \
        --user "$(id -u):$(id -g)" \
-       synesthesiam/voice2json:2.0.0 "$@"
+       synesthesiam/voice2json "$@"
 ```
 
 Mark it as executable with `chmod +x /path/to/voice2json` and try it out:
@@ -99,6 +102,45 @@ $ voice2json --help
 ```
 
 After [downloading a profile](#download-profile), you should now be able to run any of the example `voice2json` commands in the documentation.
+
+### Raspberry Pi Zero
+
+Docker on the Raspberry Pi Zero appears to be broken, and will pull the wrong Docker image by default. To fix this, you must enable "experimental" features in your Docker daemon and explicitly specify the platform.
+
+First, edit your `/etc/docker/daemon.json` file (create it if it doesn't exist using `sudo`) and add the following content:
+
+```json
+{
+  "experimental": true
+}
+```
+
+Next, restart your Docker daemon by running:
+
+```bash
+$ sudo systemctl restart docker
+```
+
+Finally, pull the correct Docker image:
+
+```bash
+$ docker pull --platform linux/arm/v6 synesthesiam/voice2json
+```
+
+### Updating
+
+To update your `voice2json` Docker image, simply run:
+
+```bash
+$ docker pull synesthesiam/voice2json
+```
+
+If you're using a Raspberry Pi Zero, make sure to specify the platform:
+
+```bash
+$ docker pull --platform linux/arm/v6 synesthesiam/voice2json
+```
+
 
 ---
 
