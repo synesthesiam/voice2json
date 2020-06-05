@@ -1,6 +1,7 @@
 aioconsole==0.1.16
 aiofiles==0.4.0
 aiohttp==3.6.2
+git+https://github.com/rhasspy/rhasspy-nlu.git@af1c9435c3949d70b09f1d30dad29b636cb7c8b1
 jsonlines==1.2.0
 networkx==2.4
 pydash==4.7.6
@@ -8,5 +9,4 @@ pyyaml==5.3
 rhasspy-asr-deepspeech==0.1.2
 rhasspy-asr-kaldi==0.1.6
 rhasspy-asr-pocketsphinx==0.1.7
-rhasspy-nlu==0.1.9
 rhasspy-silence==0.1.2
