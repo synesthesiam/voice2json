@@ -2,10 +2,15 @@ FROM ubuntu:eoan as build-amd64
 
 ENV LANG C.UTF-8
 
+# IFDEF PROXY
+#! RUN echo 'Acquire::http { Proxy "http://${PROXY}"; };' >> /etc/apt/apt.conf.d/01proxy
+# ENDIF
+
 RUN apt-get update && \
     apt-get install --no-install-recommends --yes \
         python3 python3-dev python3-setuptools python3-pip python3-venv \
-        build-essential swig libatlas-base-dev portaudio19-dev
+        build-essential swig libatlas-base-dev portaudio19-dev \
+        curl
 
 # -----------------------------------------------------------------------------
 
@@ -13,10 +18,15 @@ FROM ubuntu:eoan as build-armv7
 
 ENV LANG C.UTF-8
 
+# IFDEF PROXY
+#! RUN echo 'Acquire::http { Proxy "http://${PROXY}"; };' >> /etc/apt/apt.conf.d/01proxy
+# ENDIF
+
 RUN apt-get update && \
     apt-get install --no-install-recommends --yes \
         python3 python3-dev python3-setuptools python3-pip python3-venv \
-        build-essential swig libatlas-base-dev portaudio19-dev
+        build-essential swig libatlas-base-dev portaudio19-dev \
+        curl
 
 # -----------------------------------------------------------------------------
 
@@ -24,10 +34,15 @@ FROM ubuntu:eoan as build-arm64
 
 ENV LANG C.UTF-8
 
+# IFDEF PROXY
+#! RUN echo 'Acquire::http { Proxy "http://${PROXY}"; };' >> /etc/apt/apt.conf.d/01proxy
+# ENDIF
+
 RUN apt-get update && \
     apt-get install --no-install-recommends --yes \
         python3 python3-dev python3-setuptools python3-pip python3-venv \
-        build-essential swig libatlas-base-dev portaudio19-dev
+        build-essential swig libatlas-base-dev portaudio19-dev \
+        curl
 
 # -----------------------------------------------------------------------------
 
@@ -35,9 +50,12 @@ FROM balenalib/raspberry-pi-debian-python:3.7-buster-build as build-armv6
 
 ENV LANG C.UTF-8
 
-RUN apt-get update && \
-    apt-get install --no-install-recommends --yes \
-        swig libatlas-base-dev portaudio19-dev
+# IFDEF PROXY
+#! RUN echo 'Acquire::http { Proxy "http://${PROXY}"; };' >> /etc/apt/apt.conf.d/01proxy
+# ENDIF
+
+RUN install_packages \
+        swig libatlas-base-dev portaudio19-dev curl
 
 # -----------------------------------------------------------------------------
 
@@ -69,6 +87,11 @@ COPY site/ ${BUILD_DIR}/site/
 
 COPY VERSION README.md LICENSE ${BUILD_DIR}/
 COPY voice2json/ ${BUILD_DIR}/voice2json/
+
+# IFDEF PYPI
+#! ENV PIP_INDEX_URL=http://${PYPI}/simple/
+#! ENV PIP_TRUSTED_HOST=${PYPI_HOST}
+# ENDIF
 
 RUN cd ${BUILD_DIR} && \
     make && \
