@@ -1,4 +1,4 @@
-# How `voice2json` Works
+# How voice2json Works
 
 At a high level, `voice2json` transforms audio data (voice commands) into [JSON](https://json.org) events.
 
@@ -6,7 +6,7 @@ At a high level, `voice2json` transforms audio data (voice commands) into [JSON]
 
 The voice commands are specified beforehand in a [compact, text-based format](training.md):
 
-```ini
+```
 [LightState]
 states = (on | off)
 turn (<states>){state} [the] light
