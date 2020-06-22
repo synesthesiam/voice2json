@@ -105,7 +105,7 @@ async def wake(args: argparse.Namespace, core: Voice2JsonCore) -> None:
                     {
                         "keyword": str(model_path),
                         "detect_seconds": time.perf_counter() - start_time,
-                        "detect_timestamp": int(time.time())
+                        "detect_timestamp": float(time.time())
                     }
                 )
 
