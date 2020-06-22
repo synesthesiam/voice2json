@@ -339,7 +339,7 @@ kenlm: $(KENLM_PRE_FILE)
 
   ifeq ($(KENLM_FROM),prebuilt)
 $(KENLM_PRE_FILE):
-	$(DO_DOWNLOAD) "$(KENLM_PRE_FILE)" "https://github.com/synesthesiam/prebult-apps/releases/download/v1.0/kenlm-20200308_$(KENLM_ARCH).tar.gz"
+	$(DO_DOWNLOAD) "$(KENLM_PRE_FILE)" "https://github.com/synesthesiam/prebult-apps/releases/download/v1.0/kenlm-20200308_$(DOCKER_ARCH).tar.gz"
   else # KENLM_FROM
 $(KENLM_PRE_FILE): $(EIGEN_SRC_FILE) $(KENLM_SRC_FILE)
 	"$(srcdir)/scripts/build/build-kenlm.sh" "$(KENLM_SRC_FILE)" "$(EIGEN_SRC_FILE)" "$(BUILD_DIR)" "$(KENLM_PRE_FILE)"

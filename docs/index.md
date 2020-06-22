@@ -38,7 +38,7 @@ states = (on | off)
 turn (<states>){state} [the] light
 ```
 
-Tools like [Node-RED](https://node-red.org) can be [easily integrated](recipes.md#create-an-mqtt-transcription-service) with `voice2json` through [MQTT](http://mqtt.org).
+Tools like [Node-RED](https://nodered.org) can be [easily integrated](recipes.md#create-an-mqtt-transcription-service) with `voice2json` through [MQTT](http://mqtt.org).
 
 ---
 
