@@ -1,14 +1,12 @@
-&#8226; [Home](index.md) &#8226; Whitepaper
+# How `voice2json` Works
 
-# How voice2json Works
+At a high level, `voice2json` transforms audio data (voice commands) into [JSON](https://json.org) events.
 
-At a high level, `voice2json` transforms audio data (voice commands) into JSON events.
+![Audio to JSON](img/whitepaper/audio-to-json.svg)
 
-![voice2json overview](img/overview-1.svg)
+The voice commands are specified beforehand in a [compact, text-based format](training.md):
 
-The voice commands are specified beforehand in a compact, text-based format:
-
-```
+```ini
 [LightState]
 states = (on | off)
 turn (<states>){state} [the] light
@@ -18,122 +16,154 @@ This format supports:
 
 * `[optional words]`
 * `(alternative | choices)`
-* `rules = ...`
-* `<rule references>`
-* `(...){tags}`
+* `name = body` - rules
+* `<rule name>` - rule references
+* `(value){name}` - tags
+* `input:output` - substitutions
+* `$movies` - slot lists
+* `1..100` - number sequences
+* `TEXT!float` - converters
 
-During **training**, `voice2json` generates artifacts that can recognize and decode the specified voice commands. If these commands change, `voice2json` must be **re-trained**.
+During training, `voice2json` [generates artifacts](#conclusion) that can recognize and decode the specified voice commands. If these commands change, `voice2json` must be re-trained.
 
-![Sentences and training](img/overview-2.svg)
+![Sentences and training](img/whitepaper/sentences-and-training.svg)
 
 ---
 
 ## Core Components
 
-At its core, `voice2json` can be broken down into **speech** and **intent** recognition components.
+`voice2json` core functionality can be broken down into [speech](#speech-to-text) and [intent](#text-to-intent) recognition components.
 
-![voice2json breakdown](img/overview-3.svg)
+![core components](img/whitepaper/core-components.svg)
 
 When voice commands are recognized by the speech component, the transcription is given to the intent recognizer to process. The final result is a structured JSON event with:
 
-1. An intent
+1. An intent name
 2. Recognized slots/entities
+3. Optional metadata about the speech recognition process
+    * Input text, time, tokens, etc.
+
+For example:
+
+```json
+{
+    "text": "turn on the light",
+    "intent": {
+        "name": "LightState"
+    },
+    "slots": {
+        "state": "on"
+    }
+}
+```
 
 ---
 
 ## Speech to Text
 
-The transcription of voice commands in `voice2json` is handled by one of two open source systems:
+The offline transcription of voice commands in `voice2json` is handled by one of three open source systems:
 
 * [Pocketsphinx](https://github.com/cmusphinx/pocketsphinx)
     * CMU (2000)
 * [Kaldi](https://kaldi-asr.org)
     * Johns Hopkins (2009)
+* [DeepSpeech](https://github.com/mozilla/DeepSpeech)
+    * Mozilla (v0.6, 2019)
     
-Both systems require:
+Pocketsphinx and Kaldi both require:
 
-* **An acoustic model**
-    * Maps speech features to phonemes
-* **A pronunciation dictionary**
-    * Maps phonemes to words
-* **A language model**
-    * Captures statistics about which words occur with others
+* An [acoustic model](#acoustic-model)
+    * Maps [audio features](https://en.wikipedia.org/wiki/Mel-frequency_cepstrum) to [phonemes](https://en.wikipedia.org/wiki/Phoneme)
+* A [pronunciation dictionary](#pronunciation-dictionary)
+    * Maps [phonemes](https://en.wikipedia.org/wiki/Phoneme) to words
+* A [language model](#language-model)
+    * Describes how often [words follow other words](https://en.wikipedia.org/wiki/Language_model)
+    
+DeepSpeech combines the acoustic model and pronunciation dictionary into a single neural network. It still uses a language model, however.
 
-![Speech breakdown](img/overview-4.svg)
+![Speech recognizer components](img/whitepaper/speech-recognizer.svg)
 
 ### Acoustic Model
 
-An acoustic model maps **acoustic/speech features** to likely **phonemes**. 
+An acoustic model maps acoustic/speech features to likely phonemes in a given language. 
 
-Typically, Mel-frequency cepstrum coefficients (**MFCCs**) are used as acoustic features.
+Typically, [Mel-frequency cepstrum coefficients](https://en.wikipedia.org/wiki/Mel-frequency_cepstrum) (abbreviated MFCCs) are used as acoustic features. These mathematically highlight useful aspects of human speech.
 
-![Acoustic model](img/overview-5.svg)
+![Acoustic model](img/whitepaper/acoustic-model.svg)
 
-Phonemes are language (and locale) specific. They are the *indivisible units* of word pronunciation. Determining a language's phonemes requires a linguistic analysis, and there may be some debate over the final set. Human languages typically have no more than a few dozen phonemes.
+[Phonemes](https://en.wikipedia.org/wiki/Phoneme) are language (and even locale) specific. They are the *indivisible units* of word pronunciation. Determining a language's phonemes requires a linguistic analysis, and there may be some debate over the final set. Individual human languages typically have no more than a few dozen phonemes. The set of all possible phonemes can be represented using the [International Phonetic Alphabet](https://en.wikipedia.org/wiki/International_Phonetic_Alphabet).
 
-An acoustic model is a **statistical mapping** between MFCCs and (typically) singletons, pairs, and triplets of phonemes. This mapping is learned from a large collection of speech examples and their corresponding transcriptions. Collecting and transcribing these large speech data sets is a [limiting factor in open source speech recognition](https://voice.mozilla.org).
+An acoustic model is a statistical mapping between audio features (MFCCs) and one or more phonemes. This mapping is learned from a large collection of speech examples along with their corresponding transcriptions. A pre-built [pronunciation dictionary](#pronunciation-dictionary) is needed to map transcriptions back to phonemes before a model can be trained. Collecting, transcribing, and validating these large speech data sets is a [limiting factor in open source speech recognition](https://voice.mozilla.org).
 
 ### Pronunciation Dictionary
 
-A dictionary that maps sequences of phonemes to **words** is needed both to train an acoustic model and to do speech recognition. More than one mapping (pronunciation) is possible.
+A dictionary that maps sequences of phonemes to words is needed both to train an acoustic model and to do speech recognition. More than one mapping (pronunciation) is possible for each word.
 
-For practical purposes, a word is just the "stuff between whitespace". What matters most is consistency -- i.e., compound words, contractions. Below is a table of examples for each phoneme for U.S. English from the [CMU Pronouncing Dictionary](http://www.speech.cs.cmu.edu/cgi-bin/cmudict).
+For practical purposes, let's consider a word to be just the "stuff between whitespace" in text. Regardless of how exactly you define what a "word" is, what matters most is consistency: someone needs to decide if compound words (like "pre-built"), contractions, etc. are single ("prebuilt") or multiple words ("pre" and "built"). 
 
-| Phoneme | Word | Pronunciation  |
-| ------- | ------- | -------     |
-| AA      | odd     | AA D        |
-| AE      | at      | AE T        |
-| AH      | hut     | HH AH T     |
-| AO      | ought   | AO T        |
-| AW      | cow     | K  AW       |
-| AY      | hide    | HH AY D     |
-| B       | be      | B  IY       |
-| CH      | cheese  | CH IY Z     |
-| D       | dee     | D  IY       |
-| DH      | thee    | DH IY       |
-| EH      | Ed      | EH D        |
-| ER      | hurt    | HH ER T     |
-| EY      | ate     | EY T        |
-| F       | fee     | F  IY       |
-| G       | green   | G  R  IY N  |
-| HH      | he      | HH IY       |
-| IH      | it      | IH T        |
-| IY      | eat     | IY T        |
-| JH      | gee     | JH IY       |
-| K       | key     | K  IY       |
-| L       | lee     | L  IY       |
-| M       | me      | M  IY       |
-| N       | knee    | N  IY       |
-| NG      | ping    | P  IH NG    |
-| OW      | oat     | OW T        |
-| OY      | toy     | T  OY       |
-| P       | pee     | P  IY       |
-| R       | read    | R  IY D     |
-| S       | sea     | S  IY       |
-| SH      | she     | SH IY       |
-| T       | tea     | T  IY       |
-| TH      | theta   | TH EY T  AH |
-| UH      | hood    | HH UH D     |
-| UW      | two     | T  UW       |
-| V       | vee     | V  IY       |
-| W       | we      | W  IY       |
-| Y       | yield   | Y  IY L  D  |
-| Z       | zee     | Z  IY       |
-| ZH      | seizure | S  IY ZH ER |
+![Dictionary mapping phonemes to words](img/whitepaper/pronunciation-dictionary.svg)
 
-![Dictionary mapping](img/overview-6.svg)
+Below is a table of examples phonemes for U.S. English from the [CMU Pronouncing Dictionary](http://www.speech.cs.cmu.edu/cgi-bin/cmudict).
+
+| Phoneme | Word    | Pronunciation |
+| ------- | ------- | -------       |
+| AA      | odd     | AA D          |
+| AE      | at      | AE T          |
+| AH      | hut     | HH AH T       |
+| AO      | ought   | AO T          |
+| AW      | cow     | K  AW         |
+| AY      | hide    | HH AY D       |
+| B       | be      | B  IY         |
+| CH      | cheese  | CH IY Z       |
+| D       | dee     | D  IY         |
+| DH      | thee    | DH IY         |
+| EH      | Ed      | EH D          |
+| ER      | hurt    | HH ER T       |
+| EY      | ate     | EY T          |
+| F       | fee     | F  IY         |
+| G       | green   | G  R  IY N    |
+| HH      | he      | HH IY         |
+| IH      | it      | IH T          |
+| IY      | eat     | IY T          |
+| JH      | gee     | JH IY         |
+| K       | key     | K  IY         |
+| L       | lee     | L  IY         |
+| M       | me      | M  IY         |
+| N       | knee    | N  IY         |
+| NG      | ping    | P  IH NG      |
+| OW      | oat     | OW T          |
+| OY      | toy     | T  OY         |
+| P       | pee     | P  IY         |
+| R       | read    | R  IY D       |
+| S       | sea     | S  IY         |
+| SH      | she     | SH IY         |
+| T       | tea     | T  IY         |
+| TH      | theta   | TH EY T  AH   |
+| UH      | hood    | HH UH D       |
+| UW      | two     | T  UW         |
+| V       | vee     | V  IY         |
+| W       | we      | W  IY         |
+| Y       | yield   | Y  IY L  D    |
+| Z       | zee     | Z  IY         |
+| ZH      | seizure | S  IY ZH ER   |
+
+More [recent versions](https://github.com/cmusphinx/cmudict) of this dictionary include [stress](https://en.wikipedia.org/wiki/Stress_(linguistics)), indicating which parts of the word are emphasized during pronunciation.
+
+During training, `voice2json` copies pronunciations for every word in your voice command templates from a large pre-built pronunciation dictionary. Words that can't be found in this dictionary have their pronunciations guess using a pre-trained [grapheme to phoneme](#grapheme-to-phoneme) model.
 
 #### Grapheme to Phoneme
 
-A **grapheme to phoneme** model can be used to predict the pronunciation of words outside of the dictionary. This is a statistical model that maps sequences of characters (graphemes) to sequences of phonemes. `voice2json` uses a tool called [Phonetisaurus](https://github.com/AdolfVonKleist/Phonetisaurus) for this purpose.
+A [grapheme](https://en.wikipedia.org/wiki/Grapheme) to phoneme (G2P) model can be used to guess the phonetic pronunciation of words. This is a statistical model that maps sequences of characters (graphemes) to sequences of phonemes, and is typically trained from a large pre-built pronunciation dictionary. `voice2json` uses a tool called [Phonetisaurus](https://github.com/AdolfVonKleist/Phonetisaurus) for this purpose.
+
+![Grapheme to phoneme model](img/whitepaper/grapheme-to-phoneme.svg)
 
 ### Language Model
 
-A language model is a statistical mapping of (typically) word singletons, pairs, and triplets to **probabilities**.
+A language model describes how often some words follow others. It is common to see models that go from one to three words in a row.
 
-This mapping is derived from a large text corpus, usually books, news, Wikipedia, etc. Not all pairs/triplets will be present, so their probabilities have to be guessed by some algorithm.
+Language models are created from a large text corpus, such as books, news sites, Wikipedia, etc. Not all combinations will be present in the training materal, so their probabilities have to be predicted by [a heuristic](http://mlwiki.org/index.php/Smoothing_for_Language_Models).
 
-Below is a made-up example of word singleton/pair/triplet probabilities for corpus that only contains the words "sod", "sawed", "that", "that's", and "odd".
+Below is a made-up example of word singleton/pair/triplet probabilities for a corpus that only contains the words "sod", "sawed", "that", "that's", and "odd".
 
 ```
 0.2  sod
@@ -151,84 +181,60 @@ Below is a made-up example of word singleton/pair/triplet probabilities for corp
 0.5  that sod that
 ```
 
-During transcription, multiple words from the pronunciation dictionary may match a string of phonemes. The statistics captured in the language model help narrow the possibilities by considering word order and likelihood.
+During speech recognition, incoming phonemes may match more than one word from the pronunciation dictionary. The language model helps narrow down the possibilities by telling the speech recognizer that some word combinations are very unlikely and can be ignored.
 
-![Language mapping](img/overview-7.svg)
+![Language model](img/whitepaper/language-model.svg)
 
-### Sentences
+### Sentence Fragments
 
-The language model will only give you **sentence fragments** because that's what it was trained on! But you *can* get complete "sentences" with a few tricks:
+The language model does not contain probabilities for entire sentences, only sentence *fragments*. Getting a complete sentence from the speech recognizer requires a few tricks:
 
-* Add virtual start/stop sentence words (`<s>`, `</s>`)
-    * The language model will now capture statistics about which words frequently occur at the beginning and end of sentences
+* Adding virtual start/stop sentence "words" (`<s>`, `</s>`)
+    * `<s> what time` is the start of a sentence "what time..." 
+    * `is it </s>` is the end of a sentence "...is it?" 
 * Use sliding time windows
-    * Fragments are stitched together using overlapping windows that take statistics into account
-* Break audio at long pauses or assume single sentence
-    * You need to know where to insert `<s>` and `</s>`.
+    * Fragments are stitched together using overlapping windows
+    * "what time", "time is", "is it" for the sentence "what time is it"
+* Breaking audio at long pauses or always assuming a single sentence
+    * You can always assume the first "word" is `<s>` (start of sentence)
+    * Where to put `</s>` (end of sentence), though?
 
-Unfortunately, the recognized "sentences" may be non-sensical and have little to do with previous sentences:
+When using these tricks, the recognized "sentences" may still be non-sensical and have little to do with previous sentences. For example:
 
 ```
 that sod that that sod that sawed...
 ```
 
-Modern [transformer networks](https://arxiv.org/abs/1810.04805) (~RNNs) can handle these long-term dependencies much better, but:
+Modern [transformer neural networks](https://arxiv.org/abs/1810.04805) can handle long-term dependencies within and between sentences much better, but:
 
-* They require a **vast amount** of training data
+* They require a huge amount of training data
 * They can be slow/resource intensive to (re-)train and execute without specialized hardware
 
-For `voice2json`'s intended domain (pre-specified, short voice commands) the tricks above suffice for now.
+For `voice2json`'s intended use (pre-specified, short voice commands) the tricks above are usually good enough. While cloud services can be used with `voice2json`, there are trade-offs in privacy and resiliency (loss of Internet or cloud account).
+
+### Language Model Training
+
+During training, `voice2json` generates a custom language model based on your voice command templates (usually in [ARPA format](https://cmusphinx.github.io/wiki/arpaformat/)). Thanks to the [opengrm](http://www.opengrm.org/twiki/bin/view/GRM/NGramLibrary) library, `voice2json` can take the intermediary sentence graph produced during the initial stages of training and *directly* generate a language model! This enables `voice2json` to train in seconds, even for millions of possible voice commands.
+
+![Sentences to graph](img/whitepaper/sentences-to-graph.svg)
+
+### Language Model Mixing
+
+`voice2json`'s custom language model can optionally be [mixed](training.md#language-model-mixing) with a much larger, pre-built language model. Depending on how much weight is given to either model, this will increase the probability of your voice commands against a background of general sentences in the profile's language.
+
+![Language model mixing](img/whitepaper/language-model-mixing.svg)
+
+When mixed appropriately, `voice2json` is capable of (nearly) open-ended speech recognition with a preference for the user's voice commands. Unfortunately, this will usually result in lower speech recognition performance and many more intent recognition failures (which is only trained on the user's voice commands).
 
 ---
 
 ## Text to Intent
 
-The speech recognition system(s) in `voice2json` produce transcriptions that feed directly into the intent recognition system. Because both systems were trained together from [the same template](sentences.md), all valid commands (with minor variations) should be correctly translated to JSON events.
+The speech recognition system(s) in `voice2json` produce text transcriptions that are then given to an intent recognition system. When both speech and intent systems are trained together from [the same template file](training.md), all valid commands (with minor variations) should be correctly translated to JSON events.
 
-### Finite State Transducers
+`voice2json` transforms the set of possible voice commands into a graph that acts as a [finite state transducer](https://en.wikipedia.org/wiki/Finite-state_transducer) (FST). When given a valid sentence as input, this transducer will output the (transformed) sentence along with "meta" words that provide the sentence's intent and named entities.
 
-A finite state transducer (FST) is a formal state transition system with input/output symbols and weights. `voice2json` uses the [OpenFST](http://www.openfst.org) library to do FST operations.
-
-The example below creates a three state FST with some transition arcs. A state transition occurs when the input symbol of the arc is matched, and the output symbol is emitted. The `<eps>` (epsilon) symbol is used by convention to represent a automatic transition (input) or an empty string (output).
-
-
-```python
-import pywrapfst as fst
-
-test_fst = fst.Fst()
-
-# Create a start state
-s0 = test_fst.add_state()
-test_fst.set_start(s0)
-
-# Add two more states
-s1 = test_fst.add_state()
-s2 = test_fst.add_state()
-
-# Add some arcs
-weight_one = fst.Weight.One(test_fst.weight_type())
-symbols = fst.SymbolTable()
-
-eps = symbols.add_symbol("<eps>")
-hello = symbols.add_symbol("hello")
-world = symbols.add_symbol("world")
-nope = symbols.add_symbol("nope")
-
-test_fst.add_arc(s0, fst.Arc(hello, hello, weight_one, s1))
-test_fst.add_arc(s1, fst.Arc(world, world, weight_one, s2))
-test_fst.add_arc(s2, fst.Arc(eps, nope, weight_one, s0))
-
-test_fst.set_final(s2)
-test_fst.set_input_symbols(symbols)
-test_fst.set_output_symbols(symbols)
-
-# Display
-test_fst
-```
-
-![svg](img/output_21_0.svg)
-
-`voice2json` splits the contents of a [sentence template file](sentences.md) (`sentences.ini`) into a set of [JSGF grammars](https://www.w3.org/TR/jsgf/), one per `[Intent]`. Each grammar is then transformed into an FST.
+As an example, consider the sentence template below for a `LightState` intent:
 
 ```
 [LightState]
@@ -236,73 +242,67 @@ states = (on | off)
 turn (<states>){state} [the] light
 ```
 
+When trained with this template, `voice2json` will generate a graph like this:
 
-```
-#JSGF V1.0;
-grammar LightState;
+![Example intent graph](img/whitepaper/intent-graph.svg)
 
-public <LightState> = ((turn (<states>){state} [the] light));
-<states> = ((on | off));
-```
+Each state is labeled with a number, and edges (arrows) have labels as well. The edge labels have a special format, which represent the input required to traverse the edge and the corresponding output. A colon (":") separates the [input/output words](training.md#substitutions) on an edge, and is omitted when both input and output are the same. Output "words" that begin with two underscores ("__") are "meta" words that provide additional information about the recognized sentence.
 
-![svg](img/output_24_0.svg)
-
-The FST above will accept all of the sentences represented in the the template file, which are:
+The FST above will accept all possible sentences in the template file:
 
 
-```
-turn on the light
-turn on light
-turn off the light
-turn off light
-```
+* turn on the light
+* turn on light
+* turn off the light
+* turn off light
 
-The transitions from states 1 to 2, and from states 3 to 4 are especially important. These transitions have an `<eps>` input symbol, meaning they will be taken automatically with no extra input. They will then output `__begin__state` and `__end__state` symbols respectively. So the accepted sentences above will be transformed into the following:
+This is the output when each sentence is accepted by the FST:
 
-| Input                | Output                                           |
-| -------              | --------                                         |
-| `turn on the light`  | `turn __begin__state on __end__state the light`  |
-| `turn on light`      | `turn __begin__state on __end__state light`      |
-| `turn off the light` | `turn __begin__state off __end__state the light` |
-| `turn off light`     | `turn __begin__state off __end__state light`     |
+| Input                | Output                                                               |
+| -------              | --------                                                             |
+| `turn on the light`  | `__label__LightState turn __begin__state on __end__state the light`  |
+| `turn on light`      | `__label__LightState turn __begin__state on __end__state light`      |
+| `turn off the light` | `__label__LightState turn __begin__state off __end__state the light` |
+| `turn off light`     | `__label__LightState turn __begin__state off __end__state light`     |
 
-The `__begin__` and `__end__` symbols are used by `voice2json` to construct the final JSON event for each sentence. They mark the beginning and end of a **tagged** block of text in the original template file, specifically `(on | off){state}` here. These begin/end symbols can be easily translated into a common scheme for annotating text corpora (IOB) in order to train a Named Entity Recognizer (NER). [flair](http://github.com/zalandoresearch/flair) can read such corpora, for example, and train NERs using [PyTorch](https://pytorch.org).
+The `__label__` notation is taken from [fasttext](https://fasttext.cc), a highly-performant sentence classification framework. A single meta `__label__` word is produced for each sentence, labeling it with the property intent name.
 
-#### intent.fst
+The `__begin__` and `__end__` meta words are used by `voice2json` to construct the JSON event for each sentence. They mark the beginning and end of a [tagged](training.md#tags) block of text in the original template file -- e.g., `(on | off){state}`. These begin/end symbols can be easily translated into a common scheme for annotating text corpora (IOB) in order to train a Named Entity Recognizer (NER). [flair](http://github.com/zalandoresearch/flair) can read such corpora, for example, and train NERs using [PyTorch](https://pytorch.org).
 
-`voice2json` combines all of the individual FSTs for each intent into a single FST named `intent.fst`.
+[The `voice2json` NLU library](https://github.com/rhasspy/rhasspy-nlu) currently uses the following set of meta words:
 
-
-![svg](img/output_27_0.svg)
-
-Because we only have one intent (`LightState`), this looks pretty similar to the grammar FST above. The first `<eps>` transition, however, emits a `__label__LightState` symbol that indicates which intent the following sentences belong to. When more than one intent is present, there will be multiple `__label__` transitions from the first state.
-
-The `__label__` notation is taken from [fasttext](https://fasttext.cc), a highly-performant sentence classification framework. `voice2json` could therefore be used to produce training data for a fasttext model.
-
-### Opengrm
-
-Thanks to the [opengrm](http://www.opengrm.org/twiki/bin/view/GRM/NGramLibrary) library, `voice2json` can take the `intent.fst` produced during the initial stages of training and *directly* generate a language model!
-
-![intent to language model](img/overview-8.svg)
-
-By going from `sentences.ini` to JSGF grammars to `intent.fst` and finally to a language model, `voice2json` *avoids generating all possible training sentences*. For domains with many intents, and many more ways of expressing them, this is the difference between several seconds and dozens of minutes in training time.
+* `__label__INTENT`
+    * Sentence belongs to intent named `INTENT`
+* `__begin__TAG`
+    * Beginning of [tag](training.md#tags) named `TAG`
+* `__end__TAG`
+    * End of [tag](training.md#tags) named `TAG`
+* `__convert__CONV`
+    * Beginning of [converter](training.md#converters) named `CONV`
+* `__converted__CONV`
+    * End of [converter](training.md#converters) named `CONV`
+* `__source__SLOT`
+    * Name of [slot list](training.md#slots-lists) where text came from
+* `__unpack__PAYLOAD`
+    * Decodes `PAYLOAD` as a base64-encoded string and then interprets as edge label
 
 ### fsticuffs
 
-`voice2json`'s OpenFST-based intent recognizer is called `fsticuffs`. It takes the `intent.fst` generated during training and uses it to convert transcriptions from the speech system to JSON events.
+`voice2json`'s FST-based intent recognizer is called `fsticuffs`. It takes the intent graph generated during training and uses it to convert transcriptions from the speech system into JSON events.
 
-![speech to json](img/overview-9.svg)
+![speech to json](img/whitepaper/fsticuffs-recognize.svg)
 
-Intent recognition is accomplished by simply running the transcription through `intent.fst` and parsing the output. The transcription "turn on the light" is split (by whitespace) into the words `turn` `on` `the` `light`.
+Intent recognition is done by simply running the transcription through the intent graph and parsing the output words (and meta words). The transcription "turn on the light" is split (by whitespace) into the words `turn` `on` `the` `light`.
 
-Following a path through `intent.fst` with the words as input symbols, this will output:
+Following a path through the example intent graph above with the words as input symbols, this will output:
 
 `__label__LightState` `turn` `__begin__state` `on` `__end__state` `the` `light`
 
-With some simple rules for `__label__`, `__begin__`, and `__end__`, this is then transformed into:
+A fairly simple state machine receives these symbols/words, and constructs a structured intent that is ultimately converted to JSON. The intent's name and named entities are recovered using the `__label__`, `__begin__`, and `__end__` meta words. All non-meta words are collected for the final text string, which includes [substitutions](training.md#substitutions) and [conversions](training.md#converters). The final output is something like this:
 
 ```json
 { 
+  "text": "turn on the light",
   "intent": {
     "name": "LightState"
   },
@@ -314,128 +314,17 @@ With some simple rules for `__label__`, `__begin__`, and `__end__`, this is then
 
 #### Fuzzy FSTs
 
-What if `fsticuffs` were to receive the transcription "would you turn on the light"? This is not valid with the example `sentences.ini` file, but perhaps we want to also accept text input via chat.
+What if `fsticuffs` were to receive the transcription "would you turn on the light"? This is not a valid example voice command, but seems reasonable to accept via text input (e.g., chat).
 
-Because `would` and `you` are not a valid symbols in `intent.fst`, there will be **no output** from the FST. To deal with this, `voice2json` allows **stop words** (common words) to be silently passed over during recognition if they are not accepted by the FST. Additionally, all unknown words (not present in `sentences.ini`) can be optionally deleted by `fsticuffs` before recognition starts. This works well as long as sentences like "**don't** turn on the light" aren't expected to work!
+Because `would` and `you` are not words encoded in the intent, the FST will fail to recognize it. To deal with this, `voice2json` allows [stop words](https://en.wikipedia.org/wiki/Stop_words) to be silently passed over during recognition if they would not have been accepted. This "fuzzy" recognition mode is slower, but allows for may more sentences to be accepted.
 
-### Slots
+## Conclusion
 
-It can be cumbersome to maintain large lists of items in `sentences.ini`:
+When trained, `voice2json` produces the following artifacts:
 
-```
-[SetColor]
-set the color to (red | green | blue | orange | ...){color}
-```
-
-Additionally, it's not easy to programmatically modify these lists. `voice2json` has a simple syntax for specifying **slot files**:
-
-```
-[SetColor]
-set the color to ($colors){color}
-```
-
-During training, `voice2json` will look for a file named `slots/colors` in the user's profile. This is simply a text file with one item per line:
-
-```
-red
-green
-blue
-orange
-...
-```
-
-`voice2json` interprets each line as a JSGF fragment, allowing for optional words, alternatives, etc.:
-
-```
-[(light | dark)] red
-[blue] green
-...
-```
-
-When `voice2json` is re-trained, it will only re-generate artifacts if `sentences.ini` or used slot files have changed.
-
-### Word/Tag Replacement
-
-`voice2json` allows you to control how words are emitted in the final JSON event.
-
-Consider the following example with two lights: a lamp in the living room and a light in the garage:
-
-```
-[LightState]
-state = (on | off)
-name = (living room lamp | garage light)
-turn (<state>){state} [the] (<name>){name}
-```
-
-If the voice command "turn on the living room lamp" is spoken, `voice2json` will produce the expected JSON:
-
-```json
-{ 
-  "intent": {
-    "name": "LightState"
-  },
-  "slots": {
-    "state": "on",
-    "name": "living room lamp"
-  }
-}
-```
-
-If another system meant to consume this JSON event does not know what `on` and `living room lamp` are, however, it will be unable to handle the intent. Suppose this hypothetical system knows only how to `enable` and `disable` either `switch_1` or `switch_2`. We could ease the burden of interfacing with some minor modifications to `sentences.ini`:
-
-```
-[LightState]
-state = (on:enable | off:disable)
-name = (living room lamp){name:switch_1} | (garage light){name:switch_2}
-turn (<state>){state} [the] (<name>)
-```
-
-The syntax `on:enable` tells `voice2json` to *listen* for the word `on`, but *emit* the word `enable` in its place. Similarly, the syntax `(living room lamp){name:switch_1}` tells `voice2json` to listen for `living room lamp`, but actually put `switch_1` in the `name` slot:
-
-```json
-{ 
-  "intent": {
-    "name": "LightState"
-  },
-  "slots": {
-    "state": "enable",
-    "name": "switch_1"
-  }
-}
-```
-
-This syntax also works inside slot files. When nothing is put on the right side of the `:`, the word is silently dropped, so:
-
-```
-[the:] light
-```
-
-will match both `the light` and `light`, but always emit just `light`. This technique is especially useful in English with articles like "a" and "an". It is common to write something in `sentences.ini` like this:
-
-```
-[LightState]
-turn on (a | an) ($colors){color} light
-```
-
-where `slots/colors` might be:
-
-```
-red
-orange
-```
-
-This will match `turn on a red light` and `turn on an orange light` as intended, but also `turn on an red light` and `turn on a orange light`. Using word replacement and a slot file, we can instead write:
-
-```
-[LightState]
-turn on ($colors){color} light
-```
-
-where `slots/colors` is:
-
-```
-a: red
-an: orange
-```
-
-This will *only* match `turn on a red light` and `turn on an orange light` as well as ensuring that the `color` slot does not contain "a" or "an"!
+* A [pronunciation dictionary](#pronunciation-dictionary) containing *only* the words from your [voice command templates](training.md)
+    * Words missing from the dictionary have their pronunciations guessed using a [grapheme to phoneme](#grapheme-to-phoneme) model
+* An [intent graph](#text-to-intent) that is used to [recognize intents from sentences](#fsticuffs)
+    * Can optionally [ignore common words](#fuzzy-fsts) to allow for "fuzzier" recognition
+* A [language model](#language-model) generated directly from the intent graph using [opengrm](http://www.opengrm.org/twiki/bin/view/GRM/NGramLibrary)
+    * This may be optionally [mixed](#language-model-mixing) with a large pre-built language model
