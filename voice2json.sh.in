@@ -1,18 +1,26 @@
 #!/usr/bin/env bash
-prefix="@prefix@"
-virtualenv="@VIRTUALENV@"
-export voice2json_dir="${prefix}/share/voice2json"
+in_place="@IN_PLACE@"
+if [[ "${in_place}" == 'yes' ]]; then
+    # Run directly from source code
+    this_dir="$( cd "$( dirname "$0" )" && pwd )"
+    "${this_dir}/bin/voice2json" "$@"
+else
+    # Use virtual environment as a prefix
+    prefix="@prefix@"
+    virtualenv="@VIRTUALENV@"
+    export voice2json_dir="${prefix}/share/voice2json"
 
-: "${PYTHON=python3}"
+    : "${PYTHON=python3}"
 
-if [[ "${virtualenv}" = 'yes' ]]; then
-    # Use virtual environment
-    source "${prefix}/bin/activate"
-    PYTHON="${prefix}/bin/python"
+    if [[ "${virtualenv}" = 'yes' ]]; then
+        # Use virtual environment
+        source "${prefix}/bin/activate"
+        PYTHON="${prefix}/bin/python"
+    fi
+
+    export LD_LIBRARY_PATH="${prefix}/lib:${LD_LIBRARY_PATH}"
+    export PATH="${prefix}/bin:${PATH}"
+    export KALDI_DIR="${prefix}/lib/kaldi"
+
+    "${PYTHON}" -m voice2json "$@"
 fi
-
-export LD_LIBRARY_PATH="${prefix}/lib:${LD_LIBRARY_PATH}"
-export PATH="${prefix}/bin:${PATH}"
-export KALDI_DIR="${prefix}/lib/kaldi"
-
-"${PYTHON}" -m voice2json "$@"

@@ -43,6 +43,8 @@ pkgincludedir = $(includedir)/@PACKAGE_NAME@
 # Dependencies
 # -----------------------------------------------------------------------------
 
+IN_PLACE = @IN_PLACE@
+
 BUILD_DIR ?= $(srcdir)/build
 DOWNLOAD_DIR ?= $(srcdir)/download
 DO_DOWNLOAD ?= curl -sSfL -o
@@ -132,11 +134,13 @@ install-dependencies: install-opengrm \
 install-voice2json:
 	"$(INSTALL_PYTHON)" -m pip install $(PIP_INSTALL_ARGS) "$(srcdir)"
 	chmod +x "$(srcdir)/voice2json.sh"
+ifneq ($(IN_PLACE),yes)
 	install -D "$(srcdir)/voice2json.sh" "$(DESTDIR)$(prefix)/bin/voice2json"
 	install -D "--target-directory=$(DESTDIR)$(prefix)/share/voice2json/etc" "$(srcdir)/etc/profile.defaults.yml"
 	install -D "--target-directory=$(DESTDIR)$(prefix)/share/voice2json/etc/precise" "$(srcdir)/etc/precise"/*
 	install -D "--target-directory=$(DESTDIR)$(prefix)/share/voice2json" VERSION README.md LICENSE
-	cp -fR "$(srcdir)/site" "$(DESTDIR)$(prefix)/share/voice2json/"
+	cp -fR "$(srcdir)/site" "$(DESTDIR)$(prefix)/share/voice2json/" || true
+endif  # IN_PLACE
 
 # -----------------------------------------------------------------------------
 

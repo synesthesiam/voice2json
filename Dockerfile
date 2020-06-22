@@ -77,16 +77,9 @@ COPY configure config.sub config.guess \
      ${BUILD_DIR}/
 
 RUN cd ${BUILD_DIR} && \
-    ./configure --prefix=${APP_DIR}
+    ./configure --enable-in-place --prefix=${APP_DIR}/.venv
 
 COPY scripts/install/ ${BUILD_DIR}/scripts/install/
-
-COPY etc/profile.defaults.yml ${BUILD_DIR}/etc/
-COPY etc/precise/ ${BUILD_DIR}/etc/precise/
-COPY site/ ${BUILD_DIR}/site/
-
-COPY VERSION README.md LICENSE ${BUILD_DIR}/
-COPY voice2json/ ${BUILD_DIR}/voice2json/
 
 # IFDEF PYPI
 #! ENV PIP_INDEX_URL=http://${PYPI}/simple/
@@ -98,7 +91,7 @@ RUN cd ${BUILD_DIR} && \
     make install
 
 # Strip binaries and shared libraries
-RUN (find ${APP_DIR} -type f \( -name '*.so*' -or -executable \) -print0 | xargs -0 strip --strip-unneeded -- 2>/dev/null) || true
+RUN (find ${APP_DIR} -type f \\( -name '*.so*' -or -executable \\) -print0 | xargs -0 strip --strip-unneeded -- 2>/dev/null) || true
 
 # -----------------------------------------------------------------------------
 
@@ -139,6 +132,11 @@ FROM run-$TARGETARCH$TARGETVARIANT
 ENV APP_DIR=/usr/lib/voice2json
 COPY --from=build ${APP_DIR}/ ${APP_DIR}/
 
-RUN cp ${APP_DIR}/bin/voice2json /usr/bin/
+COPY etc/profile.defaults.yml ${APP_DIR}/etc/
+COPY etc/precise/ ${APP_DIR}/etc/precise/
+COPY site/ ${APP_DIR}/site/
 
-ENTRYPOINT ["bash", "/usr/bin/voice2json"]
+COPY VERSION ${APP_DIR}/
+COPY voice2json/ ${APP_DIR}/voice2json/
+
+ENTRYPOINT ["bash", "/usr/lib/voice2json/bin/voice2json"]
