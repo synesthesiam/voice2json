@@ -5,8 +5,6 @@ set -e
 this_dir="$( cd "$( dirname "$0" )" && pwd )"
 src_dir="$(realpath "${this_dir}/../..")"
 
-version="$(cat "${src_dir}/VERSION")"
-
 # -----------------------------------------------------------------------------
 
 profiles=()
@@ -56,7 +54,7 @@ for platform in "${platforms[@]}"; do
 
     docker pull  \
            --platform "${platform}" \
-           "${DOCKER_REGISTRY}/synesthesiam/voice2json:${version}"
+           "${DOCKER_REGISTRY}/synesthesiam/voice2json"
 
     target_dir="${temp_dir}/${target}"
     rm -rf "${target_dir}"
@@ -69,12 +67,11 @@ docker run -i \
         -v "${HOME}:${HOME}" \
         -e "HOME=${HOME}" \
         --user "$(id -u):$(id -g)" \
-        "${DOCKER_REGISTRY}/synesthesiam/voice2json:${voice2json_version}" "$@"
+        "${DOCKER_REGISTRY}/synesthesiam/voice2json" "$@"
 ' > "${target_dir}/voice2json"
     chmod +x "${target_dir}/voice2json"
 
     export voice2json_platform="${platform}"
-    export voice2json_version="${version}"
 
     # Execute test scripts
     PATH="${target_dir}:${PATH}" \

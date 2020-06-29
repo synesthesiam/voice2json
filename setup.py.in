@@ -1,34 +1,49 @@
 """Setup script for voice2json"""
 import os
+from pathlib import Path
 
 import setuptools
 
-this_dir = os.path.abspath(os.path.dirname(__file__))
+this_dir = Path(__file__).parent
 
 # -----------------------------------------------------------------------------
 
-with open(os.path.join(this_dir, "README.md"), "r") as readme_file:
-    long_description = readme_file.read()
+# Load README in as long description
+long_description: str = ""
+readme_path = this_dir / "README.md"
+if readme_path.is_file():
+    long_description = readme_path.read_text()
 
-with open("requirements.txt", "r") as requirements_file:
+# -----------------------------------------------------------------------------
+
+
+def is_yes(s):
+    """True if string is yes (from configure.ac)"""
+    return s.lower().strip() == "yes"
+
+
+# -----------------------------------------------------------------------------
+
+requirements_path = this_dir / "requirements.txt"
+with open(requirements_path, "r") as requirements_file:
     requirements = requirements_file.read().splitlines()
 
-    enable_pocketsphinx = "@ENABLE_POCKETSPHINX@"
-    if enable_pocketsphinx != "yes":
+    enable_pocketsphinx = is_yes("@ENABLE_POCKETSPHINX@")
+    if not enable_pocketsphinx:
         # Disable pocketsphinx
         requirements = [
             r for r in requirements if not r.startswith("rhasspy-asr-pocketsphinx")
         ]
 
-    enable_kaldi = "@ENABLE_KALDI@"
-    if enable_kaldi != "yes":
+    enable_kaldi = is_yes("@ENABLE_KALDI@")
+    if not enable_kaldi:
         # Disable Kaldi
         requirements = [
             r for r in requirements if not r.startswith("rhasspy-asr-kaldi")
         ]
 
-    enable_deepspeech = "@ENABLE_DEEPSPEECH@"
-    if enable_deepspeech != "yes":
+    enable_deepspeech = is_yes("@ENABLE_DEEPSPEECH@")
+    if not enable_deepspeech:
         # Disable Mozilla's DeepSpeech
         requirements = [
             r for r in requirements if not r.startswith("rhasspy-asr-deepspeech")
@@ -41,7 +56,7 @@ setuptools.setup(
     version="@PACKAGE_VERSION@",
     author="Michael Hansen",
     author_email="@PACKAGE_BUGREPORT@",
-    url="https://github.com/synesthesiam/voice2json",
+    url="https://voice2json.org",
     packages=setuptools.find_packages(),
     package_data={"@PACKAGE_NAME@": ["py.typed"]},
     install_requires=requirements,

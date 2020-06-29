@@ -624,6 +624,7 @@ ac_includes_default="\
 
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
+IN_PLACE
 KENLM_FROM
 ENABLE_KENLM
 PHONETISAURUS_FROM
@@ -3693,6 +3694,8 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 is_virtualenv_enabled=yes
 is_dependency_check_enabled=yes
 
+is_in_place=no
+
 
 is_wake_enabled=yes
 
@@ -4116,6 +4119,15 @@ case $enable_precompiled_binaries in #(
             phonetisaurus_from=source
             kenlm_from=source
          ;; #(
+  *) :
+     ;;
+esac
+
+case $enable_in_place in #(
+  yes) :
+    is_in_place=yes ;; #(
+  no) :
+    is_in_place=no ;; #(
   *) :
      ;;
 esac
@@ -4877,6 +4889,9 @@ PHONETISAURUS_FROM=$phonetisaurus_from
 ENABLE_KENLM=$is_kenlm_enabled
 
 KENLM_FROM=$kenlm_from
+
+
+IN_PLACE=$is_in_place
 
 
 cat >confcache <<\_ACEOF

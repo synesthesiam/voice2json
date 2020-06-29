@@ -10,7 +10,7 @@ RUN apt-get update && \
     apt-get install --no-install-recommends --yes \
         python3 python3-dev python3-setuptools python3-pip python3-venv \
         build-essential swig libatlas-base-dev portaudio19-dev \
-        curl
+        curl ca-certificates
 
 # -----------------------------------------------------------------------------
 
@@ -26,7 +26,7 @@ RUN apt-get update && \
     apt-get install --no-install-recommends --yes \
         python3 python3-dev python3-setuptools python3-pip python3-venv \
         build-essential swig libatlas-base-dev portaudio19-dev \
-        curl
+        curl ca-certificates
 
 # -----------------------------------------------------------------------------
 
@@ -42,11 +42,11 @@ RUN apt-get update && \
     apt-get install --no-install-recommends --yes \
         python3 python3-dev python3-setuptools python3-pip python3-venv \
         build-essential swig libatlas-base-dev portaudio19-dev \
-        curl
+        curl ca-certificates
 
 # -----------------------------------------------------------------------------
 
-FROM balenalib/raspberry-pi-debian-python:3.7-buster-build as build-armv6
+FROM balenalib/raspberry-pi-debian-python:3.7-buster-build-20200604 as build-armv6
 
 ENV LANG C.UTF-8
 
@@ -55,7 +55,7 @@ ENV LANG C.UTF-8
 # ENDIF
 
 RUN install_packages \
-        swig libatlas-base-dev portaudio19-dev curl
+        swig libatlas-base-dev portaudio19-dev curl ca-certificates
 
 # -----------------------------------------------------------------------------
 
@@ -91,7 +91,8 @@ RUN cd ${BUILD_DIR} && \
     make install
 
 # Strip binaries and shared libraries
-RUN (find ${APP_DIR} -type f \\( -name '*.so*' -or -executable \\) -print0 | xargs -0 strip --strip-unneeded -- 2>/dev/null) || true
+RUN (find ${APP_DIR} -type f -name '*.so*' -print0 | xargs -0 strip --strip-unneeded -- 2>/dev/null) || true
+RUN (find ${APP_DIR} -type f -executable -print0 | xargs -0 strip --strip-unneeded -- 2>/dev/null) || true
 
 # -----------------------------------------------------------------------------
 
@@ -114,7 +115,7 @@ FROM run as run-armv7
 
 FROM run as run-arm64
 
-FROM balenalib/raspberry-pi-debian-python:3.7-buster-run as run-armv6
+FROM balenalib/raspberry-pi-debian-python:3.7-buster-run-20200604 as run-armv6
 
 ENV LANG C.UTF-8
 
@@ -139,4 +140,4 @@ COPY site/ ${APP_DIR}/site/
 COPY VERSION ${APP_DIR}/
 COPY voice2json/ ${APP_DIR}/voice2json/
 
-ENTRYPOINT ["bash", "/usr/lib/voice2json/bin/voice2json"]
+ENTRYPOINT ["bash", "/usr/lib/voice2json/voice2json.sh"]

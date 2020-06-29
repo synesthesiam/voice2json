@@ -23,6 +23,10 @@ dnl ---------------------------------------------------------------------------
 is_virtualenv_enabled=yes
 is_dependency_check_enabled=yes
 
+dnl An in-place install does not include Rhasspy Python modules, since they will
+dnl be used directly from source.
+is_in_place=no
+
 dnl -------------------
 dnl Wake Word Detection
 dnl -------------------
@@ -387,6 +391,11 @@ AS_CASE([$enable_precompiled_binaries],
             kenlm_from=source
         ])
 
+dnl In-place install
+AS_CASE([$enable_in_place],
+        [yes],[is_in_place=yes],
+        [no],[is_in_place=no])
+
 dnl ---------------------------------------------------------------------------
 dnl Extra Dependency Checks
 dnl ---------------------------------------------------------------------------
@@ -537,5 +546,7 @@ AC_SUBST([PHONETISAURUS_FROM], [$phonetisaurus_from])
 
 AC_SUBST([ENABLE_KENLM], [$is_kenlm_enabled])
 AC_SUBST([KENLM_FROM], [$kenlm_from])
+
+AC_SUBST([IN_PLACE], [$is_in_place])
 
 AC_OUTPUT
