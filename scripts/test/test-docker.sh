@@ -7,26 +7,10 @@ src_dir="$(realpath "${this_dir}/../..")"
 
 # -----------------------------------------------------------------------------
 
-profiles=()
+: "${PLATFORMS=linux/amd64,linux/arm/v7,linux/arm64}"
+: "${DOCKER_REGISTRY=docker.io}"
 
-if [[ -z "$1" ]]; then
-    platforms=('linux/amd64' 'linux/arm/v7' 'linux/arm64')
-else
-    on_profiles=''
-    platforms=()
-
-    while [[ ! -z "$1" ]]; do
-        if [[ "$1" = '--' ]]; then
-            on_profiles='yes'
-        elif [[ -z "${on_profiles}" ]]; then
-            platforms+=("$1")
-        else
-            profiles+=("$1")
-        fi
-
-        shift
-    done
-fi
+IFS=',' read -ra platforms <<< "${PLATFORMS}"
 
 # -----------------------------------------------------------------------------
 
@@ -76,5 +60,5 @@ docker run -i \
     # Execute test scripts
     PATH="${target_dir}:${PATH}" \
     TMPDIR="${HOME}/.cache" \
-        "${src_dir}/scripts/test/test-all.sh" "${HOME}/opt/voice2json-profiles/english" "${profiles[@]}"
+        "${src_dir}/scripts/test/test-all.sh" "${HOME}/opt/voice2json-profiles/english"
 done

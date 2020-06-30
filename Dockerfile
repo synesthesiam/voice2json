@@ -132,10 +132,12 @@ FROM run-$TARGETARCH$TARGETVARIANT
 
 ENV APP_DIR=/usr/lib/voice2json
 COPY --from=build ${APP_DIR}/ ${APP_DIR}/
+COPY --from=build /build/voice2json.sh ${APP_DIR}/
 
 COPY etc/profile.defaults.yml ${APP_DIR}/etc/
 COPY etc/precise/ ${APP_DIR}/etc/precise/
 COPY site/ ${APP_DIR}/site/
+COPY bin/voice2json ${APP_DIR}/bin/
 
 COPY VERSION ${APP_DIR}/
 COPY voice2json/ ${APP_DIR}/voice2json/
