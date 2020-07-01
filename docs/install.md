@@ -85,10 +85,12 @@ $ sudo usermod -a -G docker $USER
 
 Create a Bash script named `voice2json` somewhere in your `$PATH` and add the following content:
 
-```bash
+```
 #!/usr/bin/env bash
 docker run -i \
+       --init \
        -v "${HOME}:${HOME}" \
+       -v "/dev/shm/:/dev/shm/" \
        -w "$(pwd)" \
        -e "HOME=${HOME}" \
        --user "$(id -u):$(id -g)" \
