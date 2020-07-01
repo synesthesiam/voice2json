@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 docker run -i \
+       --init \
        -v "${HOME}:${HOME}" \
+       -v "/dev/shm/:/dev/shm/" \
        -w "$(pwd)" \
        -e "HOME=${HOME}" \
        --user "$(id -u):$(id -g)" \
-       synesthesiam/voice2json:2.0.0 "$@"
+       synesthesiam/voice2json "$@"
