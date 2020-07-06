@@ -465,20 +465,28 @@ class AsyncStdinReader:
         self.loop = loop or asyncio.get_event_loop()
         self.read_n_queue: "queue.Queue[int]" = queue.Queue()
         self.read_result_queue: "asyncio.Queue[bytes]" = asyncio.Queue()
-        self.read_thread = threading.Thread(target=self._read_stdin, daemon=True)
-        self.read_thread.start()
+        self.read_thread: typing.Optional[threading.Thread] = None
 
     async def read(self, n: int) -> bytes:
         """Some bytes from stdin buffer."""
+        if not self.read_thread:
+            self.read_thread = threading.Thread(target=self._read_stdin, daemon=True)
+            self.read_thread.start()
+
         self.read_n_queue.put(n)
         data = await self.read_result_queue.get()
         return data
 
     async def close(self):
-        """Do nothing."""
+        """Shut down read thread."""
         self.read_n_queue.put(None)
 
+        if self.read_thread:
+            self.read_thread.join(timeout=0.5)
+            self.read_thread = None
+
     def _read_stdin(self):
+        """Get requests to read some number of bytes and process them."""
         n = self.read_n_queue.get()
         while n is not None:
             result = sys.stdin.buffer.read(n)
