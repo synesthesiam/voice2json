@@ -14,7 +14,8 @@ shift
 this_dir="$( cd "$( dirname "$0" )" && pwd )"
 src_dir="$(realpath "${this_dir}/..")"
 
-version="$(cat "${src_dir}/VERSION")"
+# version="$(cat "${src_dir}/VERSION")"
+version='2.0'
 
 # -----------------------------------------------------------------------------
 
@@ -45,7 +46,7 @@ fi
 
 # ------------------------------------------------------------------------------
 
-rm -f "${dist_dir}/voice2json_${version}_"*.deb
+rm -f "${dist_dir}/voice2json_"*.deb
 
 echo "Building..."
 docker buildx build \

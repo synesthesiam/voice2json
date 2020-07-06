@@ -39,6 +39,6 @@ docker buildx build \
         "${src_dir}" \
         -f "${DOCKERFILE}" \
         "--platform=${PLATFORMS}" \
-        --tag "${DOCKER_REGISTRY}/synesthesiam/voice2json" \
+        --tag "${DOCKER_REGISTRY}/synesthesiam/voice2json:latest" \
         --push \
         "$@"
