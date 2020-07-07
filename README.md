@@ -3,7 +3,7 @@
 `voice2json` is a collection of [command-line tools](https://voice2json.org/commands.html) for <strong>offline speech/intent recognition</strong> on Linux. It is free, open source ([MIT](https://opensource.org/licenses/MIT)), and [supports 17 human languages](https://voice2json.org/index.html#supported-languages). 
 
 * [Getting Started](https://voice2json.org/#getting-started)
-* [Commands](https://voice2json.org/comands.html)
+* [Commands](https://voice2json.org/commands.html)
 * [Profiles](https://github.com/synesthesiam/voice2json-profiles)
 * [Recipes](https://voice2json.org/recipes.html)
 * [Node-RED Plugin](https://github.com/johanneskropf/node-red-contrib-voice2json)
