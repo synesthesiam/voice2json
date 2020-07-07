@@ -36,10 +36,10 @@ Pre-compiled packages are available for Debian-based distributions (Ubuntu, Linu
 
 Next, download the appropriate `.deb` file for your CPU architecture:
 
-* [amd64](https://github.com/synesthesiam/voice2json/releases/download/v2.0/voice2json_2.0.0_amd64.deb) - Desktops, laptops, and servers
-* [armhf](https://github.com/synesthesiam/voice2json/releases/download/v2.0/voice2json_2.0.0_armhf.deb) - Raspberry Pi 2, and 3 (armv7)
-* [arm64](https://github.com/synesthesiam/voice2json/releases/download/v2.0/voice2json_2.0.0_arm64.deb) - Raspberry Pi 3+, 4
-* [armel](https://github.com/synesthesiam/voice2json/releases/download/v2.0/voice2json_2.0.0_armel.deb) - Raspberry Pi 0, 1
+* [amd64](https://github.com/synesthesiam/voice2json/releases/download/v2.0/voice2json_2.0_amd64.deb) - Desktops, laptops, and servers
+* [armhf](https://github.com/synesthesiam/voice2json/releases/download/v2.0/voice2json_2.0_armhf.deb) - Raspberry Pi 2, and 3 (armv7)
+* [arm64](https://github.com/synesthesiam/voice2json/releases/download/v2.0/voice2json_2.0_arm64.deb) - Raspberry Pi 3+, 4
+* [armel](https://github.com/synesthesiam/voice2json/releases/download/v2.0/voice2json_2.0_armel.deb) - Raspberry Pi 0, 1
 
 If you're unsure about your architecture, run:
 
