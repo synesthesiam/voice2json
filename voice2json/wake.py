@@ -2,6 +2,8 @@
 import argparse
 import asyncio
 import logging
+import os
+import signal
 import shutil
 import subprocess
 import time
@@ -56,69 +58,84 @@ async def wake(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 
     precise_cmd = [str(engine_path), str(model_path), str(args.chunk_size)]
     engine_proc = subprocess.Popen(
-        precise_cmd, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE
+        precise_cmd,
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE,
+        start_new_session=True,  # create process group
     )
 
-    chunk_stream = engine_proc.stdin
-    prob_stream = engine_proc.stdout
-    assert chunk_stream and prob_stream, "Failed to connect engine streams"
-
-    # Create detector
-    _LOGGER.debug(
-        "Creating Precise detector (sensitivity=%s, trigger_level=%s)",
-        sensitivity,
-        trigger_level,
-    )
-
-    detector = TriggerDetector(args.chunk_size, sensitivity, trigger_level)
-    activation_count = 0
-
-    start_time = time.perf_counter()
-
-    # Create audio source and start listening
-    audio_source = await core.make_audio_source(args.audio_source)
-
-    # Audio data buffer
-    chunk = bytes()
+    engine_pgid = os.getpgid(engine_proc.pid)
 
     try:
-        while True:
-            chunk += await audio_source.read(args.chunk_size)
-            if len(chunk) >= args.chunk_size:
-                chunk_stream.write(chunk[: args.chunk_size])
-                chunk_stream.flush()
-                chunk = chunk[args.chunk_size :]
-            else:
-                # Need more data before writing chunk
-                continue
+        chunk_stream = engine_proc.stdin
+        prob_stream = engine_proc.stdout
+        assert chunk_stream and prob_stream, "Failed to connect engine streams"
 
-            # Wait for prediction
-            prob_bytes = prob_stream.readline()
+        # Create detector
+        _LOGGER.debug(
+            "Creating Precise detector (sensitivity=%s, trigger_level=%s)",
+            sensitivity,
+            trigger_level,
+        )
 
-            prob_str = prob_bytes.decode().strip()
-            _LOGGER.debug("Prediction: %s", prob_str)
+        detector = TriggerDetector(args.chunk_size, sensitivity, trigger_level)
+        activation_count = 0
 
-            if detector.update(float(prob_str)):
-                # Activation
-                activation_count += 1
-                print_json(
-                    {
-                        "keyword": str(model_path),
-                        "detect_seconds": time.perf_counter() - start_time,
-                        "detect_timestamp": float(time.time())
-                    }
-                )
+        start_time = time.perf_counter()
 
-            # Check exit count
-            if (args.exit_count is not None) and (activation_count >= args.exit_count):
-                break
-    finally:
+        # Create audio source and start listening
+        audio_source = await core.make_audio_source(args.audio_source)
+
+        # Audio data buffer
+        chunk = bytes()
+
         try:
-            await audio_source.close()
-            engine_proc.terminate()
-            engine_proc.wait()
-        except Exception:
-            pass
+            while True:
+                chunk_part = await audio_source.read(args.chunk_size)
+                if not chunk_part:
+                    # Empty chunk
+                    break
+
+                chunk += chunk_part
+                if len(chunk) >= args.chunk_size:
+                    chunk_stream.write(chunk[: args.chunk_size])
+                    chunk_stream.flush()
+                    chunk = chunk[args.chunk_size :]
+                else:
+                    # Need more data before writing chunk
+                    continue
+
+                # Wait for prediction
+                prob_bytes = prob_stream.readline()
+
+                prob_str = prob_bytes.decode().strip()
+                _LOGGER.debug("Prediction: %s", prob_str)
+
+                if detector.update(float(prob_str)):
+                    # Activation
+                    activation_count += 1
+                    print_json(
+                        {
+                            "keyword": str(model_path),
+                            "detect_seconds": time.perf_counter() - start_time,
+                            "detect_timestamp": float(time.time()),
+                        }
+                    )
+
+                # Check exit count
+                if (args.exit_count is not None) and (
+                    activation_count >= args.exit_count
+                ):
+                    break
+        finally:
+            try:
+                await audio_source.close()
+            except Exception:
+                pass
+    finally:
+        # Kill engine process group
+        os.killpg(engine_pgid, signal.SIGTERM)
+        engine_proc.wait(timeout=0.5)
 
 
 # -----------------------------------------------------------------------------
