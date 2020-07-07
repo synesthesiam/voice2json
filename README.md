@@ -4,8 +4,11 @@
 
 * [Getting Started](https://voice2json.org/#getting-started)
 * [Commands](https://voice2json.org/comands.html)
+* [Profiles](https://github.com/synesthesiam/voice2json-profiles)
 * [Recipes](https://voice2json.org/recipes.html)
+* [Node-RED Plugin](https://github.com/johanneskropf/node-red-contrib-voice2json)
 * [About](https://voice2json.org/about.html)
+    * [Whitepaper](https://voice2json.org/whitepaper.html)
 
 From the command-line:
 
@@ -61,7 +64,7 @@ Supported speech to text systems include:
 
 ## Unique Features
 
-`voice2json` is more than just a wrapper around [pocketsphinx](https://github.com/cmusphinx/pocketsphinx) and [Kaldi](https://kaldi-asr.org)!
+`voice2json` is more than just a wrapper around open source speech to text systems!
 
 * Training produces **both** a speech and intent recognizer. By describing your voice commands with `voice2json`'s [templating language](https://voice2json.org/sentences.html), you get [more than just transcriptions](https://voice2json.org/formats.html#intents) for free.
 * Re-training is **fast enough** to be done at runtime (usually < 5s), even up to [millions of possible voice commands](https://voice2json.org/recipes.html#set-and-run-times). This means you can change [referenced slot](https://voice2json.org/sentences.html#slot-references) values or [add/remove intents](https://voice2json.org/commands.html#intent-whitelist) on the fly.
@@ -72,6 +75,7 @@ Supported speech to text systems include:
 * [print-profile](https://voice2json.org/commands.html#print-profile) - Print profile settings
 * [train-profile](https://voice2json.org/commands.html#train-profile) - Generate speech/intent artifacts
 * [transcribe-wav](https://voice2json.org/commands.html#transcribe-wav) - Transcribe WAV file to text
+* [transcribe-stream](https://voice2json.org/commands.html#transcribe-stream) - Transcribe live audio stream to text
 * [recognize-intent](https://voice2json.org/commands.html#recognize-intent) - Recognize intent from JSON or text
 * [wait-wake](https://voice2json.org/commands.html#wait-wake) - Listen to live audio stream for wake word
 * [record-command](https://voice2json.org/commands.html#record-command) - Record voice command from live audio stream
@@ -80,3 +84,5 @@ Supported speech to text systems include:
 * [record-examples](https://voice2json.org/commands.html#record-examples) - Generate and record speech examples
 * [test-examples](https://voice2json.org/commands.html#test-examples) - Test recorded speech examples
 * [show-documentation](https://voice2json.org/commands.html#show-documentation) - Run HTTP server locally with documentation
+* [print-downloads](https://voice2json.org/commands.html#print-downloads) - Print profile file download information
+* [print-files](https://voice2json.org/commands.html#print-files) - Print user profile files for backup

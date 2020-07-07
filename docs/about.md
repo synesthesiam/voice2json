@@ -37,7 +37,7 @@
 
 #### Removed
 
-* MaryTTS server is no longer embedded in Docker image. Must be hosted externally.
+* MaryTTS server is no longer embedded in Docker image. Must be [hosted externally](https://github.com/synesthesiam/docker-marytts).
 
 ---
 

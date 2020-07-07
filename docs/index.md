@@ -4,8 +4,11 @@
 
 * [Getting Started](#getting-started)
 * [Commands](commands.md)
+* [Profiles](https://github.com/synesthesiam/voice2json-profiles)
 * [Recipes](recipes.md)
+* [Node-RED Plugin](https://github.com/johanneskropf/node-red-contrib-voice2json)
 * [About](about.md)
+    * [Whitepaper](whitepaper.md)
 
 From the command-line:
 
@@ -479,7 +482,7 @@ Community contributions are welcomed! There are many different ways to contribut
     * Translations of the [example voice commands](https://github.com/synesthesiam/en-us_pocketsphinx-cmu/blob/8e6c984183a43de0cc87930efff37b4a5c840a40/sentences.ini)
     * Example WAV files of you speaking with text transcriptions for performance testing
 * [Contributing to Mozilla Common Voice](https://voice.mozilla.org/)
-* Assist other `voice2json` [community members](https://community.rhasspy.org)
+* Assist other `voice2json` [community members](https://community.rhasspy.org/c/voice2json/10)
 * Implement or critique one of [my crazy ideas](#ideas)
 
 ---
