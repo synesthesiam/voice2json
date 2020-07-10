@@ -63,9 +63,7 @@ async def train_profile(
     # -------------------
     base_dictionary = ppath("training.base-dictionary", "base_dictionary.txt")
     custom_words = ppath("training.custom-words-file", "custom_words.txt")
-    custom_words_action = pydash.get(
-        profile, "training.custom-words-action", "overwrite"
-    )
+    custom_words_action = pydash.get(profile, "training.custom-words-action", "append")
 
     acoustic_model = ppath("training.acoustic-model", "acoustic_model")
     acoustic_model_type = AcousticModelType(
