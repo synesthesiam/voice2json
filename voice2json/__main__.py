@@ -578,7 +578,8 @@ def get_core(args: argparse.Namespace) -> Voice2JsonCore:
             setting_value = json.loads(setting_value)
         except json.JSONDecodeError:
             _LOGGER.warning(
-                f"Interpreting setting for {setting_path} as a string. Surround with quotes to avoid this warning."
+                "Interpreting setting for %s as a string. Surround with quotes to avoid this warning.",
+                setting_path,
             )
             pass
 
@@ -618,6 +619,7 @@ async def print_files(args: argparse.Namespace, core: Voice2JsonCore) -> None:
             core.profile_file,
             core.profile_dir / "sentences.ini",
             core.profile_dir / "custom_words.txt",
+            core.profile_dir / "sounds_like.txt",
         ]
         + list((core.profile_dir / "slots").rglob("*"))
         + list((core.profile_dir / "slot_programs").rglob("*"))

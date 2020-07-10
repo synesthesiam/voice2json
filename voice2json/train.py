@@ -1,6 +1,8 @@
 """Methods to train a voice2json profile."""
 import asyncio
+import itertools
 import logging
+import re
 import typing
 from collections import defaultdict
 from enum import Enum
@@ -8,7 +10,7 @@ from pathlib import Path
 
 import pydash
 import rhasspynlu
-from rhasspynlu.g2p import PronunciationsType
+from rhasspynlu.g2p import PronunciationAction, PronunciationsType
 from rhasspynlu.jsgf import Expression, Word
 
 from .utils import ppath as utils_ppath
@@ -63,7 +65,13 @@ async def train_profile(
     # -------------------
     base_dictionary = ppath("training.base-dictionary", "base_dictionary.txt")
     custom_words = ppath("training.custom-words-file", "custom_words.txt")
-    custom_words_action = pydash.get(profile, "training.custom-words-action", "append")
+    custom_words_action = PronunciationAction(
+        pydash.get(profile, "training.custom-words-action", "append")
+    )
+    sounds_like = ppath("training.sounds-like-file", "sounds_like.txt")
+    sounds_like_action = PronunciationAction(
+        pydash.get(profile, "training.sounds-like-action", "append")
+    )
 
     acoustic_model = ppath("training.acoustic-model", "acoustic_model")
     acoustic_model_type = AcousticModelType(
@@ -244,6 +252,9 @@ async def train_profile(
                     dict_file, word_dict=pronunciations, action=custom_words_action
                 )
 
+        if sounds_like.is_file():
+            load_sounds_like(sounds_like, pronunciations, action=sounds_like_action)
+
     g2p_word_transform = None
     if g2p_word_casing == WordCasing.UPPER:
         g2p_word_transform = str.upper
@@ -337,3 +348,103 @@ async def train_profile(
         )
     else:
         _LOGGER.warning("Not training speech to text system (%s)", acoustic_model_type)
+
+
+# -----------------------------------------------------------------------------
+
+_SOUNDS_LIKE_WORD_N = re.compile(r"^([^(]+)\(([0-9]+)\)$")
+
+
+def load_sounds_like(
+    sounds_like: Path,
+    pronunciations: PronunciationsType,
+    action: PronunciationAction = PronunciationAction.APPEND,
+):
+    """Loads file with unknown word pronunciations based on known words."""
+    original_action = action
+
+    # File with <unknown_word> <known_word> [<known_word> ...]
+    # Pronunciation is derived from phonemes of known words.
+    # Phonemes can be included with the syntax /P1 P2/
+    with open(sounds_like, "r") as sounds_like_file:
+        for i, line in enumerate(sounds_like_file):
+            line = line.strip()
+            if not line:
+                continue
+
+            try:
+                # Restore word action
+                action = original_action
+
+                # Parse line of <unknown> <known> [<known> ...]
+                unknown_word, *known_words = line.split()
+                assert known_words, f"No known words for {unknown_word}"
+
+                # Identify literal phonemes
+                in_phoneme = False
+                known_words_phonemes = []
+                for known_word in known_words:
+                    if known_word.startswith("/"):
+                        in_phoneme = True
+                        known_word = known_word[1:]
+
+                    end_slash = known_word.endswith("/")
+                    if end_slash:
+                        known_word = known_word[:-1]
+
+                    known_words_phonemes.append((in_phoneme, known_word))
+
+                    if end_slash:
+                        in_phoneme = False
+
+                # Collect pronunciations from known words
+                word_prons: typing.List[typing.List[typing.List[str]]] = []
+                for is_phoneme, known_word in known_words_phonemes:
+                    if is_phoneme:
+                        # Add literal phoneme
+                        word_prons.append([[known_word]])
+                        continue
+
+                    # Check for explicit word index (1-based)
+                    word_index: typing.Optional[int] = None
+                    match = _SOUNDS_LIKE_WORD_N.match(known_word)
+                    if match:
+                        # word(N)
+                        known_word, word_index = match.group(1), int(match.group(2))
+
+                    if known_word in pronunciations:
+                        known_prons = pronunciations[known_word]
+                        assert known_prons, f"No pronunciations for {known_word}"
+                        if word_index is None:
+                            # Add all known pronunciations
+                            word_prons.append(known_prons)
+                        else:
+                            # Add indexed word only.
+                            # Clip to within bounds of list.
+                            i = min(max(1, word_index), len(known_prons)) - 1
+                            word_prons.append([known_prons[i]])
+                    else:
+                        raise ValueError(
+                            f"Unknown word used in sounds like for '{unknown_word}': {known_word}"
+                        )
+
+                # Generate all possible pronunciations.
+                # There can be more than one generated pronunciation if one or
+                # more known words have multiple pronunciations.
+                for word_pron_tuple in itertools.product(*word_prons):
+                    word_pron = list(itertools.chain(*word_pron_tuple))
+                    has_word = unknown_word in pronunciations
+
+                    # Handle according to custom words action
+                    if has_word and (action == PronunciationAction.APPEND):
+                        # Append to list of pronunciations
+                        pronunciations[unknown_word].append(word_pron)
+                    elif action == PronunciationAction.OVERWRITE_ONCE:
+                        # Overwrite just once, then append
+                        pronunciations[unknown_word] = [word_pron]
+                        action = PronunciationAction.APPEND
+                    else:
+                        # Overwrite
+                        pronunciations[unknown_word] = [word_pron]
+            except Exception as e:
+                _LOGGER.warning("load_sounds_like: %s (line %s)", e, i + 1)

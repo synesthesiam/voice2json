@@ -3,8 +3,8 @@ import argparse
 import asyncio
 import logging
 import os
-import signal
 import shutil
+import signal
 import subprocess
 import time
 import typing
