@@ -359,7 +359,12 @@ def get_args() -> argparse.Namespace:
     pronounce_parser = sub_parsers.add_parser(
         "pronounce-word", help="Speak a word phonetically"
     )
-    pronounce_parser.add_argument("word", nargs="*", help="Word(s) to prononunce")
+    pronounce_parser.add_argument("word", nargs="*", help="Word(s) to pronounce")
+    pronounce_parser.add_argument(
+        "--sounds-like",
+        action="store_true",
+        help="Interpret pronunciation(s) like sounds_like.txt",
+    )
     pronounce_parser.add_argument(
         "--quiet",
         "-q",

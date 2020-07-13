@@ -200,6 +200,8 @@ async def transcribe_stream(args: argparse.Namespace, core: Voice2JsonCore) -> N
     # Number of transcriptions that have happened
     num_transcriptions = 0
 
+    print("Ready", file=sys.stderr)
+
     try:
         chunk = await audio_source.read(args.chunk_size)
         while chunk:

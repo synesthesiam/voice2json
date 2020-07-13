@@ -7,11 +7,16 @@ import shlex
 import sys
 import time
 import typing
+from collections import defaultdict
+from pathlib import Path
 from xml.etree import ElementTree as etree
 
 import pydash
+import rhasspynlu
+from rhasspynlu.g2p import PronunciationAction, PronunciationsType
 
 from .core import Voice2JsonCore
+from .sounds_like import G2PAlignmentType, load_g2p_corpus, load_sounds_like
 
 _LOGGER = logging.getLogger("voice2json.pronounce")
 
@@ -20,7 +25,6 @@ _LOGGER = logging.getLogger("voice2json.pronounce")
 
 async def pronounce(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     """Pronounce one or more words from a dictionary or by guessing."""
-    import rhasspynlu
 
     # Load settings
     phoneme_pronunciations = bool(
@@ -40,24 +44,29 @@ async def pronounce(args: argparse.Namespace, core: Voice2JsonCore) -> None:
         base_dictionary_path = core.ppath(
             "training.base_dictionary", "base_dictionary.txt"
         )
-        dictionary_path = core.ppath("training.dictionary", "dictionary.txt")
         custom_words_path = core.ppath("training.custom-words-file", "custom_words.txt")
+        custom_words_action = PronunciationAction(
+            pydash.get(core.profile, "training.custom-words-action", "append")
+        )
+        sounds_like_path = core.ppath("training.sounds-like-file", "sounds_like.txt")
+        sounds_like_action = PronunciationAction(
+            pydash.get(core.profile, "training.sounds-like-action", "append")
+        )
         g2p_path = core.ppath("training.g2p-model", "g2p.fst")
+        g2p_corpus_path = core.ppath(
+            "training.grapheme-to-phoneme-corpus", "g2p.corpus"
+        )
         g2p_exists = bool(g2p_path and g2p_path.exists())
 
-        # Load dictionaries
-        dictionary_paths = [dictionary_path, base_dictionary_path]
-
-        if custom_words_path and custom_words_path.exists():
-            dictionary_paths.insert(0, custom_words_path)
-
-        for dict_path in dictionary_paths:
-            if dict_path and dict_path.exists():
-                _LOGGER.debug("Loading pronunciation dictionary from %s", dict_path)
-                with open(dict_path, "r") as dict_file:
-                    pronunciations = rhasspynlu.g2p.read_pronunciations(
-                        dict_file, pronunciations
-                    )
+        # Load pronunciations
+        pronunciations, g2p_alignment = load_pronunciations(
+            base_dictionary=base_dictionary_path,
+            custom_words=custom_words_path,
+            custom_words_action=custom_words_action,
+            sounds_like=sounds_like_path,
+            sounds_like_action=sounds_like_action,
+            g2p_corpus=g2p_corpus_path,
+        )
 
     # True if audio will go to stdout.
     # In this case, printing will go to stderr.
@@ -90,9 +99,13 @@ async def pronounce(args: argparse.Namespace, core: Voice2JsonCore) -> None:
     # Process words
     try:
         for word in words:
-            word_parts = word.strip().split()
+            line = word.strip()
+            if not line:
+                continue
+
+            word_parts = line.split()
             word = word_parts[0]
-            dict_phonemes = []
+            dict_phonemes: typing.List[typing.List[str]] = []
 
             if word_casing == "upper":
                 word = word.upper()
@@ -101,7 +114,30 @@ async def pronounce(args: argparse.Namespace, core: Voice2JsonCore) -> None:
 
             if len(word_parts) > 1:
                 # Pronunciation provided
-                dict_phonemes.append(word_parts[1:])
+                if args.sounds_like:
+                    # Handle "sounds like" pronunciations with known words and word segments
+                    if not g2p_alignment:
+
+                        assert (
+                            g2p_corpus_path and g2p_corpus_path.is_file()
+                        ), f"Missing g2p corpus: {g2p_corpus_path}"
+
+                        g2p_alignment = load_g2p_corpus(g2p_corpus_path)
+
+                    with io.StringIO(line) as sounds_like_file:
+                        load_sounds_like(
+                            sounds_like_file,
+                            pronunciations=pronunciations,
+                            action=sounds_like_action,
+                            g2p_alignment=g2p_alignment,
+                        )
+
+                    dict_phonemes.extend(
+                        phonemes for phonemes in pronunciations.get(word, [])
+                    )
+                else:
+                    # Literal phonemes
+                    dict_phonemes.append(word_parts[1:])
 
             if not phoneme_pronunciations:
                 # Use word itself if acoustic model does not use phonemes
@@ -333,3 +369,45 @@ def get_pronounce_marytts(
             return data
 
     return do_pronounce
+
+
+# -----------------------------------------------------------------------------
+
+
+def load_pronunciations(
+    base_dictionary: typing.Optional[Path] = None,
+    custom_words: typing.Optional[Path] = None,
+    custom_words_action: PronunciationAction = PronunciationAction.APPEND,
+    sounds_like: typing.Optional[Path] = None,
+    sounds_like_action: PronunciationAction = PronunciationAction.APPEND,
+    g2p_corpus: typing.Optional[Path] = None,
+) -> typing.Tuple[PronunciationsType, typing.Optional[G2PAlignmentType]]:
+    """Loads phonetic pronunciations from available dictionaries and sounds like file."""
+    pronunciations: PronunciationsType = defaultdict(list)
+
+    for dict_path in [base_dictionary, custom_words]:
+        if not dict_path:
+            continue
+
+        if not dict_path.is_file():
+            _LOGGER.warning("Skipping %s (does not exist)", dict_path)
+            continue
+
+        _LOGGER.debug("Loading base dictionary from %s", dict_path)
+        with open(dict_path, "r") as dict_file:
+            rhasspynlu.g2p.read_pronunciations(
+                dict_file, word_dict=pronunciations, action=custom_words_action
+            )
+
+    g2p_alignment: typing.Optional[G2PAlignmentType] = None
+    if sounds_like and sounds_like.is_file():
+
+        # Load word pronunciations from sounds_like.txt
+        g2p_alignment = load_sounds_like(
+            sounds_like,
+            pronunciations,
+            action=sounds_like_action,
+            g2p_corpus=g2p_corpus,
+        )
+
+    return pronunciations, g2p_alignment

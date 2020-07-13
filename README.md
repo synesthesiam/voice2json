@@ -4,6 +4,7 @@
 
 * [Getting Started](https://voice2json.org/#getting-started)
 * [Commands](https://voice2json.org/commands.html)
+    * [Data Formats](https://voice2json.org/formats.html)
 * [Profiles](https://github.com/synesthesiam/voice2json-profiles)
 * [Recipes](https://voice2json.org/recipes.html)
 * [Node-RED Plugin](https://github.com/johanneskropf/node-red-contrib-voice2json)

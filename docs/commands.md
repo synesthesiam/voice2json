@@ -95,7 +95,7 @@ If your [sentences.ini](sentences.md) file contains [slot references](sentences.
 
 ### Slot Programs
 
-If a slot cannot be found in your `training.slots-directory`, then `voice2json` will search for [a program](sentences.md#slot-programs) in `training.slot-programs-directory` (`slot_programs` by default). If you refererence `$movies` in your [sentences.ini](sentences.md), then `slot_programs/movies` should be an executable program that will output values, one per line. These programs are executed **every** time you [re-train](#train-profile).
+If a slot cannot be found in your `training.slots-directory`, then `voice2json` will search for [a program](sentences.md#slot-programs) in `training.slot-programs-directory` (`slot_programs` by default). If you reference `$movies` in your [sentences.ini](sentences.md), then `slot_programs/movies` should be an executable program that will output values, one per line. These programs are executed **every** time you [re-train](#train-profile).
 
 ### Intent Whitelist
 
@@ -477,11 +477,11 @@ hello HH EH L OW
 
 In addition to text output, you should have heard both pronunciations of "hello". These came the `base_dictionary.txt` included in the profile.
 
-If you leave off the `--espeak` argument, make sure you have a [MaryTTS](http://mary.dfki.de/) server running locally on port 59125.
+If you pass a `--marytts` argument, `voice2json` will try to contact a [MaryTTS](http://mary.dfki.de/) server running locally on port 59125. This can be changed using the `marytts.process-url` in your [profile](profiles.md).
 
 ### Unknown Words
 
-The same `pronounce-word` command works for words that are hopefully **not** in the U.S. English dictionary:
+The same `pronounce-word` command works for words that are probably **not** in your phonetic dictionary:
 
 ```bash
 $ voice2json pronounce-word raxacoricofallipatorius
@@ -506,6 +506,10 @@ $ voice2json pronounce-word 'moogle M UW G AH L'
 ```
 
 You can save these pronunciations in the `custom_words.txt` file in your [profile](profiles.md). Make sure to [re-train](#train-profile).
+
+### Sounds Like Pronunciations
+
+By passing the `--sounds-like` flag to `pronounce-word`, you can provide word pronunciations [using other words or word segments](formats.md#sounds-like-pronunciations).
 
 ---
 
@@ -648,7 +652,7 @@ outputs something like:
 
 ```
 
-where `actual` provides details of the transcription/intent recognition of the examples, and `expected` is simply pulled from the provided transcription/intent files. The remaining properies are statistics that describes the overall accuracy of the examples relative to expectations.
+where `actual` provides details of the transcription/intent recognition of the examples, and `expected` is simply pulled from the provided transcription/intent files. The remaining properties are statistics that describes the overall accuracy of the examples relative to expectations.
 
 ### Report Format
 

@@ -4,6 +4,7 @@
 
 * [Getting Started](#getting-started)
 * [Commands](commands.md)
+    * [Data Formats](formats.md)
 * [Profiles](https://github.com/synesthesiam/voice2json-profiles)
 * [Recipes](recipes.md)
 * [Node-RED Plugin](https://github.com/johanneskropf/node-red-contrib-voice2json)

@@ -126,7 +126,7 @@ A `voice2json` [profile](profiles.md) will typically contain 3 dictionaries:
 
 ### Sounds Like Pronunciations
 
-`voice2json` supports an alternative way of specifying custom word pronunciations. In a file named `sounds_like.txt` in your profile, you can describe how a word should be pronounced by referencing other words:
+`voice2json` supports an alternative way of specifying custom word pronunciations. In a file named `sounds_like.txt` in your profile (see `training.sounds-like-file`), you can describe how a word should be pronounced by referencing other words:
 
 ```
 unknown_word1 known_word1 [known_word2] ...
@@ -141,6 +141,10 @@ beyoncé bee yawn say
 
 During training, `voice2json` will look up the pronunciations for the known words and construct a pronunciation for the unknown word from them. The base dictionary and your custom words are consulted for known word pronunciations.
 
+You may reference a specific pronunciation for a known word using the `word(n)` syntax, where `n` is 1-based. Pronunciations are loaded in line order from `base_dictionary.txt` first and then `custom_words.txt`. For example, `read(2)` will reference the second pronunciation of the word "read". Without an `(n)`, all pronunciations found will be used.
+
+#### Phoneme Literals
+
 You can interject phonetic chunks into these pronunciations too. For example, the word "hooiser" sounds like "who" and the "-zure" in "azure":
 
 ```
@@ -148,6 +152,18 @@ hooiser who /Z 3/
 ```
 
 Text between slashes (`/`) will be interpreted as phonemes in the configured speech system.
+
+#### Word Segments
+
+If a grapheme-to-phoneme alignment corupus is available (`training.grapheme-to-phoneme-corupus`), segments of words can also be used for pronunciations. Using the "hooiser" example above, we can replace the phonemes with:
+
+```
+hooiser who a>zure<
+```
+
+This will combine the pronunciation of "who" from the current phonetic dictionaries (`base_dictionary.txt` and `custom_words.txt`) and the "-zure" from the word "azure".
+
+The brackets point `>at<` the segment of the word that you want to contribute to the pronunciation. This is accomplished using a grapheme-to-phoneme alignment corpus generated using [phonetiaurus](https://github.com/AdolfVonKleist/Phonetisaurus) and the `base_dictionary.txt` file. In the `a>zure<` example, the word "azure" is located in the alignment corpus, and the output phonemes from the phonemes "zure" in it are used.
 
 ---
 

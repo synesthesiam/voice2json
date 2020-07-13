@@ -127,7 +127,7 @@ training:
   grapheme-to-phoneme-model: !env "${profile_dir}/g2p.fst"
 
   # Path to Phonetisaurus alignment corpus for base dictionary
-  grapheme-to-phoneme-corupus: !env "${profile_dir}/g2p.corpus"
+  grapheme-to-phoneme-corpus: !env "${profile_dir}/g2p.corpus"
 
   # Force word case during dictionary lookup/g2p.
   # One of ignore, upper, lower.

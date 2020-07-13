@@ -81,6 +81,9 @@ speech-to-text:
   # Text file with word examples for each phoneme in the pronunciation dictionary
   phoneme-examples-file: !env "${profile_dir}/phoneme_examples.txt"
 
+  # True if acoustic model uses phonemes for pronunciations
+  phoneme-pronunciations: true
+
   # Kaldi-specific settings
   kaldi:
     # Type of Kaldi model (either nnet3 or gmm)
@@ -91,10 +94,6 @@ speech-to-text:
 
     # Path to directory with pre-built HCLG.fst (open transcription)
     base-graph-directory: !env "${profile_dir}/acoustic_model/model/graph"
-
-  # Julius-specific settings
-  julius:
-    adinnet-port: 5530
 
   # Mozilla DeepSpeech-specific settings
   deepspeech:
@@ -157,8 +156,19 @@ training:
   # Path to extra word pronunciations outside of base dictionary
   custom-words-file: !env "${profile_dir}/custom_words.txt"
 
+  # Action to take when multiple pronunciations for a word are available.
+  # One of: "append", "overwrite_once", "overwrite_always".
+  custom-words-action: "append"
+
   # Path to write words without any known pronunciation
   unknown-words-file: !env "${profile_dir}/unknown_words.txt"
+
+  # Path to extra word pronunciations based on existing words instead of phonemes
+  sounds-like-file: !env "${profile_dir}/sounds_like.txt"
+
+  # Action to take when multiple pronunciations for a "sounds like" word are available.
+  # One of: "append", "overwrite_once", "overwrite_always".
+  sounds-like-action: "append"
 
   # Path to pre-built ARPA language model (open transcription)
   base-language-model: !env "${profile_dir}/base_language_model.txt"
@@ -174,6 +184,9 @@ training:
   
   # Path to model used to guess unknown word pronunciation
   grapheme-to-phoneme-model: !env "${profile_dir}/g2p.fst"
+
+  # Path to Phonetisaurus alignment corpus for base dictionary
+  grapheme-to-phoneme-corpus: !env "${profile_dir}/g2p.corpus"
 
   # Force word case during dictionary lookup/g2p.
   # One of ignore, upper, lower.
