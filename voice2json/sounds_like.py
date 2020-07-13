@@ -57,18 +57,34 @@ def load_sounds_like(
 
                 # Identify literal phonemes
                 in_phoneme = False
-                known_words_phonemes: typing.List[typing.Tuple[bool, str]] = []
+
+                # line -> alternatives -> phoneme sequence
+                known_phonemes: typing.List[typing.List[typing.List[str]]] = []
+
+                # ongoing phoneme sequence
+                current_phonemes: typing.List[str] = []
+
+                # Process space-separated tokens
                 for known_word in known_words:
                     if known_word.startswith("/"):
+                        # Begin literal phoneme string
+                        # /P1 P2 P3/
                         in_phoneme = True
                         known_word = known_word[1:]
+                        current_phonemes = []
 
                     end_slash = known_word.endswith("/")
                     if end_slash:
+                        # End literal phoneme string
+                        # /P1 P2 P3/
                         known_word = known_word[:-1]
 
-                    if not in_phoneme:
-                        # >part<ial word
+                    if in_phoneme:
+                        # Literal phonemes
+                        # P_N of /P1 P2 P3/
+                        current_phonemes.append(known_word)
+                    else:
+                        # Check for >part<ial word
                         partial_match = _SOUNDS_LIKE_PARTIAL.match(known_word)
                         if partial_match:
                             partial_prefix, partial_body = (
@@ -77,6 +93,7 @@ def load_sounds_like(
                             )
 
                             if not g2p_alignment:
+                                # Need to load g2p alignment corpus
                                 assert (
                                     g2p_corpus
                                 ), f"No G2P corpus given for partial word: {known_word}"
@@ -92,57 +109,26 @@ def load_sounds_like(
                                 g2p_alignment, word, partial_prefix, partial_body
                             )
 
-                            for body_phonemes in aligned_phonemes:
-                                known_words_phonemes.extend(
-                                    (True, p) for p in body_phonemes
-                                )
+                            # Add all possible alignments (phoneme sequences) as alternatives
+                            known_phonemes.append(list(aligned_phonemes))
+                        else:
+                            # Known word with one or more pronunciations
+                            known_prons = get_nth_word(pronunciations, known_word)
+                            assert known_prons, f"No pronunciations for {known_word}"
 
-                                # Only add first alignment
-                                break
-
-                            continue
-
-                    known_words_phonemes.append((in_phoneme, known_word))
+                            # Add all pronunciations as alternatives
+                            known_phonemes.append(known_prons)
 
                     if end_slash:
                         in_phoneme = False
+                        if current_phonemes:
+                            known_phonemes.append([current_phonemes])
 
                 # Collect pronunciations from known words
-                word_prons: typing.List[typing.List[typing.List[str]]] = []
-                for is_phoneme, known_word in known_words_phonemes:
-                    if is_phoneme:
-                        # Add literal phoneme
-                        word_prons.append([[known_word]])
-                        continue
-
-                    # Check for explicit word index (1-based)
-                    word_index: typing.Optional[int] = None
-                    match = _SOUNDS_LIKE_WORD_N.match(known_word)
-                    if match:
-                        # word(N)
-                        known_word, word_index = match.group(1), int(match.group(2))
-
-                    if known_word in pronunciations:
-                        known_prons = pronunciations[known_word]
-                        assert known_prons, f"No pronunciations for {known_word}"
-                        if word_index is None:
-                            # Add all known pronunciations
-                            word_prons.append(known_prons)
-                        else:
-                            # Add indexed word only.
-                            # Clip to within bounds of list.
-                            i = min(max(1, word_index), len(known_prons)) - 1
-                            word_prons.append([known_prons[i]])
-                    else:
-                        raise ValueError(
-                            f"Unknown word used in sounds like for '{unknown_word}': {known_word}"
-                        )
-
-                # Generate all possible pronunciations.
-                # There can be more than one generated pronunciation if one or
-                # more known words have multiple pronunciations.
-                for word_pron_tuple in itertools.product(*word_prons):
-                    word_pron = list(itertools.chain(*word_pron_tuple))
+                # word_prons: typing.List[typing.List[typing.List[str]]] = []
+                for word_phonemes in itertools.product(*known_phonemes):
+                    # Generate all possible pronunciations.
+                    word_pron = list(itertools.chain(*word_phonemes))
                     has_word = unknown_word in pronunciations
 
                     # Handle according to custom words action
@@ -205,7 +191,17 @@ def get_aligned_phonemes(
     g2p_alignment: G2PAlignmentType, word: str, prefix: str, body: str
 ) -> typing.Iterable[typing.List[str]]:
     """Yields lists of phonemes that comprise the body of the word. Prefix graphemes are skipped."""
-    for inputs_outputs in g2p_alignment.get(word, []):
+    word_index: typing.Optional[int] = None
+    match = _SOUNDS_LIKE_WORD_N.match(word)
+    if match:
+        # word(N)
+        word, word_index = (match.group(1), int(match.group(2)))
+
+    # Loop through possible alignments for this word
+    for io_index, inputs_outputs in enumerate(g2p_alignment.get(word, [])):
+        if (word_index is not None) and (word_index != (io_index + 1)):
+            continue
+
         can_match = True
         prefix_chars = list(prefix)
         body_chars = list(body)
@@ -216,6 +212,7 @@ def get_aligned_phonemes(
             word_output = list(word_output)
 
             while prefix_chars and word_input:
+                # Exhaust characters before desired word segment first
                 if word_input[0] != prefix_chars[0]:
                     can_match = False
                     break
@@ -224,6 +221,7 @@ def get_aligned_phonemes(
                 word_input = word_input[1:]
 
             while body_chars and word_input:
+                # Match desired word segment
                 if word_input[0] != body_chars[0]:
                     can_match = False
                     break
@@ -236,7 +234,30 @@ def get_aligned_phonemes(
                     word_output = word_output[1:]
 
             if not can_match or not body_chars:
+                # Mismatch or done with word segment
                 break
 
         if can_match and phonemes:
             yield phonemes
+
+
+def get_nth_word(
+    pronunciations: PronunciationsType, word: str
+) -> typing.List[typing.List[str]]:
+    """Get all pronunciations for a word or a single(n) pronunciation."""
+    # Check for explicit word index (1-based)
+    word_index: typing.Optional[int] = None
+    match = _SOUNDS_LIKE_WORD_N.match(word)
+    if match:
+        # word(N)
+        word, word_index = (match.group(1), int(match.group(2)))
+
+    known_prons = pronunciations.get(word, [])
+    if (not known_prons) or (word_index is None):
+        # Add all known pronunciations
+        return known_prons
+
+    # Add indexed word only.
+    # Clip to within bounds of list.
+    i = min(max(1, word_index), len(known_prons)) - 1
+    return [known_prons[i]]
