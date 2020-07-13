@@ -163,7 +163,8 @@ hooiser who a>zure<
 
 This will combine the pronunciation of "who" from the current phonetic dictionaries (`base_dictionary.txt` and `custom_words.txt`) and the "-zure" from the word "azure".
 
-The brackets point `>at<` the segment of the word that you want to contribute to the pronunciation. This is accomplished using a grapheme-to-phoneme alignment corpus generated using [phonetiaurus](https://github.com/AdolfVonKleist/Phonetisaurus) and the `base_dictionary.txt` file. In the `a>zure<` example, the word "azure" is located in the alignment corpus, and the output phonemes from the phonemes "zure" in it are used.
+The brackets point `>at<` the segment of the word that you want to contribute to the pronunciation. This is accomplished using a grapheme-to-phoneme alignment corpus generated using [phonetisaurus
+](https://github.com/AdolfVonKleist/Phonetisaurus) and the `base_dictionary.txt` file. In the `a>zure<` example, the word "azure" is located in the alignment corpus, and the output phonemes from the phonemes "zure" in it are used.
 
 ---
 
