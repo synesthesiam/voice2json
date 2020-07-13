@@ -18,6 +18,7 @@ A `voice2json` <strong>profile</strong> contains everything necessary to recogni
     * How `voice2json` expects words to be pronounced. You can [customize any word](commands.md#pronounce-word).
     * `base_dictionary.txt` - large, pre-built pronunciations for most words
     * `custom_words.txt` - small, custom pronunciation dictionary for [words that voice2json doesn't know](commands.md#unknown-words)
+    * `sounds_like.txt` - small, custom pronunciation dictionary using [known words or word segments](formats.md#sounds-like-pronunciations)
     * `dictionary.txt` - pronunciation dictionary generated during [training](commands.md#train-profile) containing all needed words
 * Language models
     * Captures statistics about [which words follow others](whitepaper.md#language-model) in your voice commands
@@ -29,6 +30,7 @@ A `voice2json` <strong>profile</strong> contains everything necessary to recogni
 * Grapheme to phoneme models
     * Used to guess how [unknown words](commands.md#unknown-words) *should* be pronounced
     * `g2p.fst` - a [finite state transducer](http://www.openfst.org) created using [phonetisaurus](https://github.com/AdolfVonKleist/Phonetisaurus)
+    * `g2p.corpus` - a alignment corpus created using [phonetisaurus](https://github.com/AdolfVonKleist/Phonetisaurus) and `base_dictionary.txt` for [sounds-like pronunciations](formats.md#sounds-like-pronunciations)
 * Phoneme Maps
     * Used to relate speech-to-text and text-to-speech [phonemes](whitepaper.md#pronunciation-dictionary)
     * `espeak_phonemes.txt` - map to [eSpeak](https://github.com/espeak-ng/espeak-ng) phonemes

@@ -788,6 +788,6 @@ $ voice2json print-files | tar -czf /path/to/profile_backup.tar.gz -T -
 Includes:
 
 * [Training sentences](sentences.md) (`sentences.ini`) and [slot files](sentences.md#slot-references) (`slots/`)
-* Custom word pronunciations (`custom_words.txt`)
+* Custom word pronunciations (`custom_words.txt`, `sounds_like.txt`)
 * [Slot programs](sentences.md#slot-programs) (`slot_programs/`)
 * [Converters](sentences.md#converters) (`converters/`)
