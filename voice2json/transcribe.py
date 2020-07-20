@@ -163,6 +163,9 @@ async def transcribe_stream(args: argparse.Namespace, core: Voice2JsonCore) -> N
     # Get speech to text transcriber for profile
     transcriber = core.get_transcriber(open_transcription=args.open, debug=args.debug)
 
+    # Set after a transcription has been printed
+    transcription_printed = threading.Event()
+
     # Run transcription in separate thread
     frame_queue: "Queue[typing.Optional[bytes]]" = Queue()
 
@@ -188,6 +191,7 @@ async def transcribe_stream(args: argparse.Namespace, core: Voice2JsonCore) -> N
             transcribe_dict["timeout"] = is_timeout
 
             print_json(transcribe_dict)
+            transcription_printed.set()
 
     threading.Thread(target=transcribe_proc, daemon=True).start()
 
@@ -205,6 +209,9 @@ async def transcribe_stream(args: argparse.Namespace, core: Voice2JsonCore) -> N
     try:
         chunk = await audio_source.read(args.chunk_size)
         while chunk:
+            # Reset event
+            transcription_printed.clear()
+
             # Look for speech/silence
             voice_command = recorder.process_chunk(chunk)
 
@@ -240,6 +247,9 @@ async def transcribe_stream(args: argparse.Namespace, core: Voice2JsonCore) -> N
                     )
 
                 num_transcriptions += 1
+
+                # Wait for transcription to be printed
+                transcription_printed.wait(timeout=args.timeout)
 
                 # Check exit count
                 if (args.exit_count is not None) and (

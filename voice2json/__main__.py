@@ -259,6 +259,11 @@ def get_args() -> argparse.Namespace:
     transcribe_stream_parser.add_argument(
         "--event-sink", "-e", help="File to write JSON voice command events to"
     )
+    transcribe_stream_parser.add_argument(
+        "--timeout",
+        type=float,
+        help="Seconds to wait for a transcription before exiting (default: None)",
+    )
 
     # ----------------
     # recognize-intent

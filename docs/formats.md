@@ -78,8 +78,8 @@ where
     * `confidence` is a value between 0 and 1, with 1 being maximally confident (number)
 * `entities` is a list of recognized entities (list)
     * `entity` is the name of the slot (string)
-    * `value` is the ([substitued](sentences.md#wordtag-substitutions)) value (string)
-    * `raw_value` is the (**non**-substitued) value (string)
+    * `value` is the ([substituted](sentences.md#wordtag-substitutions)) value (string)
+    * `raw_value` is the (**non**-substituted) value (string)
     * `start` is the zero-based start index of the entity in `text` (number)
     * `raw_start` is the zero-based start index of the entity in `raw_text` (number)
     * `stop` is the zero-based stop index (exclusive) of the entity in `text` (number)
@@ -155,7 +155,7 @@ Text between slashes (`/`) will be interpreted as phonemes in the configured spe
 
 #### Word Segments
 
-If a grapheme-to-phoneme alignment corupus is available (`training.grapheme-to-phoneme-corupus`), segments of words can also be used for pronunciations. Using the "hooiser" example above, we can replace the phonemes with:
+If a grapheme-to-phoneme alignment crops is available (`training.grapheme-to-phoneme-corupus`), segments of words can also be used for pronunciations. Using the "hooiser" example above, we can replace the phonemes with:
 
 ```
 hooiser who a>zure<
