@@ -59,7 +59,7 @@ Next, install the `.deb` file:
 $ sudo apt install /path/to/voice2json_<VERSION>_<ARCH>.deb
 ```
 
-where where `<VERSION>` is `voice2json`'s version (probably 2.0) and `<ARCH>** is your build architecture.
+where where `<VERSION>` is `voice2json`'s version (probably 2.0) and `<ARCH>` is your build architecture.
 
 **NOTE**: If you run `sudo apt install` in the same directory as the `.deb` file, make sure to prefix the filename with `./` like this:
 
