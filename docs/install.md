@@ -37,7 +37,7 @@ Pre-compiled packages are available for Debian-based distributions (Ubuntu, Linu
 Next, download the appropriate `.deb` file for your CPU architecture:
 
 * [amd64](https://github.com/synesthesiam/voice2json/releases/download/v2.0/voice2json_2.0_amd64.deb) - Desktops, laptops, and servers
-* [armhf](https://github.com/synesthesiam/voice2json/releases/download/v2.0/voice2json_2.0_armhf.deb) - Raspberry Pi 2, and 3 (armv7)
+* [armhf](https://github.com/synesthesiam/voice2json/releases/download/v2.0/voice2json_2.0_armhf.deb) - Raspberry Pi 2, and 3/3+ (armv7)
 * [arm64](https://github.com/synesthesiam/voice2json/releases/download/v2.0/voice2json_2.0_arm64.deb) - Raspberry Pi 3+, 4
 * [armel](https://github.com/synesthesiam/voice2json/releases/download/v2.0/voice2json_2.0_armel.deb) - Raspberry Pi 0, 1
 
@@ -59,7 +59,13 @@ Next, install the `.deb` file:
 $ sudo apt install /path/to/voice2json_<VERSION>_<ARCH>.deb
 ```
 
-where where `<VERSION>` is `voice2json`'s version (probably 2.0) and `<ARCH>` is your build architecture.
+where where `<VERSION>` is `voice2json`'s version (probably 2.0) and `<ARCH>** is your build architecture.
+
+**NOTE**: If you run `sudo apt install` in the same directory as the `.deb` file, make sure to prefix the filename with `./` like this:
+
+```bash
+$ sudo apt install ./voice2json_<VERSION>_<ARCH>.deb
+```
 
 After [downloading a profile](#download-profile), you should now be able to run any of the example `voice2json` commands in the documentation.
 
