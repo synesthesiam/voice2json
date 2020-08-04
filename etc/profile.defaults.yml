@@ -88,7 +88,7 @@ training:
   # Path to write custom intent finite state transducer
   intent-fst: !env "${profile_dir}/intent.fst"
   
-  # Path to write custom ARPA language model
+  # Path to write custom ARPA language model (or text FST)
   language-model: !env "${profile_dir}/language_model.txt"
   
   # Path to write custom pronunciation dictionary
@@ -148,6 +148,10 @@ training:
 
     # Path to directory where custom HCLG.fst will be written
     graph-directory: !env "${profile_dir}/acoustic_model/graph"
+
+    # Type of language model to generate.
+    # One of "arpa" (statistical ARPA) or "text_fst" (G.fst directly).
+    language-model-type: "arpa"
 
 # -----------------------------------------------------------------------------
 

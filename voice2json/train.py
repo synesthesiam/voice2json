@@ -285,9 +285,15 @@ async def train_profile(
     elif acoustic_model_type == AcousticModelType.KALDI:
         # Kaldi
         import rhasspyasr_kaldi
+        from rhasspyasr_kaldi.train import LanguageModelType
 
         graph_dir = ppath("training.kaldi.graph-directory") or (
             acoustic_model / "graph"
+        )
+
+        # Type of language model to generate
+        language_model_type = LanguageModelType(
+            pydash.get(profile, "training.kaldi.language-model-type", "arpa")
         )
 
         rhasspyasr_kaldi.train(
@@ -297,6 +303,7 @@ async def train_profile(
             graph_dir,
             dictionary_path,
             language_model_path,
+            language_model_type=language_model_type,
             dictionary_word_transform=word_transform,
             g2p_model=g2p_model,
             g2p_word_transform=g2p_word_transform,
