@@ -4,7 +4,7 @@ At a high level, `voice2json` transforms audio data (voice commands) into [JSON]
 
 ![Audio to JSON](img/whitepaper/audio-to-json.svg)
 
-The voice commands are specified beforehand in a [compact, text-based format](training.md):
+The voice commands are specified beforehand in a [compact, text-based format](sentences.md):
 
 ```
 [LightState]
@@ -220,7 +220,7 @@ During training, `voice2json` generates a custom language model based on your vo
 
 ### Language Model Mixing
 
-`voice2json`'s custom language model can optionally be [mixed](training.md#language-model-mixing) with a much larger, pre-built language model. Depending on how much weight is given to either model, this will increase the probability of your voice commands against a background of general sentences in the profile's language.
+`voice2json`'s custom language model can optionally be [mixed](commands.md#language-model-mixing) with a much larger, pre-built language model. Depending on how much weight is given to either model, this will increase the probability of your voice commands against a background of general sentences in the profile's language.
 
 ![Language model mixing](img/whitepaper/language-model-mixing.svg)
 
@@ -230,7 +230,7 @@ When mixed appropriately, `voice2json` is capable of (nearly) open-ended speech 
 
 ## Text to Intent
 
-The speech recognition system(s) in `voice2json` produce text transcriptions that are then given to an intent recognition system. When both speech and intent systems are trained together from [the same template file](training.md), all valid commands (with minor variations) should be correctly translated to JSON events.
+The speech recognition system(s) in `voice2json` produce text transcriptions that are then given to an intent recognition system. When both speech and intent systems are trained together from [the same template file](sentences.md), all valid commands (with minor variations) should be correctly translated to JSON events.
 
 `voice2json` transforms the set of possible voice commands into a graph that acts as a [finite state transducer](https://en.wikipedia.org/wiki/Finite-state_transducer) (FST). When given a valid sentence as input, this transducer will output the (transformed) sentence along with "meta" words that provide the sentence's intent and named entities.
 
@@ -246,7 +246,7 @@ When trained with this template, `voice2json` will generate a graph like this:
 
 ![Example intent graph](img/whitepaper/intent-graph.svg)
 
-Each state is labeled with a number, and edges (arrows) have labels as well. The edge labels have a special format, which represent the input required to traverse the edge and the corresponding output. A colon (":") separates the [input/output words](training.md#substitutions) on an edge, and is omitted when both input and output are the same. Output "words" that begin with two underscores ("__") are "meta" words that provide additional information about the recognized sentence.
+Each state is labeled with a number, and edges (arrows) have labels as well. The edge labels have a special format, which represent the input required to traverse the edge and the corresponding output. A colon (":") separates the [input/output words](sentences.md#wordtag-substitutions) on an edge, and is omitted when both input and output are the same. Output "words" that begin with two underscores ("__") are "meta" words that provide additional information about the recognized sentence.
 
 The FST above will accept all possible sentences in the template file:
 
@@ -267,22 +267,22 @@ This is the output when each sentence is accepted by the FST:
 
 The `__label__` notation is taken from [fasttext](https://fasttext.cc), a highly-performant sentence classification framework. A single meta `__label__` word is produced for each sentence, labeling it with the property intent name.
 
-The `__begin__` and `__end__` meta words are used by `voice2json` to construct the JSON event for each sentence. They mark the beginning and end of a [tagged](training.md#tags) block of text in the original template file -- e.g., `(on | off){state}`. These begin/end symbols can be easily translated into a common scheme for annotating text corpora (IOB) in order to train a Named Entity Recognizer (NER). [flair](http://github.com/zalandoresearch/flair) can read such corpora, for example, and train NERs using [PyTorch](https://pytorch.org).
+The `__begin__` and `__end__` meta words are used by `voice2json` to construct the JSON event for each sentence. They mark the beginning and end of a [tagged](sentences.md#tags) block of text in the original template file -- e.g., `(on | off){state}`. These begin/end symbols can be easily translated into a common scheme for annotating text corpora (IOB) in order to train a Named Entity Recognizer (NER). [flair](http://github.com/zalandoresearch/flair) can read such corpora, for example, and train NERs using [PyTorch](https://pytorch.org).
 
 [The `voice2json` NLU library](https://github.com/rhasspy/rhasspy-nlu) currently uses the following set of meta words:
 
 * `__label__INTENT`
     * Sentence belongs to intent named `INTENT`
 * `__begin__TAG`
-    * Beginning of [tag](training.md#tags) named `TAG`
+    * Beginning of [tag](sentences.md#tags) named `TAG`
 * `__end__TAG`
-    * End of [tag](training.md#tags) named `TAG`
+    * End of [tag](sentences.md#tags) named `TAG`
 * `__convert__CONV`
-    * Beginning of [converter](training.md#converters) named `CONV`
+    * Beginning of [converter](sentences.md#converters) named `CONV`
 * `__converted__CONV`
-    * End of [converter](training.md#converters) named `CONV`
+    * End of [converter](sentences.md#converters) named `CONV`
 * `__source__SLOT`
-    * Name of [slot list](training.md#slots-lists) where text came from
+    * Name of [slot list](sentences.md#slots-lists) where text came from
 * `__unpack__PAYLOAD`
     * Decodes `PAYLOAD` as a base64-encoded string and then interprets as edge label
 
@@ -298,7 +298,7 @@ Following a path through the example intent graph above with the words as input 
 
 `__label__LightState` `turn` `__begin__state` `on` `__end__state` `the` `light`
 
-A fairly simple state machine receives these symbols/words, and constructs a structured intent that is ultimately converted to JSON. The intent's name and named entities are recovered using the `__label__`, `__begin__`, and `__end__` meta words. All non-meta words are collected for the final text string, which includes [substitutions](training.md#substitutions) and [conversions](training.md#converters). The final output is something like this:
+A fairly simple state machine receives these symbols/words, and constructs a structured intent that is ultimately converted to JSON. The intent's name and named entities are recovered using the `__label__`, `__begin__`, and `__end__` meta words. All non-meta words are collected for the final text string, which includes [substitutions](sentences.md#wordtag-substitutions) and [conversions](sentences.md#converters). The final output is something like this:
 
 ```json
 { 
@@ -322,7 +322,7 @@ Because `would` and `you` are not words encoded in the intent, the FST will fail
 
 When trained, `voice2json` produces the following artifacts:
 
-* A [pronunciation dictionary](#pronunciation-dictionary) containing *only* the words from your [voice command templates](training.md)
+* A [pronunciation dictionary](#pronunciation-dictionary) containing *only* the words from your [voice command templates](sentences.md)
     * Words missing from the dictionary have their pronunciations guessed using a [grapheme to phoneme](#grapheme-to-phoneme) model
 * An [intent graph](#text-to-intent) that is used to [recognize intents from sentences](#fsticuffs)
     * Can optionally [ignore common words](#fuzzy-fsts) to allow for "fuzzier" recognition
