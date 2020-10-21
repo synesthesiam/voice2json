@@ -43,6 +43,7 @@ cd "${phonetisaurus_build}" && \
 # Strip binaries
 echo "Tar-ing binary files to ${output_file}"
 cd "${phonetisaurus_build}/build" && \
+    mkdir -p bin lib && \
     cp "${openfst_build}/build/bin"/* bin/ &&
     cp "${openfst_build}/build/lib"/*.so* lib/ &&
     rm -f lib/*.a lib/fst/*.a && \
