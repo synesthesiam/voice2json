@@ -139,7 +139,7 @@ ifneq ($(IN_PLACE),yes)
 	install -D "--target-directory=$(DESTDIR)$(prefix)/share/voice2json/etc" "$(srcdir)/etc/profile.defaults.yml"
 	install -D "--target-directory=$(DESTDIR)$(prefix)/share/voice2json/etc/precise" "$(srcdir)/etc/precise"/*
 	install -D "--target-directory=$(DESTDIR)$(prefix)/share/voice2json" VERSION README.md LICENSE
-	cp -fR "$(srcdir)/site" "$(DESTDIR)$(prefix)/share/voice2json/" || true
+	if [[ -d "$(srcdir)/site" ]]; then cp -fR "$(srcdir)/site" "$(DESTDIR)$(prefix)/share/voice2json/"; fi || true
 endif  # IN_PLACE
 
 # -----------------------------------------------------------------------------
