@@ -4,7 +4,7 @@ Listens for a wake word, then launches a program based on a voice command.
 
 ## Setup
 
-Once you have `voice2json` installed and a profile downloaded, copy `sentences.ini`, `custom_words.txt`, and the `slots` directory into your profile directory (probably `$HOME/.config/voice2json`). Make sure to backup your profile first if you've done any customization!
+Once you have `voice2json` installed and a profile downloaded, copy `sentences.ini` and the `slots` directory into your profile directory (probably `$HOME/.config/voice2json`). Depending on whether you're using a Pocketsphinx or Kaldi-based profile, copy `custom_words.pocketsphinx.txt` or `custom_words.kaldi.txt` (respectively) to `custom_words.txt` in your profile. Make sure to backup your profile first if you've done any customization!
 
 Next, run the `listen_and_launch.sh` script:
 
