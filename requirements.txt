@@ -4,7 +4,7 @@ aiohttp==3.6.2
 jsonlines==1.2.0
 networkx==2.4
 pydash==4.7.6
-pyyaml==5.3
+pyyaml==5.4
 rhasspy-asr-deepspeech~=0.3.0
 rhasspy-asr-kaldi~=0.3.0
 rhasspy-asr-pocketsphinx~=0.3.0
