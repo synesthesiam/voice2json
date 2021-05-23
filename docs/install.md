@@ -168,6 +168,12 @@ $ make install
 
 This will install `voice2json` inside a virtual environment at `$PWD/.venv` by default with **all** of the supported speech to text engines and supporting tools. When installation is finished, copy `voice2json.sh` somewhere in your `PATH` and rename it to `voice2json`.
 
+If you are building from source on macOS, you will also need to install [coreutils](https://www.gnu.org/software/coreutils/):
+
+```bash
+$ brew install coreutils
+```
+
 ### Customizing Installation
 
 You can pass additional information to `configure` to avoid installing parts of `voice2json` that you won't use. For example, if you only plan to use the French language profiles, set the `VOICE2JSON_LANGUAGE` environment variable to `fr` when configuring your installation:
