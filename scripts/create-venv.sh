@@ -74,7 +74,7 @@ if [[ -n "$(command -v phonetisaurus-apply)" ]]; then
 fi
 
 # Kaldi
-kaldi_file="${download}/kaldi-2020-${target_arch}.tar.gz"
+kaldi_file="${download}/kaldi-2021-${target_arch}.tar.gz"
 if [[ -s "${kaldi_file}" ]]; then
     echo 'Installing Kaldi'
     "${src_dir}/scripts/install-kaldi.sh" \
@@ -92,7 +92,7 @@ if [[ -s "${precise_file}" ]]; then
 fi
 
 # Mozilla DeepSpeech
-deepspeech_file="${download}/native_client.${target_arch}.cpu.linux.0.6.1.tar.xz"
+deepspeech_file="${download}/native_client.${target_arch}.cpu.linux.0.9.3.tar.xz"
 if [[ -s "${deepspeech_file}" ]]; then
     echo 'Installing DeepSpeech Native Client'
     "${src_dir}/scripts/install-deepspeech.sh" \
@@ -101,7 +101,7 @@ if [[ -s "${deepspeech_file}" ]]; then
 fi
 
 # KenLM
-kenlm_file="${download}/kenlm-20200308_${target_arch}.tar.gz"
+kenlm_file="${download}/kenlm-20210107_${target_arch}.tar.gz"
 if [[ -s "${kenlm_file}" ]]; then
     echo 'Installing Kenlm'
     "${src_dir}/scripts/install-kenlm.sh" \

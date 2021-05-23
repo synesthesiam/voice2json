@@ -318,15 +318,15 @@ async def train_profile(
         # DeepSpeech
         import rhasspyasr_deepspeech
 
-        trie_path = ppath("training.deepspeech.trie", "trie")
+        scorer_path = ppath("training.deepspeech.scorer", "scorer")
         alphabet_path = ppath("training.deepspeech.alphabet", "model/alphabet.txt")
 
+        # Train model
         rhasspyasr_deepspeech.train(
             intent_graph,
             language_model_path,
-            trie_path,
+            scorer_path,
             alphabet_path,
-            vocab_path=vocab_path,
             language_model_fst=language_model_fst_path,
             base_language_model_fst=base_language_model_fst,
             base_language_model_weight=base_language_model_weight,

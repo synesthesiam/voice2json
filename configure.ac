@@ -1,4 +1,4 @@
-AC_INIT([voice2json], [0.2.0], [mike@rhasspy.org])
+AC_INIT([voice2json], [0.2.1], [mike@rhasspy.org])
 AC_CONFIG_MACRO_DIR([m4])
 PC_INIT([3.7.0])
 

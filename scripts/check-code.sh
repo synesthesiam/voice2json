@@ -7,7 +7,6 @@ src_dir="$(realpath "${this_dir}/..")"
 
 venv="${src_dir}/.venv"
 if [[ -d "${venv}" ]]; then
-    echo "Using virtual environment at ${venv}"
     source "${venv}/bin/activate"
 fi
 

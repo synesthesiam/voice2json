@@ -5,8 +5,8 @@ jsonlines==1.2.0
 networkx==2.4
 pydash==4.7.6
 pyyaml==5.3
-rhasspy-asr-deepspeech~=0.3.0
-rhasspy-asr-kaldi~=0.3.0
+rhasspy-asr-deepspeech~=0.4.0
+rhasspy-asr-kaldi~=0.6.0
 rhasspy-asr-pocketsphinx~=0.3.0
 rhasspy-nlu~=0.3.0
-rhasspy-silence~=0.3.0
+rhasspy-silence~=0.4.0

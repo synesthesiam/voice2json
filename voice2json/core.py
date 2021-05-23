@@ -184,18 +184,16 @@ class Voice2JsonCore:
 
         if open_transcription:
             # Use base model
-            language_model = self.ppath(
-                "speech-to-text.deepspeech.base-language-model", "model/lm.binary"
+            scorer = self.ppath(
+                "speech-to-text.deepspeech.base-scorer", "model/base.scorer"
             )
-            trie = self.ppath("speech-to-text.deepspeech.base-trie", "model/trie")
         else:
             # Use custom model
-            language_model = self.ppath("speech-to-text.language-model", "lm.binary")
-            trie = self.ppath("speech-to-text.deepspeech.trie", "trie")
+            scorer = self.ppath("speech-to-text.deepspeech.scorer", "scorer")
 
-        assert language_model and trie, "Missing language model or trie"
+        assert scorer, "Missing language model or scorer"
 
-        return DeepSpeechTranscriber(acoustic_model, language_model, trie)
+        return DeepSpeechTranscriber(acoustic_model, scorer)
 
     def get_julius_transcriber(self, open_transcription=False, debug=False):
         """Create Transcriber for Julius."""
