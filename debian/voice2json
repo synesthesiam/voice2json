@@ -1,14 +1,12 @@
 #!/usr/bin/env bash
-prefix="/usr/lib/voice2json"
-export voice2json_dir="${prefix}/share/voice2json"
+APPDIR='/usr/lib/voice2json'
 
-: "${PYTHON=python3}"
+export PATH="${APPDIR}/bin:${APPDIR}/usr/local/bin:${PATH}"
+export LD_LIBRARY_PATH="${APPDIR}/lib:${APPDIR}/usr/local/lib:${LD_LIBRARY_PATH}"
 
-export OLD_LD_LIBRARY_PATH="${LD_LIBRARY_PATH}"
-export OLD_PATH="${PATH}"
+export voice2json_dir="${APPDIR}"
+export KALDI_DIR="${APPDIR}/lib/kaldi"
 
-export LD_LIBRARY_PATH="${prefix}/lib:${LD_LIBRARY_PATH}"
-export PATH="${prefix}/bin:${PATH}"
-export KALDI_DIR="${prefix}/lib/kaldi"
+export PYTHONPATH="${voice2json_dir}:${PYTHONPATH}"
 
-"${prefix}/voice2json/voice2json" "$@"
+"${APPDIR}/usr/local/bin/python3" -m voice2json "$@"
