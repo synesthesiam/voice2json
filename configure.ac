@@ -396,6 +396,11 @@ AS_CASE([$enable_in_place],
         [yes],[is_in_place=yes],
         [no],[is_in_place=no])
 
+dnl Virtual environment
+AS_CASE([$enable_virtualenv],
+        [yes],[is_virtualenv_enabled=yes],
+        [no],[is_virtualenv_enabled=no])
+
 dnl ---------------------------------------------------------------------------
 dnl Extra Dependency Checks
 dnl ---------------------------------------------------------------------------

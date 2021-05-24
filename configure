@@ -4132,6 +4132,15 @@ case $enable_in_place in #(
      ;;
 esac
 
+case $enable_virtualenv in #(
+  yes) :
+    is_virtualenv_enabled=yes ;; #(
+  no) :
+    is_virtualenv_enabled=no ;; #(
+  *) :
+     ;;
+esac
+
 
 # Check whether --enable-dependency-check was given.
 if test "${enable_dependency_check+set}" = set; then :
