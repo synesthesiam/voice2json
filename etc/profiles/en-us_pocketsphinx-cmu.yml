@@ -1,4 +1,5 @@
 ---
+description: "U.S. English Pocketsphinx model from Carnegie Mellon University"
 default:
   "LICENSE":
     bytes: 1537

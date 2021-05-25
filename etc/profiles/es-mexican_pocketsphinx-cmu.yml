@@ -1,4 +1,6 @@
 ---
+description: "Mexican Spanish model"
+
 default:
   acoustic_model/feat.params:
     bytes: 110

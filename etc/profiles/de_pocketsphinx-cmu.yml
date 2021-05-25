@@ -1,4 +1,6 @@
 ---
+description: "German Pocketsphinx model"
+
 default:
   acoustic_model/feat.params:
     bytes: 112

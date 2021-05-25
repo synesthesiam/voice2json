@@ -1,4 +1,7 @@
 ---
+description: "French Kaldi model from https://github.com/pguyot/zamia-speech/releases"
+url_format: "https://raw.githubusercontent.com/synesthesiam/{profile}/9795f4d0619cc121e2ef28340a9461367b0fcb3a/{file}"
+
 default:
   LICENSE:
     bytes: 18579

@@ -1,0 +1,119 @@
+---
+description: "Spanish Deepspeech v0.9 model from https://gitlab.com/Jaco-Assistant"
+url_format: "https://raw.githubusercontent.com/rhasspy/{profile}/bbfe4adbb6db2d229d4060510319cc91e90e8a1f/{file}"
+
+default:
+  LICENSE:
+    bytes: 7652
+    sha256: e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118
+  model/alphabet.txt:
+    bytes: 351
+    sha256: fec6f979d13e5ff48dc9848bda9b4246de478074f5ae52a6770e647168748050
+  model/output_graph.pbmm.gz.part-00:
+    bytes: 26214400
+    file-name: output_graph.pbmm
+    platform:
+    - machine: x86_64
+    sha256: f26d12c840718e35e4c56926e9ef904c4a0a0a78d11a06d85f3f5c9e7efc1f4a
+  model/output_graph.pbmm.gz.part-01:
+    bytes: 26214400
+    file-name: output_graph.pbmm
+    platform:
+    - machine: x86_64
+    sha256: b3d8e7d437a783ff9d3442b16f94ddca3a0ceb825b11297403d03655503d6b76
+  model/output_graph.pbmm.gz.part-02:
+    bytes: 26214400
+    file-name: output_graph.pbmm
+    platform:
+    - machine: x86_64
+    sha256: 3eef3b513fcac7efe31cf68f77b67d2d70c8f9d86de1c363b3a5975e54a421a6
+  model/output_graph.pbmm.gz.part-03:
+    bytes: 26214400
+    file-name: output_graph.pbmm
+    platform:
+    - machine: x86_64
+    sha256: 89f9460617f8173ae4dac325ada901b77be8b88b00687edaced392fd576a23f3
+  model/output_graph.pbmm.gz.part-04:
+    bytes: 26214400
+    file-name: output_graph.pbmm
+    platform:
+    - machine: x86_64
+    sha256: 48c912e44b2e71ea64d048f63676fe09ec7bc109a970e0c916b58cecd9002994
+  model/output_graph.pbmm.gz.part-05:
+    bytes: 26214400
+    file-name: output_graph.pbmm
+    platform:
+    - machine: x86_64
+    sha256: a69c7c810aeb293c509c70d2aa1f0c948811350daefb0d3c40ca4e53f7f078e4
+  model/output_graph.pbmm.gz.part-06:
+    bytes: 18094880
+    file-name: output_graph.pbmm
+    platform:
+    - machine: x86_64
+    sha256: 1b8d5dbf2debbeda50893a1ea3153c0831b5341614966de28bf3f63604189850
+  profile.yml:
+    bytes: 938
+    sha256: b36a0518505b154de2f5528b03ccb054b731206ee077b2f7c65d8989b7837708
+  stop_words.txt:
+    bytes: 2178
+    sha256: 7450c1f7196c161d9a4e537de43f88bd55cdb64028c808e14587bd7a6ac7be3d
+
+# Files needed for open transcription (pre-built model)
+open-transcription:
+  model/base.scorer.gz.part-00:
+    bytes: 26214400
+    file-name: base.scorer
+    sha256: 41252b05b46d1c0f4026b6cac34b5a95c2ca4251eab2a53e38a4fddb087c00f4
+  model/base.scorer.gz.part-01:
+    bytes: 26214400
+    file-name: base.scorer
+    sha256: cf7b45c325e3337b2a3cf3224896d88d71ba9615d8108ba61fa8122342f6f4e7
+  model/base.scorer.gz.part-02:
+    bytes: 26214400
+    file-name: base.scorer
+    sha256: 4ce013c8c6a15c66bc6644231647c29d3f2e6166bd2c37d855c681cd9e613b20
+  model/base.scorer.gz.part-03:
+    bytes: 26214400
+    file-name: base.scorer
+    sha256: 84c3bb258ce8b6c8f5774df6038f1c1b24c3232f90b9b499b9facc91a12faf32
+  model/base.scorer.gz.part-04:
+    bytes: 26214400
+    file-name: base.scorer
+    sha256: 1b96687e5b2a873e6e1291f7ba0bd7ccf64eae246dc12ea7a1f434ced5a29c54
+  model/base.scorer.gz.part-05:
+    bytes: 26214400
+    file-name: base.scorer
+    sha256: be87e5d5d82d7167739c81259982594188fad86a000596956810f3026a4f2dcb
+  model/base.scorer.gz.part-06:
+    bytes: 26214400
+    file-name: base.scorer
+    sha256: a8c275e4c2df960fe05be4d0891d72535512cfe949e88dccc62783ae81fb7351
+  model/base.scorer.gz.part-07:
+    bytes: 26214400
+    file-name: base.scorer
+    sha256: 1af1cca7ae1c8687911a76b26648406855ebe110e4bc49d531d737a002a61822
+  model/base.scorer.gz.part-08:
+    bytes: 26214400
+    file-name: base.scorer
+    sha256: 3be0ba33212e45411f4d912f0f560f6328dddca34e363a70afa63c8bf0dd2e6d
+  model/base.scorer.gz.part-09:
+    bytes: 11758932
+    file-name: base.scorer
+    sha256: 0f723a25d69c8ea759b4c9bc34e7bbfd9a24479856f9216d9e48fe2580540b3e
+
+# Files needed for mixed language modeling (pre-built + custom)
+mixed-language-model:
+  base_language_model.fst.gz.part-00:
+    bytes: 26214400
+    file-name: base_language_model.fst
+    sha256: 29b2a945f08c2a89927ee881b70e5c9b03328f23b210550873f30d9cc7e254cf
+  base_language_model.fst.gz.part-01:
+    bytes: 26214400
+    file-name: base_language_model.fst
+    sha256: 704461bb5e505044c5f4f64e7258ff381e1b51284cb1c8c112efcf76c061f709
+
+# Sample sentences, etc.
+examples:
+  sentences.ini:
+    bytes: 317
+    sha256: 5942f84939e5a7ccc4f062726defae82628d5e6d899d485eeb8e77f9c44a2a20

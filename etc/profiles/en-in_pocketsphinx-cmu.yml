@@ -1,4 +1,6 @@
 ---
+description: "Indian English Pocketsphinx model from Alpha Cephei"
+
 default:
   LICENSE:
     bytes: 1621

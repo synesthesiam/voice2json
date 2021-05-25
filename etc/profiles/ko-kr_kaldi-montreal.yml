@@ -8,7 +8,7 @@ default:
     sha256: 9837b298604f7c0a04e341cbfa6125a23dd96d672c7cab6db67a7660469f7ece
   acoustic_model/model/final.mdl.gz:
     bytes: 14629239
-    final-name: final.mdl
+    file-name: final.mdl
     sha256: 472ec3cf3adc26738e729338f6b23ef153da754f753a382a5bc0d4efc6b06a3e
   acoustic_model/model/graph/HCLG.fst.gz:
     bytes: 23797111

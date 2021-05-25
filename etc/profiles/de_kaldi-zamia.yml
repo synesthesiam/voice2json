@@ -1,4 +1,7 @@
 ---
+description: "German Kaldi model from https://github.com/gooofy/zamia-speech"
+url_format: "https://raw.githubusercontent.com/synesthesiam/{profile}/c19805ba7391eb43a195019797285e040fafecde/{file}"
+
 default:
   LICENSE:
     bytes: 7651
@@ -45,22 +48,6 @@ default:
   acoustic_model/model/final.mdl:
     bytes: 12258485
     sha256: ec0c7f62434f1578e2fc433d51e406d18d38ffeed0c147327ed31c40da5d2731
-  acoustic_model/model/graph/HCLG.fst.gz.part-00:
-    bytes: 26214400
-    file-name: HCLG.fst
-    sha256: 4bc5de456f5cd4d3fffb020c0d0d01dc2e25ad99bdc35a1b5fd71a5ff7b46836
-  acoustic_model/model/graph/HCLG.fst.gz.part-01:
-    bytes: 26214400
-    file-name: HCLG.fst
-    sha256: de134764ab8dda1456064a59d2e8f2f6445b6deaa55b36e3e534fd60ea04ef9e
-  acoustic_model/model/graph/HCLG.fst.gz.part-02:
-    bytes: 26214400
-    file-name: HCLG.fst
-    sha256: c06eaf9ea70e2c07bb3b592ea35552719197aa7843328b0d77c961890a45ab4f
-  acoustic_model/model/graph/HCLG.fst.gz.part-03:
-    bytes: 16847658
-    file-name: HCLG.fst
-    sha256: 6950f684a1d84ff5ac139ac82c805da64f47be90a4a6da17c64f92b5bc1c9979
   acoustic_model/model/graph/num_pdfs:
     bytes: 5
     sha256: 018238e1f5092c66d896906bfbcf9abf5abe978975a8852eb3a78871e16b4268
@@ -120,8 +107,8 @@ default:
     file-name: base_dictionary.txt
     sha256: f9d1ff832134782b33dddf5453d18707f4805bc68fbae68cf72c364d56845fc8
   profile.yml:
-    bytes: 806
-    sha256: 1f5c833923f260b6899e5ff7a7129f73f7b1590559ee52863e55cd39500eb90b
+    bytes: 845
+    sha256: b4eb5d9067153a600d8551c55350de9c5ffcd9e63e97fc48165dcc42f523e852
   slot_programs/rhasspy/number:
     bytes: 651
     sha256: d1f10ccea552c2c9ba2a59dd69705f8e82545592c7db5ca7078b462ed9d08387
@@ -131,6 +118,10 @@ default:
 
 # Files needed to guess word pronunciations
 grapheme-to-phoneme:
+  g2p.corpus.gz:
+    bytes: 2093358
+    file-name: g2p.corpus
+    sha256: 095f05d75e91201c51ac5857acdb365616b09d9d0cb77d891504107a4728ff49
   g2p.fst.gz:
     bytes: 30773484
     file-name: g2p.fst
@@ -142,6 +133,22 @@ open-transcription:
     bytes: 35798869
     file-name: base_language_model.txt
     sha256: 0a6cba7fcadc1481dc266a6f4e921e79886389b6745dd1ff5c99586f0e843241
+  acoustic_model/model/graph/HCLG.fst.gz.part-00:
+    bytes: 26214400
+    file-name: HCLG.fst
+    sha256: 4bc5de456f5cd4d3fffb020c0d0d01dc2e25ad99bdc35a1b5fd71a5ff7b46836
+  acoustic_model/model/graph/HCLG.fst.gz.part-01:
+    bytes: 26214400
+    file-name: HCLG.fst
+    sha256: de134764ab8dda1456064a59d2e8f2f6445b6deaa55b36e3e534fd60ea04ef9e
+  acoustic_model/model/graph/HCLG.fst.gz.part-02:
+    bytes: 26214400
+    file-name: HCLG.fst
+    sha256: c06eaf9ea70e2c07bb3b592ea35552719197aa7843328b0d77c961890a45ab4f
+  acoustic_model/model/graph/HCLG.fst.gz.part-03:
+    bytes: 16847658
+    file-name: HCLG.fst
+    sha256: 6950f684a1d84ff5ac139ac82c805da64f47be90a4a6da17c64f92b5bc1c9979
 
 # Files needed for mixed language modeling (pre-built + custom)
 mixed-language-model:
@@ -153,8 +160,8 @@ mixed-language-model:
 # Files needed for text to speech
 text-to-speech:
   espeak_phonemes.txt:
-    bytes: 500
-    sha256: 021c05355f8bfea34cc8fa4f80c0a6d9e42f6c1e804b75af96c5d09fa84a5ab1
+    bytes: 494
+    sha256: 6b267a782f951d7f2d152d209d987d06ea080ee1557274f65e8de574802889e0
   marytts/marytts-lang-de-5.2.jar:
     bytes: 5335101
     sha256: 8d6c632844faa00ef4e0694a25cc37a5458f2337e09131db977cd91031d4e10b
