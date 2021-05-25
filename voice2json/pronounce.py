@@ -20,6 +20,8 @@ from .sounds_like import G2PAlignmentType, load_g2p_corpus, load_sounds_like
 
 _LOGGER = logging.getLogger("voice2json.pronounce")
 
+ESPEAK_STRESS_CHARS = {"'": "'", ",": ",", "\u02C8": "'", "\u02CC": ",", "²": ""}
+
 # -----------------------------------------------------------------------------
 
 
@@ -242,8 +244,18 @@ def get_pronounce_espeak(
     )
 
     async def do_pronounce(word: str, dict_phonemes: typing.Iterable[str]) -> bytes:
-        espeak_phonemes = [espeak_phoneme_map[p] for p in dict_phonemes]
-        espeak_str = "".join(espeak_phonemes)
+        espeak_phonemes = []
+        for phoneme in dict_phonemes:
+            # Strip and convert stress
+            stress = ""
+            while phoneme and phoneme[0] in ESPEAK_STRESS_CHARS:
+                stress += ESPEAK_STRESS_CHARS[phoneme[0]]
+                phoneme = phoneme[1:]
+
+            if phoneme:
+                espeak_phonemes.append(stress + espeak_phoneme_map[phoneme])
+
+        espeak_str = shlex.quote("".join(espeak_phonemes))
         espeak_cmd = shlex.split(espeak_cmd_format.format(phonemes=espeak_str))
 
         if espeak_voice is not None:

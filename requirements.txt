@@ -10,3 +10,4 @@ rhasspy-asr-kaldi~=0.6.0
 rhasspy-asr-pocketsphinx~=0.3.0
 rhasspy-nlu~=0.3.0
 rhasspy-silence~=0.4.0
+tqdm~=4.45.0

@@ -6,10 +6,12 @@ For more details, see https://voice2json.org
 
 import argparse
 import asyncio
+import collections
 import json
 import logging
 import os
 import platform
+import ssl
 import sys
 import time
 import typing
@@ -17,6 +19,7 @@ from pathlib import Path
 
 import pydash
 import yaml
+from tqdm import tqdm
 
 from .core import Voice2JsonCore
 from .generate import generate
@@ -26,11 +29,19 @@ from .record import record_command, record_examples
 from .speak import speak
 from .test import test_examples
 from .transcribe import transcribe_stream, transcribe_wav
-from .utils import env_constructor, print_json, recursive_update
+from .utils import (
+    download_file,
+    env_constructor,
+    get_profile_downloads,
+    print_json,
+    reassemble_large_files,
+    recursive_update,
+)
 from .wake import wake
 
 _LOGGER = logging.getLogger("voice2json")
 
+DEFAULT_PROFILE = "en-us_kaldi-zamia"
 
 # -----------------------------------------------------------------------------
 
@@ -44,6 +55,9 @@ async def main():
         if sys.argv[1] == "--version":
             # Patch argv to use print-version command
             sys.argv = [sys.argv[0], "print-version"]
+    else:
+        # Patch argv to use print-profiles command
+        sys.argv = [sys.argv[0], "print-downloads", "--list-profiles"]
 
     # Parse command-line arguments
     args = get_args()
@@ -66,7 +80,7 @@ async def main():
         await args.func(args)
     else:
         # Load profile and create core
-        core = get_core(args)
+        core = await get_core(args)
 
         # Call sub-commmand
         try:
@@ -105,6 +119,18 @@ def get_args() -> argparse.Namespace:
         )
 
         argparser.add_argument(
+            "--no-auto-download",
+            action="store_true",
+            help="Don't automatically download profile files",
+        )
+
+        argparser.add_argument(
+            "--no-auto-train",
+            action="store_true",
+            help="Don't automatically train profile",
+        )
+
+        argparser.add_argument(
             "--debug", action="store_true", help="Print DEBUG messages to console"
         )
 
@@ -139,8 +165,8 @@ def get_args() -> argparse.Namespace:
     )
     downloads_parser.add_argument(
         "--url-format",
-        default="https://github.com/synesthesiam/{profile}/raw/master/{file}",
-        help="Format string for URL (receives {profile} and {file})",
+        default="https://raw.githubusercontent.com/synesthesiam/{profile}/master/{file}",
+        help="Format string for URL (receives {profile}, {file}, and {machine})",
     )
     downloads_parser.add_argument(
         "--only-missing",
@@ -169,7 +195,7 @@ def get_args() -> argparse.Namespace:
         "--with-examples", action="store_true", help="Include example sentences, etc."
     )
     downloads_parser.add_argument(
-        "profile_names", nargs="+", help="Profile names to check"
+        "profile_names", nargs="*", help="Profile names to check"
     )
     downloads_parser.add_argument(
         "--list-profiles", action="store_true", help="List names of known profiles"
@@ -501,38 +527,19 @@ def get_args() -> argparse.Namespace:
     )
     speak_parser.set_defaults(func=speak)
 
-    # ----------------
-    # Shared arguments
-    # ----------------
-    for sub_parser in [
-        version_parser,
-        print_parser,
-        downloads_parser,
-        print_files_parser,
-        train_parser,
-        transcribe_wav_parser,
-        transcribe_stream_parser,
-        recognize_parser,
-        command_parser,
-        wake_parser,
-        pronounce_parser,
-        generate_parser,
-        record_examples_parser,
-        test_examples_parser,
-        show_documentation_parser,
-        speak_parser,
-    ]:
-        add_default_arguments(sub_parser)
-
     return parser.parse_args()
 
 
 # -----------------------------------------------------------------------------
 
 
-def get_profile_location(args: argparse.Namespace) -> typing.Tuple[Path, Path]:
+def get_profile_location(
+    args: argparse.Namespace,
+) -> typing.Tuple[Path, Path, typing.Optional[str]]:
     """Return detected profile directory and YAML file path."""
     profile_yaml: typing.Optional[Path] = None
+    profile_dir: typing.Optional[Path] = None
+    profile_name: typing.Optional[str] = None
 
     if args.profile is None:
         # Guess profile location in $HOME/.config/voice2json
@@ -542,34 +549,121 @@ def get_profile_location(args: argparse.Namespace) -> typing.Tuple[Path, Path]:
             config_home = Path("~/.config").expanduser()
 
         profile_dir = config_home / "voice2json"
-        _LOGGER.debug("Assuming profile is at %s", profile_dir)
+
+        if profile_dir.is_dir():
+            _LOGGER.debug("Using profile at %s", profile_dir)
+        else:
+            profile_name = DEFAULT_PROFILE
+            profile_dir = None  # set automatically later
+            _LOGGER.debug("Using default profile %s", profile_name)
     else:
         # Use profile provided on command line
         profile_dir_or_file = Path(args.profile)
         if profile_dir_or_file.is_dir():
             # Assume directory with profile.yaml
             profile_dir = profile_dir_or_file
-        else:
+        elif profile_dir_or_file.is_file():
             # Assume YAML file
             profile_dir = profile_dir_or_file.parent
             profile_yaml = profile_dir_or_file
+        else:
+            # Assume name
+            profile_name = args.profile
+            profile_dir = None  # set automatically later
 
-    profile_dir = profile_dir.resolve()
+    if profile_dir is not None:
+        profile_dir = profile_dir.resolve()
 
-    if profile_yaml is None:
-        profile_yaml = profile_dir / "profile.yml"
+        if profile_yaml is None:
+            profile_yaml = profile_dir / "profile.yml"
 
-    return profile_dir, profile_yaml
+    if profile_name is not None:
+        if profile_dir is None:
+            # Guess shared profile location in $HOME/.local/share/voice2json
+            if "XDG_DATA_HOME" in os.environ:
+                share_home = Path(os.environ["XDG_DATA_HOME"])
+            else:
+                share_home = Path("~/.local/share/voice2json").expanduser()
+
+            profile_dir = share_home / profile_name
+            profile_yaml = profile_dir / "profile.yml"
+
+    assert profile_dir is not None
+    assert profile_yaml is not None
+
+    return profile_dir, profile_yaml, profile_name
 
 
-def get_core(args: argparse.Namespace) -> Voice2JsonCore:
-    """Load profile and create voice2json core."""
-    profile_dir, profile_yaml = get_profile_location(args)
+async def get_core(args: argparse.Namespace) -> Voice2JsonCore:
+    """Load/download/train profile and create voice2json core."""
+    profile_dir, profile_yaml, profile_name = get_profile_location(args)
+
+    if profile_name is not None:
+        # May need to download files
+        download_yaml = args.base_directory / "etc" / "profiles" / f"{profile_name}.yml"
+        _LOGGER.debug("Trying to load download info from %s", download_yaml)
+        with open(download_yaml, "r") as download_yaml_file:
+            files_dict = yaml.safe_load(download_yaml_file)
+
+        # Create SSL context for file downloads
+        ssl_context = ssl.SSLContext()
+        if args.certfile:
+            # User-provided SSL certificate
+            ssl_context.load_cert_chain(args.certfile, args.keyfile)
+
+        download_settings: typing.Dict[str, typing.Any] = {}
+        if args.command == "pronounce-word":
+            download_settings["grapheme_to_phoneme"] = True
+
+        if args.command in {"pronounce-word", "speak-sentence"}:
+            download_settings["text_to_speech"] = True
+
+        if args.command in {"transcribe-wav", "transcribe-stream"}:
+            if args.open:
+                download_settings["open_transcription"] = True
+
+        # Create asyncio download tasks for missing files
+        download_tasks = []
+        for download_info in get_profile_downloads(
+            profile_name, files_dict, profile_dir, **download_settings
+        ):
+            url = download_info["url"]
+            target_path = profile_dir / download_info["file"]
+            _LOGGER.debug("%s => %s", url, target_path)
+
+            download_tasks.append(
+                asyncio.create_task(
+                    download_file(url, target_path, ssl_context=ssl_context)
+                )
+            )
+
+        if download_tasks:
+            if args.no_auto_download:
+                _LOGGER.warning(
+                    "There are %s profile file(s) missing, but automatic download has been disabled.",
+                    len(download_tasks),
+                )
+                _LOGGER.warning(
+                    "Training and execution will likely fail. Run with --debug for more info."
+                )
+            else:
+                # Download missing profile files with a progress bar
+                _LOGGER.info(
+                    "Downloading %s file(s) for profile %s to %s",
+                    len(download_tasks),
+                    profile_name,
+                    profile_dir,
+                )
+
+                with tqdm(total=len(download_tasks)) as pbar:
+                    for done_task in asyncio.as_completed(download_tasks):
+                        await done_task
+                        pbar.update(1)
 
     # Set environment variable usually referenced in profile
     os.environ["profile_dir"] = str(profile_dir)
 
-    # x86_64, armv7l, armv6l, ...
+    # x86_64, armv7l, aarch64, ...
     os.environ["machine"] = args.machine
 
     # Load profile defaults
@@ -625,9 +719,27 @@ def get_core(args: argparse.Namespace) -> Voice2JsonCore:
         pydash.set_(profile, setting_path, setting_value)
 
     # Create core
-    return Voice2JsonCore(
+    core = Voice2JsonCore(
         profile_yaml, profile, certfile=args.certfile, keyfile=args.keyfile
     )
+
+    # Reassemble any large files that were downloaded
+    await reassemble_large_files(pydash.get(profile, "training.large-files", []))
+
+    if (
+        (args.command != "train-profile")
+        and (not args.no_auto_train)
+        and not core.check_trained()
+    ):
+        # Automatically train
+        _LOGGER.info("Automatically training profile")
+        start_time = time.perf_counter()
+        await core.train_profile()
+        end_time = time.perf_counter()
+
+        _LOGGER.debug("Training completed in %s second(s)", end_time - start_time)
+
+    return core
 
 
 # -----------------------------------------------------------------------------
@@ -677,14 +789,29 @@ async def print_downloads(args: argparse.Namespace) -> None:
     profiles_dir = args.base_directory / "etc" / "profiles"
 
     if args.list_profiles:
+        _LOGGER.info("Listing available profiles from %s", profiles_dir)
+        _LOGGER.info("Use voice2json -p <PROFILE_NAME> <COMMAND>")
+
         # List profile names and exit
-        for profile_name in sorted(p.stem for p in profiles_dir.glob("*.yml")):
-            print(profile_name)
+        profile_names = {}
+        for profile_path in profiles_dir.glob("*.yml"):
+            try:
+                with open(profile_path, "r") as profile_file:
+                    files_yaml = yaml.safe_load(profile_file)
+                    description = files_yaml.get("description", "")
+
+                profile_name = profile_path.stem
+                profile_names[profile_name] = description
+            except Exception:
+                _LOGGER.exception(profile_path)
+
+        for profile_name, description in sorted(profile_names.items()):
+            print(profile_name, description, sep="\t")
 
         return
 
     # Check profile files
-    profile_dir, _ = get_profile_location(args)
+    profile_dir, _, _ = get_profile_location(args)
 
     # Names of profiles to check
     profile_names = set(args.profile_names)
@@ -692,7 +819,7 @@ async def print_downloads(args: argparse.Namespace) -> None:
     # Each YAML file is a profile name with required and optional files
     for yaml_path in profiles_dir.glob("*.yml"):
         profile_name = yaml_path.stem
-        if profile_name not in profile_names:
+        if profile_names and (profile_name not in profile_names):
             # Skip file
             _LOGGER.debug("Skipping %s (not in %s)", yaml_path, profile_names)
             continue
@@ -704,6 +831,9 @@ async def print_downloads(args: argparse.Namespace) -> None:
 
         # Add files to downloads
         for condition, files in files_yaml.items():
+            if not isinstance(files, collections.abc.Mapping):
+                continue
+
             # Filter based on condition and arguments
             if (
                 (args.no_grapheme_to_phoneme and condition == "grapheme-to-phoneme")
@@ -757,7 +887,7 @@ async def print_downloads(args: argparse.Namespace) -> None:
                 file_info["file"] = file_path
                 file_info["profile"] = profile_name
                 file_info["url"] = args.url_format.format(
-                    profile=profile_name, file=file_path
+                    profile=profile_name, file=file_path, machine=args.machine
                 )
                 file_info["profile-directory"] = str(profile_dir)
 

@@ -422,7 +422,6 @@ class Voice2JsonCore:
         missing = False
         for path in [intent_graph_path]:
             if not (path and path.exists()):
-                _LOGGER.fatal("Missing %s. Did you forget to run train-profile?", path)
                 missing = True
                 break
 

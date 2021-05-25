@@ -1,5 +1,4 @@
 """Methods to train a voice2json profile."""
-import asyncio
 import logging
 import typing
 from enum import Enum
@@ -12,6 +11,7 @@ from rhasspynlu.jsgf import Expression, Word
 
 from .pronounce import load_pronunciations
 from .utils import ppath as utils_ppath
+from .utils import reassemble_large_files
 
 _LOGGER = logging.getLogger("voice2json.train")
 
@@ -112,41 +112,11 @@ async def train_profile(
     vocab_path = ppath("training.vocabulary-file", "vocab.txt")
     unknown_words_path = ppath("training.unknown-words-file", "unknown_words.txt")
 
-    async def run(command: typing.List[str], **kwargs):
-        """Run a command asynchronously."""
-        process = await asyncio.create_subprocess_exec(*command, **kwargs)
-        await process.wait()
-        assert process.returncode == 0, "Command failed"
-
     # -------------------------------------------------------------------------
     # 1. Reassemble large files
     # -------------------------------------------------------------------------
 
-    for target_path in large_paths:
-        gzip_path = Path(str(target_path) + ".gz")
-        part_paths = sorted(list(gzip_path.parent.glob(f"{gzip_path.name}.part-*")))
-        if part_paths:
-            # Concatenate paths to together
-            cat_command = ["cat"] + [str(p) for p in part_paths]
-            _LOGGER.debug(cat_command)
-
-            with open(gzip_path, "wb") as gzip_file:
-                await run(cat_command, stdout=gzip_file)
-
-        if gzip_path.is_file():
-            # Unzip single file
-            unzip_command = ["gunzip", "-f", "--stdout", str(gzip_path)]
-            _LOGGER.debug(unzip_command)
-
-            with open(target_path, "wb") as target_file:
-                await run(unzip_command, stdout=target_file)
-
-            # Delete zip file
-            gzip_path.unlink()
-
-        # Delete unneeded .gz-part files
-        for part_path in part_paths:
-            part_path.unlink()
+    await reassemble_large_files(large_paths)
 
     # -------------------------------------------------------------------------
     # 2. Generate intent graph
@@ -296,6 +266,8 @@ async def train_profile(
             pydash.get(profile, "training.kaldi.language-model-type", "arpa")
         )
 
+        spn_phone = pydash.get(profile, "training.kaldi.spn_phone", "SPN")
+
         rhasspyasr_kaldi.train(
             intent_graph,
             pronunciations,
@@ -313,6 +285,7 @@ async def train_profile(
             base_language_model_fst=base_language_model_fst,
             base_language_model_weight=base_language_model_weight,
             mixed_language_model_fst=mixed_language_model_fst_path,
+            spn_phone=spn_phone,
         )
     elif acoustic_model_type == AcousticModelType.DEEPSPEECH:
         # DeepSpeech
