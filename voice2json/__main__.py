@@ -81,29 +81,34 @@ async def main():
 def get_args() -> argparse.Namespace:
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(prog="voice2json", description="voice2json")
-    parser.add_argument("--profile", "-p", help="Path to profle directory")
-    parser.add_argument(
-        "--base-directory",
-        help="Directory with shared voice2json files (voice2json_dir)",
-    )
-    parser.add_argument("--certfile", help="Path to SSL certificate file")
-    parser.add_argument("--keyfile", help="Path to SSL key file")
-    parser.add_argument(
-        "--setting",
-        "-s",
-        nargs=2,
-        action="append",
-        default=[],
-        help="Override profile setting(s)",
-    )
-    parser.add_argument(
-        "--machine",
-        default=platform.machine(),
-        help="Platform machine to use (default: host)",
-    )
-    parser.add_argument(
-        "--debug", action="store_true", help="Print DEBUG log to console"
-    )
+
+    def add_default_arguments(argparser):
+        argparser.add_argument("--profile", "-p", help="Path to profle directory")
+        argparser.add_argument(
+            "--base-directory",
+            help="Directory with shared voice2json files (voice2json_dir)",
+        )
+        argparser.add_argument("--certfile", help="Path to SSL certificate file")
+        argparser.add_argument("--keyfile", help="Path to SSL key file")
+        argparser.add_argument(
+            "--setting",
+            "-s",
+            nargs=2,
+            action="append",
+            default=[],
+            help="Override profile setting(s)",
+        )
+        argparser.add_argument(
+            "--machine",
+            default=platform.machine(),
+            help="Platform machine to use (default: host)",
+        )
+
+        argparser.add_argument(
+            "--debug", action="store_true", help="Print DEBUG messages to console"
+        )
+
+    add_default_arguments(parser)
 
     # Create subparsers for each sub-command
     sub_parsers = parser.add_subparsers()
@@ -126,9 +131,9 @@ def get_args() -> argparse.Namespace:
     )
     print_parser.set_defaults(func=print_profile)
 
-    # -------------
+    # ---------------
     # print-downloads
-    # -------------
+    # ---------------
     downloads_parser = sub_parsers.add_parser(
         "print-downloads", help="Print links to download files for profile(s)"
     )
@@ -495,6 +500,29 @@ def get_args() -> argparse.Namespace:
         "--marytts", action="store_true", help="Use MaryTTS instead of eSpeak"
     )
     speak_parser.set_defaults(func=speak)
+
+    # ----------------
+    # Shared arguments
+    # ----------------
+    for sub_parser in [
+        version_parser,
+        print_parser,
+        downloads_parser,
+        print_files_parser,
+        train_parser,
+        transcribe_wav_parser,
+        transcribe_stream_parser,
+        recognize_parser,
+        command_parser,
+        wake_parser,
+        pronounce_parser,
+        generate_parser,
+        record_examples_parser,
+        test_examples_parser,
+        show_documentation_parser,
+        speak_parser,
+    ]:
+        add_default_arguments(sub_parser)
 
     return parser.parse_args()
 

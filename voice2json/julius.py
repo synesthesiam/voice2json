@@ -32,6 +32,7 @@ class JuliusTranscriber(Transcriber):
         model_dir: typing.Union[str, Path],
         dictionary: typing.Union[str, Path],
         language_model: typing.Union[str, Path],
+        max_empty_lines: int = 10,
         debug: bool = False,
     ):
         self.core = core
@@ -42,6 +43,7 @@ class JuliusTranscriber(Transcriber):
         self.temp_dir: typing.Optional[tempfile.TemporaryDirectory] = None
         self.julius_in: typing.Optional[typing.TextIO] = None
         self.julius_out: typing.Optional[typing.TextIO] = None
+        self.max_empty_lines = max_empty_lines
         self.debug = debug
 
     def start_julius(self):
@@ -159,6 +161,7 @@ class JuliusTranscriber(Transcriber):
             line = self.julius_in.readline().strip()
             _LOGGER.debug("Julius> %s", line)
 
+            num_empty_lines = 0
             while True:
                 if line.startswith("sentence1:"):
                     sentence_line = line.split(":", maxsplit=1)[1]
@@ -171,6 +174,12 @@ class JuliusTranscriber(Transcriber):
 
                 line = self.julius_in.readline().strip()
                 _LOGGER.debug("Julius> %s", line)
+
+                if not line:
+                    num_empty_lines += 1
+
+                if num_empty_lines >= self.max_empty_lines:
+                    break
 
             # Exclude <s> and </s>
             _LOGGER.debug(sentence_line)
