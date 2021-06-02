@@ -1,0 +1,119 @@
+---
+description: "Italian Kaldi model from https://github.com/MozillaItalia/DeepSpeech-Italian-Model"
+url_format: "https://raw.githubusercontent.com/rhasspy/{profile}/b09e25a482b0901c3db32a937694663ca631ae45/{file}"
+
+default:
+  LICENSE:
+    bytes: 35150
+    sha256: e57f1c320b8cf8798a7d2ff83a6f9e06a33a03585f6e065fea97f1d86db84052
+  model/alphabet.txt:
+    bytes: 86
+    sha256: 7dc989af1ae3fd10b4d47af104eef04bbb522fab1ad6b7e843339e3e9d3f9e3b
+  model/output_graph.pbmm.gz.part-00:
+    bytes: 26214400
+    file-name: output_graph.pbmm
+    platform:
+    - machine: x86_64
+    sha256: 33c94690f2f807ca9d1f30f54513c8ce330b0bcb26595c35d7edb757c3377e71
+  model/output_graph.pbmm.gz.part-01:
+    bytes: 26214400
+    file-name: output_graph.pbmm
+    platform:
+    - machine: x86_64
+    sha256: 5d743fb74b00454ed4866b85f52f8ccbdac93c16c5be3462d5eaa74a9988f5c0
+  model/output_graph.pbmm.gz.part-02:
+    bytes: 26214400
+    file-name: output_graph.pbmm
+    platform:
+    - machine: x86_64
+    sha256: 5f0d265fa695781f7bc98ba8733826519660322973367fa1368f17038557d95c
+  model/output_graph.pbmm.gz.part-03:
+    bytes: 26214400
+    file-name: output_graph.pbmm
+    platform:
+    - machine: x86_64
+    sha256: 6e0e7b114c64daa8de7f4d00ee76169eebc8610882de4e9f484d74f8d2afe714
+  model/output_graph.pbmm.gz.part-04:
+    bytes: 26214400
+    file-name: output_graph.pbmm
+    platform:
+    - machine: x86_64
+    sha256: b34f675ab85d641f50b522e5710a95418c9c4d43607045a0388350c9816cd725
+  model/output_graph.pbmm.gz.part-05:
+    bytes: 26214400
+    file-name: output_graph.pbmm
+    platform:
+    - machine: x86_64
+    sha256: 104738a47a74aba958dae7a88e09d30caf01172cbafc39925b7d9dd490923a6e
+  model/output_graph.pbmm.gz.part-06:
+    bytes: 18136891
+    file-name: output_graph.pbmm
+    platform:
+    - machine: x86_64
+    sha256: 5a76a31c6ba48eddc8f5feae8a32cd335671a09747610165177e315f9eeb0974
+  model/output_graph.tflite.gz:
+    bytes: 20690678
+    file-name: output_graph.tflite
+    platform:
+    - machine: armv6l
+    - machine: armv7l
+    - machine: arm64
+    - machine: aarch64
+    sha256: d4bae454289cd7baf8e0984ee530ece7198dfd4247169d1cb096f99d7269737e
+  profile.yml:
+    bytes: 848
+    sha256: 31c87154de9c74d20d26bbd4218027c415ecb375968fc831cfa37273e7264f06
+  slot_programs/rhasspy/number:
+    bytes: 651
+    sha256: d1f10ccea552c2c9ba2a59dd69705f8e82545592c7db5ca7078b462ed9d08387
+  stop_words.txt:
+    bytes: 1654
+    sha256: 293d7841f198e4012f49e8e5653c3bfd073a58cea1259fa2c0fcec894167b628
+
+# Files needed for open transcription (pre-built model)
+open-transcription:
+  model/base.scorer.gz.part-00:
+    bytes: 26214400
+    file-name: base.scorer
+    sha256: e197a4cc1ed47e33dddb7d8a660174d250a5d172e677fe1ac637f9ebdbf8fabc
+  model/base.scorer.gz.part-01:
+    bytes: 26214400
+    file-name: base.scorer
+    sha256: 7329e9f599a87f3aed2aa2f63dd80187edd6bfcb796f4f6b4e98e233a9942b3b
+  model/base.scorer.gz.part-02:
+    bytes: 26214400
+    file-name: base.scorer
+    sha256: 7dadfdb1b66b68635f5965b005b2fe6e5b750f47da1d72ceb8de76b22105eb33
+  model/base.scorer.gz.part-03:
+    bytes: 26214400
+    file-name: base.scorer
+    sha256: 1cc639afeae4a7ce92e2070f9ecbadd33568df1a8600a2ed0164d658dc98b74c
+  model/base.scorer.gz.part-04:
+    bytes: 26214400
+    file-name: base.scorer
+    sha256: 5be220713c30419a9aa0acf3a4d999a225fd444a893b1af7f780296ca55a8136
+  model/base.scorer.gz.part-05:
+    bytes: 26214400
+    file-name: base.scorer
+    sha256: c921d3040b69ce5afe0787226b5f42237c699a734ef3852a216680d7dd4991f6
+  model/base.scorer.gz.part-06:
+    bytes: 3428548
+    file-name: base.scorer
+    sha256: 7746113e53597507fb34feb8da91d3ff29875098f1d96d80fddf4f617159488c
+
+# Files needed for mixed language modeling (pre-built + custom)
+mixed-language-model:
+  base_language_model.fst.gz.part-00:
+    bytes: 26214400
+    file-name: base-language-model.fst
+    sha256: 3c4247c91ea26ae9a51510cff99ffef62eaefd922887adaea2d73f1119056b8f
+  base_language_model.fst.gz.part-01:
+    bytes: 12756015
+    file-name: base-language-model.fst
+    sha256: fb9c017385b822b1246811f2108dc41445aeb9651435dd85a7dd9f1da25501fa
+
+# Sample sentences, etc.
+examples:
+  sentences.ini:
+    bytes: 307
+    sha256: 4c6263e3a5a2a24031873933168a9e11b38b6072b7280d7e858b2d1448088cfa

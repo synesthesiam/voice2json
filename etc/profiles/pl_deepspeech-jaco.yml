@@ -1,0 +1,71 @@
+---
+description: "Polish DeepSpeech v0.9 model from https://gitlab.com/Jaco-Assistant"
+url_format: "https://raw.githubusercontent.com/rhasspy/{profile}/76669a0a0750940e5c3d7b77c031006eb447813e/{file}"
+
+default:
+  LICENSE:
+    bytes: 7652
+    sha256: e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118
+  model/alphabet.txt:
+    bytes: 354
+    sha256: dce267a83ebbb71b48e75def4672af5d4d7286bcd04821e38c5caee7b19cef16
+  model/output_graph.pbmm.gz.part-00:
+    bytes: 26214400
+    file-name: output_graph.pbmm
+    platform:
+    - machine: x86_64
+    sha256: 9456b6c9022ff89209575b377a36c2a9004c9b3059eea2ee9701192cc0675f0a
+  model/output_graph.pbmm.gz.part-01:
+    bytes: 26214400
+    file-name: output_graph.pbmm
+    platform:
+    - machine: x86_64
+    sha256: 25f21b57c21d731a9e3675588c299b2538d41deabcabad21065f3ac525727934
+  model/output_graph.pbmm.gz.part-02:
+    bytes: 26214400
+    file-name: output_graph.pbmm
+    platform:
+    - machine: x86_64
+    sha256: f7e07e4a538033e7f62408dd28edcbc52a0251dab4ec2c4d847fff43729a42ea
+  model/output_graph.pbmm.gz.part-03:
+    bytes: 26214400
+    file-name: output_graph.pbmm
+    platform:
+    - machine: x86_64
+    sha256: 0c2925932c20a614d579ac2155e040c38512c0d1db4cffbe77c02be095de1adc
+  model/output_graph.pbmm.gz.part-04:
+    bytes: 26214400
+    file-name: output_graph.pbmm
+    platform:
+    - machine: x86_64
+    sha256: 4e03552b7f0ad2e8656a74d7ab187492b4f783f187a97a8c1de1f2e767a5863a
+  model/output_graph.pbmm.gz.part-05:
+    bytes: 26214400
+    file-name: output_graph.pbmm
+    platform:
+    - machine: x86_64
+    sha256: 6f9bde9624d972f7f93659de0c56ecc4cad00dbc726e10878c1131af6e7c1b59
+  model/output_graph.pbmm.gz.part-06:
+    bytes: 18128454
+    file-name: output_graph.pbmm
+    platform:
+    - machine: x86_64
+    sha256: 838a1fb6ca160bc33077cf4806f5dd0cd910833c050bba715c36cd1c2a67bd84
+  profile.yml:
+    bytes: 884
+    sha256: 6a654f5c1089e5174313ace1a1dd7c8b0d000ab4efed97225c37aff4f298e036
+  stop_words.txt:
+    bytes: 2016
+    sha256: cf503834e5f967116b5b351c04c29df76fc40785e09849d613bf1baf61b29215
+
+# Files needed for open transcription (pre-built model)
+open-transcription:
+  model/base.scorer.gz:
+    bytes: 3000583
+    sha256: 26fcf7c07024a58c8fee255b94f70b9b2552e97eeb16690c25633bcfbdae70bd
+
+# Sample sentences, etc.
+examples:
+  sentences.ini:
+    bytes: 306
+    sha256: eb84528c4c9cfa53bd5e694b3afc591d5904d7c35e3cfcdc69e5d87b8412b11e
