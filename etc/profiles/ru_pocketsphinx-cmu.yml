@@ -1,4 +1,6 @@
 ---
+description: "Russian Pocketsphinx model"
+
 default:
   LICENSE:
     bytes: 475

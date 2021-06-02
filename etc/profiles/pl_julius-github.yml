@@ -1,4 +1,6 @@
 ---
+description: "Polish Julius model"
+
 default:
   LICENSE:
     bytes: 53

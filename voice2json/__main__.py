@@ -97,7 +97,7 @@ def get_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="voice2json", description="voice2json")
 
     def add_default_arguments(argparser):
-        argparser.add_argument("--profile", "-p", help="Path to profle directory")
+        argparser.add_argument("--profile", "-p", help="Path to profile directory")
         argparser.add_argument(
             "--base-directory",
             help="Directory with shared voice2json files (voice2json_dir)",
@@ -594,11 +594,49 @@ def get_profile_location(
     return profile_dir, profile_yaml, profile_name
 
 
+# Profiles to use when only language/locale is given
+PROFILE_ALIASES = {
+    "ca": "ca-es_pocketsphinx-cmu",
+    "ca-es": "ca-es_pocketsphinx-cmu",
+    "de": "de_kaldi-zamia",
+    "de-de": "de_kaldi-zamia",
+    "en": "en-us_kaldi-zamia",
+    "en-us": "en-us_kaldi-zamia",
+    "en-in": "en-in_pocketsphinx-cmu",
+    "el": "el-gr_pocketsphinx-cmu",
+    "el-gr": "el-gr_pocketsphinx-cmu",
+    "es": "es_kaldi-rhasspy",
+    "es-es": "es_kaldi-rhasspy",
+    "es-mexican": "es-mexican_pocketsphinx-cmu",
+    "fr": "fr_kaldi-guyot",
+    "fr-fr": "fr_kaldi-guyot",
+    "hi": "hi_pocketsphinx-cmu",
+    "it": "it_deepspeech-mozillaitalia",
+    "it-it": "it_deepspeech-mozillaitalia",
+    "ko": "ko-kr_kaldi-montreal",
+    "ko-kr": "ko-kr_kaldi-montreal",
+    "kz": "kz_pocketsphinx-cmu",
+    "nl": "nl_kaldi-cgn",
+    "pl": "pl_deepspeech-jaco",
+    "pt": "pt-br_pocketsphinx-cmu",
+    "pt-br": "pt-br_pocketsphinx-cmu",
+    "ru": "ru_kaldi-rhasspy",
+    "ru-ru": "ru_kaldi-rhasspy",
+    "sv": "sv_kaldi-rhasspy",
+    "sv-se": "sv_kaldi-rhasspy",
+    "vi": "vi_kaldi-montreal",
+}
+
+
 async def get_core(args: argparse.Namespace) -> Voice2JsonCore:
     """Load/download/train profile and create voice2json core."""
     profile_dir, profile_yaml, profile_name = get_profile_location(args)
 
     if profile_name is not None:
+        # Resolve aliases
+        profile_name = PROFILE_ALIASES.get(profile_name, profile_name)
+        assert profile_name is not None
+
         # May need to download files
         download_yaml = args.base_directory / "etc" / "profiles" / f"{profile_name}.yml"
         _LOGGER.debug("Trying to load download info from %s", download_yaml)
@@ -619,6 +657,9 @@ async def get_core(args: argparse.Namespace) -> Voice2JsonCore:
             download_settings["text_to_speech"] = True
 
         if args.command in {"transcribe-wav", "transcribe-stream"}:
+            download_settings["grapheme_to_phoneme"] = True
+
+            # Open transcription
             if args.open:
                 download_settings["open_transcription"] = True
 
@@ -793,7 +834,7 @@ async def print_downloads(args: argparse.Namespace) -> None:
         _LOGGER.info("Use voice2json -p <PROFILE_NAME> <COMMAND>")
 
         # List profile names and exit
-        profile_names = {}
+        profile_descriptions = {}
         for profile_path in profiles_dir.glob("*.yml"):
             try:
                 with open(profile_path, "r") as profile_file:
@@ -801,11 +842,11 @@ async def print_downloads(args: argparse.Namespace) -> None:
                     description = files_yaml.get("description", "")
 
                 profile_name = profile_path.stem
-                profile_names[profile_name] = description
+                profile_descriptions[profile_name] = description
             except Exception:
                 _LOGGER.exception(profile_path)
 
-        for profile_name, description in sorted(profile_names.items()):
+        for profile_name, description in sorted(profile_descriptions.items()):
             print(profile_name, description, sep="\t")
 
         return

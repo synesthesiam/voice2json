@@ -1,4 +1,6 @@
 ---
+description: "Kazakh Pocketsphinx model"
+
 default:
   LICENSE:
     bytes: 8

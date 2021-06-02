@@ -51,6 +51,51 @@ default:
   acoustic_model/model/final.mdl:
     bytes: 12318093
     sha256: 18a4a1adee64a319a523ed6fa2709a9ecb49ede9537050485a08da64adcf6580
+  acoustic_model/model/normalization.fst:
+    bytes: 2731662
+    sha256: a535a245f99d2bd1761784b3de7fe907cd9b4dc2d8c2606df3bb8c5c8e273188
+  acoustic_model/model/tree:
+    bytes: 687424
+    sha256: a02292a97904e58c06ea87289481d0ac9d12e6d32edd62ecc33edda6f35d662e
+  acoustic_model/phones/extra_questions.txt:
+    bytes: 158
+    sha256: 844bab734431b63cddc8bac9bc31a970f434ebd3313598808cd48e93b3a79024
+  acoustic_model/phones/nonsilence_phones.txt:
+    bytes: 203
+    sha256: 690b8c13bfc261f17d4bc56443dc3535c06fdb59ab7121061eba15c316f212f9
+  acoustic_model/phones/optional_silence.txt:
+    bytes: 4
+    sha256: ebe5d1c9a1dc955e8b0e9d16062b2d6fede3ba741afdb9a6aec65810009bee11
+  acoustic_model/phones/silence_phones.txt:
+    bytes: 12
+    sha256: 80376510e0ac0b313b3d27947e2ec4a6f30826cd1ead5b6ccd2a18dccbb5a915
+  base_dictionary.txt.gz:
+    bytes: 551504
+    file-name: base_dictionary.txt
+    sha256: 14ef3b1be95c20e7b72ed45a2d464795defca4cdd603b6fc7d205cafe1320477
+  profile.yml:
+    bytes: 658
+    sha256: e966e7cb5d4d20a23f76ec23953ffc79fcf6929212573a1eba33bd65903b3868
+  slot_programs/rhasspy/number:
+    bytes: 651
+    sha256: d1f10ccea552c2c9ba2a59dd69705f8e82545592c7db5ca7078b462ed9d08387
+  stop_words.txt:
+    bytes: 805
+    sha256: 6ca60ffd4257c35cc3981d0e923881c3d8b85c8c0f6ef7a6697bd4ae97200fd8
+
+# Files needed to guess word pronunciations
+grapheme-to-phoneme:
+  g2p.fst.gz:
+    bytes: 8662751
+    file-name: g2p.fst
+    sha256: 75802f3bbea24876bce8224115d87b28ac1fc39d861a81fb80fc8ef30fb784c2
+
+# Files needed for open transcription (pre-built model)
+open-transcription:
+  base_language_model.txt.gz:
+    bytes: 21453362
+    file-name: base_language_model.txt
+    sha256: 5bad59d04c983afeea8a384851257c4f9fcf14c1b4a9a9d1949d882b64cf7fe5
   acoustic_model/model/graph/HCLG.fst.gz.part-00:
     bytes: 26214400
     file-name: HCLG.fst
@@ -146,51 +191,6 @@ default:
   acoustic_model/model/graph/words.txt:
     bytes: 1437341
     sha256: 41dda4243fd97837e4c95be7ee232b0e25ff83141546837ba657be334871c964
-  acoustic_model/model/normalization.fst:
-    bytes: 2731662
-    sha256: a535a245f99d2bd1761784b3de7fe907cd9b4dc2d8c2606df3bb8c5c8e273188
-  acoustic_model/model/tree:
-    bytes: 687424
-    sha256: a02292a97904e58c06ea87289481d0ac9d12e6d32edd62ecc33edda6f35d662e
-  acoustic_model/phones/extra_questions.txt:
-    bytes: 158
-    sha256: 844bab734431b63cddc8bac9bc31a970f434ebd3313598808cd48e93b3a79024
-  acoustic_model/phones/nonsilence_phones.txt:
-    bytes: 203
-    sha256: 690b8c13bfc261f17d4bc56443dc3535c06fdb59ab7121061eba15c316f212f9
-  acoustic_model/phones/optional_silence.txt:
-    bytes: 4
-    sha256: ebe5d1c9a1dc955e8b0e9d16062b2d6fede3ba741afdb9a6aec65810009bee11
-  acoustic_model/phones/silence_phones.txt:
-    bytes: 12
-    sha256: 80376510e0ac0b313b3d27947e2ec4a6f30826cd1ead5b6ccd2a18dccbb5a915
-  base_dictionary.txt.gz:
-    bytes: 551504
-    file-name: base_dictionary.txt
-    sha256: 14ef3b1be95c20e7b72ed45a2d464795defca4cdd603b6fc7d205cafe1320477
-  profile.yml:
-    bytes: 658
-    sha256: e966e7cb5d4d20a23f76ec23953ffc79fcf6929212573a1eba33bd65903b3868
-  slot_programs/rhasspy/number:
-    bytes: 651
-    sha256: d1f10ccea552c2c9ba2a59dd69705f8e82545592c7db5ca7078b462ed9d08387
-  stop_words.txt:
-    bytes: 805
-    sha256: 6ca60ffd4257c35cc3981d0e923881c3d8b85c8c0f6ef7a6697bd4ae97200fd8
-
-# Files needed to guess word pronunciations
-grapheme-to-phoneme:
-  g2p.fst.gz:
-    bytes: 8662751
-    file-name: g2p.fst
-    sha256: 75802f3bbea24876bce8224115d87b28ac1fc39d861a81fb80fc8ef30fb784c2
-
-# Files needed for open transcription (pre-built model)
-open-transcription:
-  base_language_model.txt.gz:
-    bytes: 21453362
-    file-name: base_language_model.txt
-    sha256: 5bad59d04c983afeea8a384851257c4f9fcf14c1b4a9a9d1949d882b64cf7fe5
 
 # Files needed for mixed language modeling (pre-built + custom)
 mixed-language-model:

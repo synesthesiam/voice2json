@@ -1,4 +1,6 @@
 ---
+description: "Dutch Pocketsphinx model"
+
 default:
   LICENSE:
     bytes: 475

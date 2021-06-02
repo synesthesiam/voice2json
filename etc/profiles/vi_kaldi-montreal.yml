@@ -1,4 +1,6 @@
 ---
+description: "Vietnamese Kaldi model from https://montreal-forced-aligner.readthedocs.io/en/latest/pretrained_models.html"
+
 default:
   LICENSE:
     bytes: 1067
@@ -52,6 +54,45 @@ default:
     bytes: 14633132
     final-name: final.mdl
     sha256: aa4e8dc70c65473246ff5fe297c8651a4ac4bf5d9fe2715034e74988510b29c7
+  acoustic_model/model/tree:
+    bytes: 1237996
+    sha256: f575762fc141663ff9a63d7d42184dcc5cd8e7a14ec040078fa1a7c78a46ee6f
+  acoustic_model/phones/nonsilence_phones.txt:
+    bytes: 1303
+    sha256: 5aca5e5c3e9df8141b303b495e269ff0927a185d9e799cdeaa4ffdc4f4f8708d
+  acoustic_model/phones/optional_silence.txt:
+    bytes: 4
+    sha256: b2897f4f7491c02d663ee433d54dadc3b1b920ce91ce47064e2d031c7625dde7
+  acoustic_model/phones/silence_phones.txt:
+    bytes: 11
+    sha256: 63beafd4cd218ead279dce08a3e93514d657254d54435e3c2d0ba62de358bc48
+  base_dictionary.txt.gz:
+    bytes: 240776
+    file-name: base_dictionary.txt
+    sha256: b68a53501ed5d9231c4d9133442d8392d23ced7adeff72eef6a14d961a4af9ee
+  profile.yml:
+    bytes: 611
+    sha256: f300bbbd3b9f960dcf5ea8c542cb67d3477a81492bb6b330397aef1f5cc94add
+  slot_programs/rhasspy/number:
+    bytes: 651
+    sha256: d1f10ccea552c2c9ba2a59dd69705f8e82545592c7db5ca7078b462ed9d08387
+  stop_words.txt:
+    bytes: 20476
+    sha256: 9a3ef1538256e00d228783124e045aafec26b612f5824fabc0d360d5f4d242d4
+
+# Files needed to guess word pronunciations
+grapheme-to-phoneme:
+  g2p.fst.gz:
+    bytes: 2777134
+    file-name: g2p.fst
+    sha256: 01a338e7adfa7a0191d644be853686a9fe5600ddcca0a764e9f49f4cbcc566bb
+
+# Files needed for open transcription (pre-built model)
+open-transcription:
+  base_language_model.txt.gz:
+    bytes: 27497628
+    file-name: base_language_model.txt
+    sha256: f5cb25411c07aa36bc1382d2ecb1aae334692525f2974b2fad68b1eedcf2ba51
   acoustic_model/model/graph/HCLG.fst.gz.part-00:
     bytes: 26214400
     file-name: HCLG.fst
@@ -143,45 +184,6 @@ default:
   acoustic_model/model/graph/words.txt:
     bytes: 481810
     sha256: bc93273e332211f79dad6e4c1072fdd87c6f8f6affc3bffa1d2932f1344bbb55
-  acoustic_model/model/tree:
-    bytes: 1237996
-    sha256: f575762fc141663ff9a63d7d42184dcc5cd8e7a14ec040078fa1a7c78a46ee6f
-  acoustic_model/phones/nonsilence_phones.txt:
-    bytes: 1303
-    sha256: 5aca5e5c3e9df8141b303b495e269ff0927a185d9e799cdeaa4ffdc4f4f8708d
-  acoustic_model/phones/optional_silence.txt:
-    bytes: 4
-    sha256: b2897f4f7491c02d663ee433d54dadc3b1b920ce91ce47064e2d031c7625dde7
-  acoustic_model/phones/silence_phones.txt:
-    bytes: 11
-    sha256: 63beafd4cd218ead279dce08a3e93514d657254d54435e3c2d0ba62de358bc48
-  base_dictionary.txt.gz:
-    bytes: 240776
-    file-name: base_dictionary.txt
-    sha256: b68a53501ed5d9231c4d9133442d8392d23ced7adeff72eef6a14d961a4af9ee
-  profile.yml:
-    bytes: 611
-    sha256: f300bbbd3b9f960dcf5ea8c542cb67d3477a81492bb6b330397aef1f5cc94add
-  slot_programs/rhasspy/number:
-    bytes: 651
-    sha256: d1f10ccea552c2c9ba2a59dd69705f8e82545592c7db5ca7078b462ed9d08387
-  stop_words.txt:
-    bytes: 20476
-    sha256: 9a3ef1538256e00d228783124e045aafec26b612f5824fabc0d360d5f4d242d4
-
-# Files needed to guess word pronunciations
-grapheme-to-phoneme:
-  g2p.fst.gz:
-    bytes: 2777134
-    file-name: g2p.fst
-    sha256: 01a338e7adfa7a0191d644be853686a9fe5600ddcca0a764e9f49f4cbcc566bb
-
-# Files needed for open transcription (pre-built model)
-open-transcription:
-  base_language_model.txt.gz:
-    bytes: 27497628
-    file-name: base_language_model.txt
-    sha256: f5cb25411c07aa36bc1382d2ecb1aae334692525f2974b2fad68b1eedcf2ba51
 
 # Files needed for mixed language modeling (pre-built + custom)
 mixed-language-model:
