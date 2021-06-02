@@ -598,6 +598,8 @@ def get_profile_location(
 PROFILE_ALIASES = {
     "ca": "ca-es_pocketsphinx-cmu",
     "ca-es": "ca-es_pocketsphinx-cmu",
+    "cs": "cs-cz_kaldi-rhasspy",
+    "cs-cz": "cs-cz_kaldi-rhasspy",
     "de": "de_kaldi-zamia",
     "de-de": "de_kaldi-zamia",
     "en": "en-us_kaldi-zamia",
@@ -625,6 +627,8 @@ PROFILE_ALIASES = {
     "sv": "sv_kaldi-rhasspy",
     "sv-se": "sv_kaldi-rhasspy",
     "vi": "vi_kaldi-montreal",
+    "zh": "zh-cn_pocketsphinx-cmu",
+    "zh-cn": "zh-cn_pocketsphinx-cmu",
 }
 
 

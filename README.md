@@ -1,6 +1,6 @@
 ![voice2json logo](docs/img/voice2json.svg)
 
-`voice2json` is a collection of [command-line tools](https://voice2json.org/commands.html) for <strong>offline speech/intent recognition</strong> on Linux. It is free, open source ([MIT](https://opensource.org/licenses/MIT)), and [supports 17 human languages](https://voice2json.org/index.html#supported-languages). 
+`voice2json` is a collection of [command-line tools](https://voice2json.org/commands.html) for <strong>offline speech/intent recognition</strong> on Linux. It is free, open source ([MIT](https://opensource.org/licenses/MIT)), and [supports 18 human languages](#supported-languages). 
 
 * [Getting Started](https://voice2json.org/#getting-started)
 * [Commands](https://voice2json.org/commands.html)
@@ -14,9 +14,9 @@
 From the command-line:
 
 ```bash
-$ voice2json transcribe-wav \
+$ voice2json -p en transcribe-wav \
       < turn-on-the-light.wav | \
-      voice2json recognize-intent | \
+      voice2json -p en recognize-intent | \
       jq .
 ```
 
@@ -58,8 +58,70 @@ Supported speech to text systems include:
 
 * CMU's [pocketsphinx](https://github.com/cmusphinx/pocketsphinx)
 * Dan Povey's [Kaldi](https://kaldi-asr.org)
-* Mozilla's [DeepSpeech](https://github.com/mozilla/DeepSpeech) 0.6
+* Mozilla's [DeepSpeech](https://github.com/mozilla/DeepSpeech) 0.9
 * Kyoto University's [Julius](https://github.com/julius-speech/julius)
+
+---
+
+## Supported Languages
+
+* Catalan (`ca`)
+    * [`ca-es_pocketsphinx-cmu`](https://github.com/synesthesiam/ca-es_pocketsphinx-cmu)
+* Czech (`cs`)
+    * [`cs-cz_kaldi-rhasspy`](https://github.com/rhasspy/cs_kaldi-rhasspy)
+* German (`de`)
+    * [`de_deepspeech-aashishag`](https://github.com/synesthesiam/de_deepspeech-aashishag)
+    * [`de_deepspeech-jaco`](https://github.com/rhasspy/de_deepspeech-jaco)
+    * [`de_kaldi-zamia`](https://github.com/synesthesiam/de_kaldi-zamia)
+    * [`de_pocketsphinx-cmu`](https://github.com/synesthesiam/de_pocketsphinx-cmu)
+* Greek (`el`)
+    * [`el-gr_pocketsphinx-cmu`](https://github.com/synesthesiam/el-gr_pocketsphinx-cmu)
+* English (`en`)
+    * [`en-in_pocketsphinx-cmu`](https://github.com/synesthesiam/en-in_pocketsphinx-cmu)
+    * [`en-us_deepspeech-mozilla`](https://github.com/synesthesiam/en-us_deepspeech-mozilla)
+    * [`en-us_kaldi-rhasspy`](https://github.com/rhasspy/en-us_kaldi-rhasspy)
+    * [`en-us_kaldi-zamia`](https://github.com/synesthesiam/en-us_kaldi-zamia)
+    * [`en-us_pocketsphinx-cmu`](https://github.com/synesthesiam/en-us_pocketsphinx-cmu)
+* Spanish (`es`)
+    * [`es_deepspeech-jaco`](https://github.com/rhasspy/es_deepspeech-jaco)
+    * [`es_kaldi-rhasspy`](https://github.com/rhasspy/es_kaldi-rhasspy)
+    * [`es-mexican_pocketsphinx-cmu`](https://github.com/synesthesiam/es-mexican_pocketsphinx-cmu)
+    * [`es_pocketsphinx-cmu`](https://github.com/synesthesiam/es_pocketsphinx-cmu)
+* French (`fr`)
+    * [`fr_deepspeech-jaco`](https://github.com/rhasspy/fr_deepspeech-jaco)
+    * [`fr_kaldi-guyot`](https://github.com/synesthesiam/fr_kaldi-guyot)
+    * [`fr_kaldi-rhasspy`](https://github.com/rhasspy/fr_kaldi-rhasspy)
+    * [`fr_pocketsphinx-cmu`](https://github.com/synesthesiam/fr_pocketsphinx-cmu)
+* Hindi (`hi`)
+    * [`hi_pocketsphinx-cmu`](https://github.com/synesthesiam/hi_pocketsphinx-cmu)
+* Italian (`it`)
+    * [`it_deepspeech-jaco`](https://github.com/rhasspy/it_deepspeech-jaco)
+    * [`it_deepspeech-mozillaitalia`](https://github.com/rhasspy/it_deepspeech-mozillaitalia)
+    * [`it_kaldi-rhasspy`](https://github.com/rhasspy/it_kaldi-rhasspy)
+    * [`it_pocketsphinx-cmu`](https://github.com/synesthesiam/it_pocketsphinx-cmu)
+* Korean (`ko`)
+    * [`ko-kr_kaldi-montreal`](https://github.com/synesthesiam/ko-kr_kaldi-montreal)
+* Kazakh (`kz`)
+    * [`kz_pocketsphinx-cmu`](https://github.com/synesthesiam/kz_pocketsphinx-cmu)
+* Dutch (`nl`)
+    * [`nl_kaldi-cgn`](https://github.com/synesthesiam/nl_kaldi-cgn)
+    * [`nl_kaldi-rhasspy`](https://github.com/rhasspy/nl_kaldi-rhasspy)
+    * [`nl_pocketsphinx-cmu`](https://github.com/synesthesiam/nl_pocketsphinx-cmu)
+* Polish (`pl`)
+    * [`pl_deepspeech-jaco`](https://github.com/rhasspy/pl_deepspeech-jaco)
+    * [`pl_julius-github`](https://github.com/synesthesiam/pl_julius-github)
+* Portuguese (`pt`)
+    * [`pt-br_pocketsphinx-cmu`](https://github.com/synesthesiam/pt-br_pocketsphinx-cmu)
+* Russian (`ru`)
+    * [`ru_kaldi-rhasspy`](https://github.com/rhasspy/ru_kaldi-rhasspy)
+    * [`ru_pocketsphinx-cmu`](https://github.com/synesthesiam/ru_pocketsphinx-cmu)
+* Swedish (`sv`)
+    * [`sv_kaldi-montreal`](https://github.com/synesthesiam/sv_kaldi-montreal)
+    * [`sv_kaldi-rhasspy`](https://github.com/rhasspy/sv_kaldi-rhasspy)
+* Vietnamese (`vi`)
+    * [`vi_kaldi-montreal`](https://github.com/synesthesiam/vi_kaldi-montreal)
+* Mandarin (`zh`)
+    * [`zh-cn_pocketsphinx-cmu`](https://github.com/synesthesiam/zh-cn_pocketsphinx-cmu)
 
 ---
 
