@@ -170,6 +170,10 @@ AS_CASE([$host_cpu],
 
 dnl ---------------------------------------------------------------------------
 
+AC_ARG_ENABLE([in-place],
+    AS_HELP_STRING([--enable-in-place],
+        [use shared files directly from source directory instead of copying them]))
+
 precompiled_binaries_enabled=yes
 
 AC_ARG_ENABLE([precompiled-binaries],

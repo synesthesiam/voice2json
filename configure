@@ -718,6 +718,7 @@ SHELL'
 ac_subst_files=''
 ac_user_opts='
 enable_option_checking
+enable_in_place
 enable_precompiled_binaries
 enable_virtualenv
 enable_opengrm
@@ -1372,6 +1373,8 @@ Optional Features:
   --disable-option-checking  ignore unrecognized --enable/--with options
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
+  --enable-in-place       use shared files directly from source directory
+                          instead of copying them
   --disable-precompiled-binaries
                           build dependencies from source instead of
                           downloading prebuilt binaries
@@ -3828,6 +3831,12 @@ case $host_cpu in #(
   *) :
      ;;
 esac
+
+
+# Check whether --enable-in-place was given.
+if test "${enable_in_place+set}" = set; then :
+  enableval=$enable_in_place;
+fi
 
 
 precompiled_binaries_enabled=yes
