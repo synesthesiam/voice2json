@@ -585,7 +585,7 @@ def get_profile_location(
             profile_yaml = profile_dir_or_file
         else:
             # Assume name
-            profile_name = PROFILE_ALIASES.get(args.profile)
+            profile_name = PROFILE_ALIASES.get(args.profile, args.profile)
             profile_dir = None  # set automatically later
 
     if profile_dir is not None:
@@ -892,7 +892,7 @@ async def print_downloads(args: argparse.Namespace) -> None:
         share_home = Path("~/.local/share/voice2json").expanduser()
 
     # Names of profiles to check
-    profile_names = set(PROFILE_ALIASES.get(name) for name in args.profile_names)
+    profile_names = set(PROFILE_ALIASES.get(name, name) for name in args.profile_names)
 
     # Each YAML file is a profile name with required and optional files
     for yaml_path in profiles_dir.glob("*.yml"):
