@@ -19,7 +19,7 @@ out_version='2.1'
 
 # -----------------------------------------------------------------------------
 
-: "${PLATFORMS=linux/amd64,linux/arm/v7,linux/arm64,linux/arm/v6}"
+: "${PLATFORMS=linux/amd64,linux/arm/v7,linux/arm64}"
 
 DOCKERFILE="${src_dir}/Dockerfile.debian"
 
