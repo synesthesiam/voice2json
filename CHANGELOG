@@ -1,3 +1,16 @@
+## [2.1] - 3 Jun 2021
+
+### Added
+
+* download-profile command and auto-download of relevant language files from Github
+* New Kaldi profiles for Czech, English, Spanish, French, Dutch, Russian, and Swedish
+* New DeepSpeech profiles for German, French, and Italian
+
+### Changed
+
+* Upgrade DeepSpeech support to v0.9
+* --profile argument can now be a language name, profile name, or directory
+
 ## [2.0] - 7 May 2020
 
 ### Added
