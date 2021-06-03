@@ -63,6 +63,7 @@ RUN cd ${BUILD_DIR} && \
 COPY scripts/install/ ${BUILD_DIR}/scripts/install/
 
 COPY etc/profile.defaults.yml ${BUILD_DIR}/etc/
+COPY etc/profiles/ ${BUILD_DIR}/etc/profiles/
 COPY etc/precise/ ${BUILD_DIR}/etc/precise/
 COPY site/ ${BUILD_DIR}/site/
 
