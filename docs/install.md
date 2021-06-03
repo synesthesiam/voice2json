@@ -36,9 +36,9 @@ Pre-compiled packages are available for Debian-based distributions (Ubuntu, Linu
 
 Next, download the appropriate `.deb` file for your CPU architecture:
 
-* [amd64](https://github.com/synesthesiam/voice2json/releases/download/v2.0/voice2json_2.0_amd64.deb) - Desktops, laptops, and servers
-* [armhf](https://github.com/synesthesiam/voice2json/releases/download/v2.0/voice2json_2.0_armhf.deb) - Raspberry Pi 2, and 3/3+ (armv7)
-* [arm64](https://github.com/synesthesiam/voice2json/releases/download/v2.0/voice2json_2.0_arm64.deb) - Raspberry Pi 3+, 4
+* [amd64](https://github.com/synesthesiam/voice2json/releases/download/v2.1/voice2json_2.1_amd64.deb) - Desktops, laptops, and servers
+* [armhf](https://github.com/synesthesiam/voice2json/releases/download/v2.1/voice2json_2.1_armhf.deb) - Raspberry Pi 2, and 3/3+ (armv7)
+* [arm64](https://github.com/synesthesiam/voice2json/releases/download/v2.1/voice2json_2.1_arm64.deb) - Raspberry Pi 3+, 4
 
 If you're unsure about your architecture, run:
 
@@ -58,7 +58,7 @@ Next, install the `.deb` file:
 $ sudo apt install /path/to/voice2json_<VERSION>_<ARCH>.deb
 ```
 
-where where `<VERSION>` is `voice2json`'s version (probably 2.0) and `<ARCH>` is your build architecture.
+where where `<VERSION>` is `voice2json`'s version (probably 2.1) and `<ARCH>` is your build architecture.
 
 **NOTE**: If you run `sudo apt install` in the same directory as the `.deb` file, make sure to prefix the filename with `./` like this:
 
@@ -88,7 +88,7 @@ $ sudo usermod -a -G docker $USER
 
 ### Shell Script
 
-Create a Bash script named `voice2json` somewhere in your `$PATH` and add the following content:
+Create a Bash script named `voice2json` somewhere in your `$PATH` and add the following content ([source](https://github.com/synesthesiam/voice2json/blob/master/docker/voice2json)):
 
 ```bash
 #!/usr/bin/env bash
@@ -109,6 +109,13 @@ $ voice2json --help
 ```
 
 After [downloading a profile](commands.md#download-profile), you should now be able to run any of the example `voice2json` commands in the documentation.
+
+### Microphone Access
+
+Getting Docker to properly use your microphone [can be difficult](https://github.com/synesthesiam/voice2json/issues/21). For commands like `transcribe-stream` that operate on a live audio stream, try:
+
+1. Adding `--device /dev/snd:/dev/snd` to your `docker run` command, or
+2. Piping audio in with something like `arecord -r 16000 -f S16_LE -c 1 | voice2json transcribe-stream --audio-source -`
 
 ### Updating
 
