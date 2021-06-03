@@ -4,7 +4,7 @@ APPDIR='/usr/lib/voice2json'
 export PATH="${APPDIR}/bin:${APPDIR}/usr/local/bin:${PATH}"
 export LD_LIBRARY_PATH="${APPDIR}/lib:${APPDIR}/usr/local/lib:${LD_LIBRARY_PATH}"
 
-export voice2json_dir="${APPDIR}"
+export voice2json_dir="${APPDIR}/share/voice2json"
 export KALDI_DIR="${APPDIR}/lib/kaldi"
 
 export PYTHONPATH="${voice2json_dir}:${PYTHONPATH}"

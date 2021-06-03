@@ -137,6 +137,7 @@ install-voice2json:
 ifneq ($(IN_PLACE),yes)
 	install -D "$(srcdir)/voice2json.sh" "$(DESTDIR)$(prefix)/bin/voice2json"
 	install -D "--target-directory=$(DESTDIR)$(prefix)/share/voice2json/etc" "$(srcdir)/etc/profile.defaults.yml"
+	install -D "--target-directory=$(DESTDIR)$(prefix)/share/voice2json/etc/profiles" "$(srcdir)/etc/profiles/"*
 	install -D "--target-directory=$(DESTDIR)$(prefix)/share/voice2json/etc/precise" "$(srcdir)/etc/precise"/*
 	install -D "--target-directory=$(DESTDIR)$(prefix)/share/voice2json" VERSION README.md LICENSE
 	if [[ -d "$(srcdir)/site" ]]; then cp -fR "$(srcdir)/site" "$(DESTDIR)$(prefix)/share/voice2json/"; fi || true
