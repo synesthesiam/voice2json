@@ -43,7 +43,7 @@ The following commands are available:
 Downloads missing language-specific files from [Github](https://github.com/synesthesiam/voice2json-profiles).
 
 ```bash
-$ voice2json -p en-us_kaldi-zamia download-profile
+$ voice2json --profile en-us_kaldi-zamia download-profile
 ```
 
 Output:
@@ -51,6 +51,8 @@ Output:
 ```
 Downloaded 10 file(s) /home/user/.local/share/voice2json/en-us_kaldi-zamia
 ```
+
+The `--profile` argument can be one of the [supported languages](index.md#supported-languages) (like `en` or `fr`), or one of the [known profile names](https://github.com/synesthesiam/voice2json/tree/master/etc/profiles) like `de_kaldi-zamia`.
 
 ---
 

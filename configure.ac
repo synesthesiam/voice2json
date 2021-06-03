@@ -1,4 +1,4 @@
-AC_INIT([voice2json], [0.2.1], [mike@rhasspy.org])
+AC_INIT([voice2json], [2.1.0], [mike@rhasspy.org])
 AC_CONFIG_MACRO_DIR([m4])
 PC_INIT([3.7.0])
 
@@ -23,7 +23,7 @@ dnl ---------------------------------------------------------------------------
 is_virtualenv_enabled=yes
 is_dependency_check_enabled=yes
 
-dnl An in-place install does not include Rhasspy Python modules, since they will
+dnl An in-place install does not include voice2json Python modules, since they will
 dnl be used directly from source.
 is_in_place=no
 
@@ -177,7 +177,7 @@ AC_ARG_ENABLE([precompiled-binaries],
         [build dependencies from source instead of downloading prebuilt binaries]))
 
 AC_ARG_VAR([VOICE2JSON_LANGUAGE],
-    [use recommended settings for specific language (ca,nl,en,fr,de,el,hi,it,kz,zh,pl,pt,es,sv,vi)])
+    [use recommended settings for specific language (ca,cs,nl,en,fr,de,el,hi,it,kz,zh,pl,pt,es,sv,vi)])
 
 dnl ---------------------------------------------------------------------------
 dnl Python virtual environment
@@ -270,18 +270,19 @@ AS_IF([test "x$VOICE2JSON_LANGUAGE" != x],
         lang=$VOICE2JSON_LANGUAGE
         AS_CASE([$lang],
             [ca],[stt_system=pocketsphinx],
+            [cs],[stt_system=kaldi],
             [nl],[stt_system=${kaldi_or_pocketsphinx}],
             [en],[stt_system=${kaldi_or_pocketsphinx}],
             [fr],[stt_system=${kaldi_or_pocketsphinx}],
             [de],[stt_system=${kaldi_or_pocketsphinx}],
             [hi],[stt_system=pocketsphinx],
-            [it],[stt_system=pocketsphinx],
+            [it],[stt_system=deepspeech],
             [kz],[stt_system=pocketsphinx],
             [zh],[stt_system=pocketsphinx],
-            [pl],[stt_system=julius],
+            [pl],[stt_system=deepspeech],
             [pt],[stt_system=pocketsphinx],
-            [ru],[stt_system=pocketsphinx],
-            [es],[stt_system=pocketsphinx],
+            [ru],[stt_system=${kaldi_or_pocketsphinx}],
+            [es],[stt_system=${kaldi_or_pocketsphinx}],
             [sv],[stt_system=kaldi],
             [vi],[stt_system=kaldi],
             [AC_MSG_ERROR([Unsupported language: $lang])])
@@ -474,6 +475,7 @@ voice2json configuration summary:
 architecture: ${host_cpu}/${docker_arch}
 prefix: ${summary_prefix}
 virtualenv: ${is_virtualenv_enabled}
+in place: ${is_in_place}
 language: ${VOICE2JSON_LANGUAGE}
 
 wake:"])
