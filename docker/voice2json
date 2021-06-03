@@ -6,6 +6,7 @@ while [[ -n "$1" ]]; do
     if [[ "$1" == '--update' ]]; then
         # Update Docker image
         update='1'
+    else
         args+=("$1")
     fi
 
@@ -23,4 +24,4 @@ docker run -i \
        -w "$(pwd)" \
        -e "HOME=${HOME}" \
        --user "$(id -u):$(id -g)" \
-       "synesthesiam/voice2json:${tag}" "$@"
+       "synesthesiam/voice2json:${tag}" "${args[@]}"
