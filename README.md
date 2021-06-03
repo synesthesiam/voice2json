@@ -72,7 +72,7 @@ Supported speech to text systems include:
 * German (`de`)
     * [`de_deepspeech-aashishag`](https://github.com/synesthesiam/de_deepspeech-aashishag)
     * [`de_deepspeech-jaco`](https://github.com/rhasspy/de_deepspeech-jaco)
-    * [`de_kaldi-zamia`](https://github.com/synesthesiam/de_kaldi-zamia)
+    * [`de_kaldi-zamia`](https://github.com/synesthesiam/de_kaldi-zamia) (default)
     * [`de_pocketsphinx-cmu`](https://github.com/synesthesiam/de_pocketsphinx-cmu)
 * Greek (`el`)
     * [`el-gr_pocketsphinx-cmu`](https://github.com/synesthesiam/el-gr_pocketsphinx-cmu)
@@ -80,23 +80,23 @@ Supported speech to text systems include:
     * [`en-in_pocketsphinx-cmu`](https://github.com/synesthesiam/en-in_pocketsphinx-cmu)
     * [`en-us_deepspeech-mozilla`](https://github.com/synesthesiam/en-us_deepspeech-mozilla)
     * [`en-us_kaldi-rhasspy`](https://github.com/rhasspy/en-us_kaldi-rhasspy)
-    * [`en-us_kaldi-zamia`](https://github.com/synesthesiam/en-us_kaldi-zamia)
+    * [`en-us_kaldi-zamia`](https://github.com/synesthesiam/en-us_kaldi-zamia) (default)
     * [`en-us_pocketsphinx-cmu`](https://github.com/synesthesiam/en-us_pocketsphinx-cmu)
 * Spanish (`es`)
     * [`es_deepspeech-jaco`](https://github.com/rhasspy/es_deepspeech-jaco)
-    * [`es_kaldi-rhasspy`](https://github.com/rhasspy/es_kaldi-rhasspy)
+    * [`es_kaldi-rhasspy`](https://github.com/rhasspy/es_kaldi-rhasspy) (default)
     * [`es-mexican_pocketsphinx-cmu`](https://github.com/synesthesiam/es-mexican_pocketsphinx-cmu)
     * [`es_pocketsphinx-cmu`](https://github.com/synesthesiam/es_pocketsphinx-cmu)
 * French (`fr`)
     * [`fr_deepspeech-jaco`](https://github.com/rhasspy/fr_deepspeech-jaco)
-    * [`fr_kaldi-guyot`](https://github.com/synesthesiam/fr_kaldi-guyot)
+    * [`fr_kaldi-guyot`](https://github.com/synesthesiam/fr_kaldi-guyot) (default)
     * [`fr_kaldi-rhasspy`](https://github.com/rhasspy/fr_kaldi-rhasspy)
     * [`fr_pocketsphinx-cmu`](https://github.com/synesthesiam/fr_pocketsphinx-cmu)
 * Hindi (`hi`)
     * [`hi_pocketsphinx-cmu`](https://github.com/synesthesiam/hi_pocketsphinx-cmu)
 * Italian (`it`)
     * [`it_deepspeech-jaco`](https://github.com/rhasspy/it_deepspeech-jaco)
-    * [`it_deepspeech-mozillaitalia`](https://github.com/rhasspy/it_deepspeech-mozillaitalia)
+    * [`it_deepspeech-mozillaitalia`](https://github.com/rhasspy/it_deepspeech-mozillaitalia) (default)
     * [`it_kaldi-rhasspy`](https://github.com/rhasspy/it_kaldi-rhasspy)
     * [`it_pocketsphinx-cmu`](https://github.com/synesthesiam/it_pocketsphinx-cmu)
 * Korean (`ko`)
@@ -104,20 +104,20 @@ Supported speech to text systems include:
 * Kazakh (`kz`)
     * [`kz_pocketsphinx-cmu`](https://github.com/synesthesiam/kz_pocketsphinx-cmu)
 * Dutch (`nl`)
-    * [`nl_kaldi-cgn`](https://github.com/synesthesiam/nl_kaldi-cgn)
+    * [`nl_kaldi-cgn`](https://github.com/synesthesiam/nl_kaldi-cgn) (default)
     * [`nl_kaldi-rhasspy`](https://github.com/rhasspy/nl_kaldi-rhasspy)
     * [`nl_pocketsphinx-cmu`](https://github.com/synesthesiam/nl_pocketsphinx-cmu)
 * Polish (`pl`)
-    * [`pl_deepspeech-jaco`](https://github.com/rhasspy/pl_deepspeech-jaco)
+    * [`pl_deepspeech-jaco`](https://github.com/rhasspy/pl_deepspeech-jaco) (default)
     * [`pl_julius-github`](https://github.com/synesthesiam/pl_julius-github)
 * Portuguese (`pt`)
     * [`pt-br_pocketsphinx-cmu`](https://github.com/synesthesiam/pt-br_pocketsphinx-cmu)
 * Russian (`ru`)
-    * [`ru_kaldi-rhasspy`](https://github.com/rhasspy/ru_kaldi-rhasspy)
+    * [`ru_kaldi-rhasspy`](https://github.com/rhasspy/ru_kaldi-rhasspy) (default)
     * [`ru_pocketsphinx-cmu`](https://github.com/synesthesiam/ru_pocketsphinx-cmu)
 * Swedish (`sv`)
     * [`sv_kaldi-montreal`](https://github.com/synesthesiam/sv_kaldi-montreal)
-    * [`sv_kaldi-rhasspy`](https://github.com/rhasspy/sv_kaldi-rhasspy)
+    * [`sv_kaldi-rhasspy`](https://github.com/rhasspy/sv_kaldi-rhasspy) (default)
 * Vietnamese (`vi`)
     * [`vi_kaldi-montreal`](https://github.com/synesthesiam/vi_kaldi-montreal)
 * Mandarin (`zh`)
@@ -135,10 +135,12 @@ Supported speech to text systems include:
 
 ## Commands
 
-* [print-profile](https://voice2json.org/commands.html#print-profile) - Print profile settings
+* [download-profile](https://voice2json.org/commands.html#download-profile) - Download missing files for a profile
 * [train-profile](https://voice2json.org/commands.html#train-profile) - Generate speech/intent artifacts
 * [transcribe-wav](https://voice2json.org/commands.html#transcribe-wav) - Transcribe WAV file to text
+    * Add `--open` for unrestricted speech to text
 * [transcribe-stream](https://voice2json.org/commands.html#transcribe-stream) - Transcribe live audio stream to text
+    * Add `--open` for unrestricted speech to text
 * [recognize-intent](https://voice2json.org/commands.html#recognize-intent) - Recognize intent from JSON or text
 * [wait-wake](https://voice2json.org/commands.html#wait-wake) - Listen to live audio stream for wake word
 * [record-command](https://voice2json.org/commands.html#record-command) - Record voice command from live audio stream
@@ -147,5 +149,6 @@ Supported speech to text systems include:
 * [record-examples](https://voice2json.org/commands.html#record-examples) - Generate and record speech examples
 * [test-examples](https://voice2json.org/commands.html#test-examples) - Test recorded speech examples
 * [show-documentation](https://voice2json.org/commands.html#show-documentation) - Run HTTP server locally with documentation
+* [print-profile](https://voice2json.org/commands.html#print-profile) - Print profile settings
 * [print-downloads](https://voice2json.org/commands.html#print-downloads) - Print profile file download information
 * [print-files](https://voice2json.org/commands.html#print-files) - Print user profile files for backup

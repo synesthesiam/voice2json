@@ -3,14 +3,22 @@
 # Command-Line Tools
 
 ```bash
-$ voice2json [--debug] [--profile <PROFILE_DIR>] <COMMAND> [<COMMAND_ARG>...]
+$ voice2json [--debug] [--profile <PROFILE>] <COMMAND> [<COMMAND_ARG>...]
 ```
 
-The [profile](profiles.md) directory can be given with `--profile`. If not provided, a profile is expected in `$XDG_CONFIG_HOME/voice2json`, which is typically `$HOME/.config/voice2json`.
+The `<PROFILE>` can be:
+
+* A [supported language name](index.md#supported-languages) like `en` or `fr`
+* The name of a [known profile](https://github.com/synesthesiam/voice2json/tree/master/etc/profiles), such as `de_kaldi-zamia`
+* A directory with with [`profile.yml`](profiles.md), a [`sentences.ini`](sentences.md), and other language-specific files
+
+If no `<PROFILE>` is given, the `$XDG_CONFIG_HOME/voice2json` directory is used first if it exists. Otherwise, the default U.S. English profile is used.
+
+---
 
 The following commands are available:
 
-* [print-profile](#print-profile) - Print profile settings
+* [download-profile](#download-profile) - Download missing files for a profile
 * [train-profile](#train-profile) - Generate speech/intent artifacts
 * [transcribe-wav](#transcribe-wav) - Transcribe WAV file to text
 * [transcribe-stream](#transcribe-stream) - Transcribe live audio stream to text
@@ -23,52 +31,25 @@ The following commands are available:
 * [record-examples](#record-examples) - Generate and record speech examples
 * [test-examples](#test-examples) - Test recorded speech examples
 * [show-documentation](#show-documentation) - Run HTTP server locally with documentation
+* [print-profile](#print-profile) - Print profile settings
 * [print-downloads](#print-downloads) - Print profile file download information
 * [print-files](#print-files) - Print user profile files for backup
 * print-version - Print `voice2json` version and exit
     
 ---
 
-## print-profile
+## download-profile
 
-Prints all profile settings as JSON to the console. This is a combination of the [default settings](profiles.md#default-settings) and what's provided in [profile.yml](profiles.md#profileyml).
+Downloads missing language-specific files from [Github](https://github.com/synesthesiam/voice2json-profiles).
 
 ```bash
-$ voice2json print-profile | jq .
+$ voice2json -p en-us_kaldi-zamia download-profile
 ```
 
 Output:
 
-```json
-{
-    "language": {
-        "name": "english",
-        "code": "en-us"
-    },
-    "speech-to-text": {
-        ...
-    },
-    "intent-recognition": {
-        ...
-    },
-    "training": {
-        ...
-    },
-    "wake-word": {
-        ...
-    },
-    "voice-command": {
-        ...
-    },
-    "text-to-speech": {
-        ...
-    },
-    "audio": {
-        ...
-    },
-
-    ...
-}
+```
+Downloaded 10 file(s) /home/user/.local/share/voice2json/en-us_kaldi-zamia
 ```
 
 ---
@@ -791,3 +772,47 @@ Includes:
 * Custom word pronunciations (`custom_words.txt`, `sounds_like.txt`)
 * [Slot programs](sentences.md#slot-programs) (`slot_programs/`)
 * [Converters](sentences.md#converters) (`converters/`)
+
+---
+
+## print-profile
+
+Prints all profile settings as JSON to the console. This is a combination of the [default settings](profiles.md#default-settings) and what's provided in [profile.yml](profiles.md#profileyml).
+
+```bash
+$ voice2json print-profile | jq .
+```
+
+Output:
+
+```json
+{
+    "language": {
+        "name": "english",
+        "code": "en-us"
+    },
+    "speech-to-text": {
+        ...
+    },
+    "intent-recognition": {
+        ...
+    },
+    "training": {
+        ...
+    },
+    "wake-word": {
+        ...
+    },
+    "voice-command": {
+        ...
+    },
+    "text-to-speech": {
+        ...
+    },
+    "audio": {
+        ...
+    },
+
+    ...
+}
+```

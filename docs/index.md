@@ -14,9 +14,9 @@
 From the command-line:
 
 ```bash
-$ voice2json transcribe-wav \
+$ voice2json -p en transcribe-wav \
       < turn-on-the-light.wav | \
-      voice2json recognize-intent | \
+      voice2json -p en recognize-intent | \
       jq .
 ```
 
@@ -62,8 +62,84 @@ Supported speech to text systems include:
 
 * CMU's [pocketsphinx](https://github.com/cmusphinx/pocketsphinx)
 * Dan Povey's [Kaldi](https://kaldi-asr.org)
-* Mozilla's [DeepSpeech](https://github.com/mozilla/DeepSpeech) 0.6
+* Mozilla's [DeepSpeech](https://github.com/mozilla/DeepSpeech) 0.9
 * Kyoto University's [Julius](https://github.com/julius-speech/julius)
+
+---
+
+## Getting Started
+
+1. [Install voice2json](install.md)
+2. Run [`voice2json -p <LANG> download-profile`](commands.md#download-profile) to download [language-specific](#supported-languages) files
+    * Your [profile settings](profiles.md) will be in `$HOME/.local/share/voice2json/<PROFILE>/profile.yml`
+3. Edit `sentences.ini` in [your profile](profiles.md) and add your [custom voice commands](sentences.md)
+4. [Train your profile](commands.md#train-profile)
+5. Use the [transcribe-wav](commands.md#transcribe-wav) and [recognize-intent](commands.md#recognize-intent) commands to do speech/intent recognition
+    * See [the recipes](recipes.md) for more possibilities
+
+---
+
+## Supported Languages
+
+`voice2json` supports the following languages/locales. I don't speak or write any language besides U.S. English very well, so **please** let me know if any profile is broken or could be improved! I'm mostly [Chinese Room-ing it](https://en.wikipedia.org/wiki/Chinese_room#Chinese_room_thought_experiment).
+
+* Catalan (`ca`)
+    * [`ca-es_pocketsphinx-cmu`](https://github.com/synesthesiam/ca-es_pocketsphinx-cmu)
+* Czech (`cs`)
+    * [`cs-cz_kaldi-rhasspy`](https://github.com/rhasspy/cs_kaldi-rhasspy)
+* German (`de`)
+    * [`de_deepspeech-aashishag`](https://github.com/synesthesiam/de_deepspeech-aashishag)
+    * [`de_deepspeech-jaco`](https://github.com/rhasspy/de_deepspeech-jaco)
+    * [`de_kaldi-zamia`](https://github.com/synesthesiam/de_kaldi-zamia) (default)
+    * [`de_pocketsphinx-cmu`](https://github.com/synesthesiam/de_pocketsphinx-cmu)
+* Greek (`el`)
+    * [`el-gr_pocketsphinx-cmu`](https://github.com/synesthesiam/el-gr_pocketsphinx-cmu)
+* English (`en`)
+    * [`en-in_pocketsphinx-cmu`](https://github.com/synesthesiam/en-in_pocketsphinx-cmu)
+    * [`en-us_deepspeech-mozilla`](https://github.com/synesthesiam/en-us_deepspeech-mozilla)
+    * [`en-us_kaldi-rhasspy`](https://github.com/rhasspy/en-us_kaldi-rhasspy)
+    * [`en-us_kaldi-zamia`](https://github.com/synesthesiam/en-us_kaldi-zamia) (default)
+    * [`en-us_pocketsphinx-cmu`](https://github.com/synesthesiam/en-us_pocketsphinx-cmu)
+* Spanish (`es`)
+    * [`es_deepspeech-jaco`](https://github.com/rhasspy/es_deepspeech-jaco)
+    * [`es_kaldi-rhasspy`](https://github.com/rhasspy/es_kaldi-rhasspy) (default)
+    * [`es-mexican_pocketsphinx-cmu`](https://github.com/synesthesiam/es-mexican_pocketsphinx-cmu)
+    * [`es_pocketsphinx-cmu`](https://github.com/synesthesiam/es_pocketsphinx-cmu)
+* French (`fr`)
+    * [`fr_deepspeech-jaco`](https://github.com/rhasspy/fr_deepspeech-jaco)
+    * [`fr_kaldi-guyot`](https://github.com/synesthesiam/fr_kaldi-guyot) (default)
+    * [`fr_kaldi-rhasspy`](https://github.com/rhasspy/fr_kaldi-rhasspy)
+    * [`fr_pocketsphinx-cmu`](https://github.com/synesthesiam/fr_pocketsphinx-cmu)
+* Hindi (`hi`)
+    * [`hi_pocketsphinx-cmu`](https://github.com/synesthesiam/hi_pocketsphinx-cmu)
+* Italian (`it`)
+    * [`it_deepspeech-jaco`](https://github.com/rhasspy/it_deepspeech-jaco)
+    * [`it_deepspeech-mozillaitalia`](https://github.com/rhasspy/it_deepspeech-mozillaitalia) (default)
+    * [`it_kaldi-rhasspy`](https://github.com/rhasspy/it_kaldi-rhasspy)
+    * [`it_pocketsphinx-cmu`](https://github.com/synesthesiam/it_pocketsphinx-cmu)
+* Korean (`ko`)
+    * [`ko-kr_kaldi-montreal`](https://github.com/synesthesiam/ko-kr_kaldi-montreal)
+* Kazakh (`kz`)
+    * [`kz_pocketsphinx-cmu`](https://github.com/synesthesiam/kz_pocketsphinx-cmu)
+* Dutch (`nl`)
+    * [`nl_kaldi-cgn`](https://github.com/synesthesiam/nl_kaldi-cgn) (default)
+    * [`nl_kaldi-rhasspy`](https://github.com/rhasspy/nl_kaldi-rhasspy)
+    * [`nl_pocketsphinx-cmu`](https://github.com/synesthesiam/nl_pocketsphinx-cmu)
+* Polish (`pl`)
+    * [`pl_deepspeech-jaco`](https://github.com/rhasspy/pl_deepspeech-jaco) (default)
+    * [`pl_julius-github`](https://github.com/synesthesiam/pl_julius-github)
+* Portuguese (`pt`)
+    * [`pt-br_pocketsphinx-cmu`](https://github.com/synesthesiam/pt-br_pocketsphinx-cmu)
+* Russian (`ru`)
+    * [`ru_kaldi-rhasspy`](https://github.com/rhasspy/ru_kaldi-rhasspy) (default)
+    * [`ru_pocketsphinx-cmu`](https://github.com/synesthesiam/ru_pocketsphinx-cmu)
+* Swedish (`sv`)
+    * [`sv_kaldi-montreal`](https://github.com/synesthesiam/sv_kaldi-montreal)
+    * [`sv_kaldi-rhasspy`](https://github.com/rhasspy/sv_kaldi-rhasspy) (default)
+* Vietnamese (`vi`)
+    * [`vi_kaldi-montreal`](https://github.com/synesthesiam/vi_kaldi-montreal)
+* Mandarin (`zh`)
+    * [`zh-cn_pocketsphinx-cmu`](https://github.com/synesthesiam/zh-cn_pocketsphinx-cmu)
 
 ---
 
@@ -108,18 +184,6 @@ When [trained](commands.md#train-profile), `voice2json` will transform [audio da
 
 ---
 
-## Getting Started
-
-1. [Install voice2json](install.md)
-2. [Download a profile](install.md#download-profile) and extract it to `$HOME/.config/voice2json`
-    * Your [profile settings](profiles.md) will be in `$HOME/.config/voice2json/profile.yml`
-3. Edit `sentences.ini` in [your profile](profiles.md) and add your [custom voice commands](sentences.md)
-4. [Train your profile](commands.md#train-profile)
-5. Use the [transcribe-wav](commands.md#transcribe-wav) and [recognize-intent](commands.md#recognize-intent) commands to do speech/intent recognition
-    * See [the recipes](recipes.md) for more possibilities
-
----
-
 ## Why Not That
 
 Why not just use [Google](https://assistant.google.com/), [Dragon](https://www.nuance.com/dragon.html), or something else?
@@ -139,68 +203,6 @@ If you feel comfortable sending your voice commands through the Internet for som
 Once you've [installed voice2json](install.md) and [downloaded a profile](install.md#download-profile), there is no longer a need for an Internet connection. At runtime, `voice2json` will only every write to your [profile directory](profiles.md) or the system's temporary directory (`/tmp`).
 
 ---
-
-## Supported Languages
-
-`voice2json` supports the following languages/locales. I don't speak or write any language besides U.S. English very well, so **please** let me know if any profile is broken or could be improved! I'm mostly [Chinese Room-ing it](https://en.wikipedia.org/wiki/Chinese_room#Chinese_room_thought_experiment).
-
-* Catalan (`ca`)
-    * [`ca-es_pocketsphinx-cmu`](https://github.com/synesthesiam/ca-es_pocketsphinx-cmu)
-* Czech (`cs`)
-    * [`cs-cz_kaldi-rhasspy`](https://github.com/rhasspy/cs_kaldi-rhasspy)
-* German (`de`)
-    * [`de_deepspeech-aashishag`](https://github.com/synesthesiam/de_deepspeech-aashishag)
-    * [`de_deepspeech-jaco`](https://github.com/rhasspy/de_deepspeech-jaco)
-    * [`de_kaldi-zamia`](https://github.com/synesthesiam/de_kaldi-zamia)
-    * [`de_pocketsphinx-cmu`](https://github.com/synesthesiam/de_pocketsphinx-cmu)
-* Greek (`el`)
-    * [`el-gr_pocketsphinx-cmu`](https://github.com/synesthesiam/el-gr_pocketsphinx-cmu)
-* English (`en`)
-    * [`en-in_pocketsphinx-cmu`](https://github.com/synesthesiam/en-in_pocketsphinx-cmu)
-    * [`en-us_deepspeech-mozilla`](https://github.com/synesthesiam/en-us_deepspeech-mozilla)
-    * [`en-us_kaldi-rhasspy`](https://github.com/rhasspy/en-us_kaldi-rhasspy)
-    * [`en-us_kaldi-zamia`](https://github.com/synesthesiam/en-us_kaldi-zamia)
-    * [`en-us_pocketsphinx-cmu`](https://github.com/synesthesiam/en-us_pocketsphinx-cmu)
-* Spanish (`es`)
-    * [`es_deepspeech-jaco`](https://github.com/rhasspy/es_deepspeech-jaco)
-    * [`es_kaldi-rhasspy`](https://github.com/rhasspy/es_kaldi-rhasspy)
-    * [`es-mexican_pocketsphinx-cmu`](https://github.com/synesthesiam/es-mexican_pocketsphinx-cmu)
-    * [`es_pocketsphinx-cmu`](https://github.com/synesthesiam/es_pocketsphinx-cmu)
-* French (`fr`)
-    * [`fr_deepspeech-jaco`](https://github.com/rhasspy/fr_deepspeech-jaco)
-    * [`fr_kaldi-guyot`](https://github.com/synesthesiam/fr_kaldi-guyot)
-    * [`fr_kaldi-rhasspy`](https://github.com/rhasspy/fr_kaldi-rhasspy)
-    * [`fr_pocketsphinx-cmu`](https://github.com/synesthesiam/fr_pocketsphinx-cmu)
-* Hindi (`hi`)
-    * [`hi_pocketsphinx-cmu`](https://github.com/synesthesiam/hi_pocketsphinx-cmu)
-* Italian (`it`)
-    * [`it_deepspeech-jaco`](https://github.com/rhasspy/it_deepspeech-jaco)
-    * [`it_deepspeech-mozillaitalia`](https://github.com/rhasspy/it_deepspeech-mozillaitalia)
-    * [`it_kaldi-rhasspy`](https://github.com/rhasspy/it_kaldi-rhasspy)
-    * [`it_pocketsphinx-cmu`](https://github.com/synesthesiam/it_pocketsphinx-cmu)
-* Korean (`ko`)
-    * [`ko-kr_kaldi-montreal`](https://github.com/synesthesiam/ko-kr_kaldi-montreal)
-* Kazakh (`kz`)
-    * [`kz_pocketsphinx-cmu`](https://github.com/synesthesiam/kz_pocketsphinx-cmu)
-* Dutch (`nl`)
-    * [`nl_kaldi-cgn`](https://github.com/synesthesiam/nl_kaldi-cgn)
-    * [`nl_kaldi-rhasspy`](https://github.com/rhasspy/nl_kaldi-rhasspy)
-    * [`nl_pocketsphinx-cmu`](https://github.com/synesthesiam/nl_pocketsphinx-cmu)
-* Polish (`pl`)
-    * [`pl_deepspeech-jaco`](https://github.com/rhasspy/pl_deepspeech-jaco)
-    * [`pl_julius-github`](https://github.com/synesthesiam/pl_julius-github)
-* Portuguese (`pt`)
-    * [`pt-br_pocketsphinx-cmu`](https://github.com/synesthesiam/pt-br_pocketsphinx-cmu)
-* Russian (`ru`)
-    * [`ru_kaldi-rhasspy`](https://github.com/rhasspy/ru_kaldi-rhasspy)
-    * [`ru_pocketsphinx-cmu`](https://github.com/synesthesiam/ru_pocketsphinx-cmu)
-* Swedish (`sv`)
-    * [`sv_kaldi-montreal`](https://github.com/synesthesiam/sv_kaldi-montreal)
-    * [`sv_kaldi-rhasspy`](https://github.com/rhasspy/sv_kaldi-rhasspy)
-* Vietnamese (`vi`)
-    * [`vi_kaldi-montreal`](https://github.com/synesthesiam/vi_kaldi-montreal)
-* Mandarin (`zh`)
-    * [`zh-cn_pocketsphinx-cmu`](https://github.com/synesthesiam/zh-cn_pocketsphinx-cmu)
 
 ---
 

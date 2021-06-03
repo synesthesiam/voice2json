@@ -75,7 +75,7 @@ async def main():
 
     _LOGGER.debug(args)
 
-    if args.command in ["print-downloads", "print-version"]:
+    if args.command in ["print-downloads", "print-version", "download-profile"]:
         # Special-case commands (no core loaded)
         await args.func(args)
     else:
@@ -527,6 +527,23 @@ def get_args() -> argparse.Namespace:
     )
     speak_parser.set_defaults(func=speak)
 
+    # ----------------
+    # download-profile
+    # ----------------
+    download_profile_parser = sub_parsers.add_parser(
+        "download-profile", help="Download and verify profile files"
+    )
+    download_profile_parser.add_argument(
+        "conditions",
+        nargs="*",
+        help="Conditions to download files for, such as open-transcription (default: all conditions)",
+    )
+    download_profile_parser.add_argument(
+        "--url-format",
+        help="Override format string for URL (receives {profile}, {file}, and {machine})",
+    )
+    download_profile_parser.set_defaults(func=download_profile)
+
     return parser.parse_args()
 
 
@@ -568,7 +585,7 @@ def get_profile_location(
             profile_yaml = profile_dir_or_file
         else:
             # Assume name
-            profile_name = args.profile
+            profile_name = PROFILE_ALIASES.get(args.profile)
             profile_dir = None  # set automatically later
 
     if profile_dir is not None:
@@ -632,15 +649,76 @@ PROFILE_ALIASES = {
 }
 
 
+def load_profile(
+    profile_dir: Path, profile_yaml: Path, args: argparse.Namespace
+) -> typing.Dict[str, typing.Any]:
+    """Load profile YAML with default settings, overrides, and platform-specific settings"""
+    # Set environment variable usually referenced in profile
+    os.environ["profile_dir"] = str(profile_dir)
+
+    # x86_64, armv7l, aarch64, ...
+    os.environ["machine"] = args.machine
+
+    # Load profile defaults
+    defaults_yaml = args.base_directory / "etc" / "profile.defaults.yml"
+    if defaults_yaml.exists():
+        _LOGGER.debug("Loading profile defaults from %s", defaults_yaml)
+        with open(defaults_yaml, "r") as defaults_file:
+            profile = yaml.safe_load(defaults_file)
+    else:
+        # No defaults
+        profile = {}
+
+    # Load profile (YAML)
+    _LOGGER.debug("Loading profile from %s", profile_yaml)
+
+    if profile_yaml.exists():
+        os.environ["profile_file"] = str(profile_yaml)
+
+        with open(profile_yaml, "r") as profile_file:
+            recursive_update(profile, yaml.safe_load(profile_file) or {})
+    else:
+        _LOGGER.warning("%s does not exist. Using default settings.", profile_yaml)
+
+    # Override with platform-specific settings
+    platform_overrides = profile.get("platform", [])
+    for platform_settings in platform_overrides:
+        machines = platform_settings.get("machine")
+        machine_settings = platform_settings.get("settings", {})
+
+        if machines and machine_settings:
+            if isinstance(machines, str):
+                # Ensure list
+                machines = [machines]
+
+            if args.machine in machines:
+                # Machine match: override settings
+                for key, value in machine_settings.items():
+                    _LOGGER.debug("Overriding %s (machine=%s)", key, args.machine)
+                    recursive_update(profile[key], value)
+
+    # Override with user settings
+    for setting_path, setting_value in args.setting:
+        try:
+            setting_value = json.loads(setting_value)
+        except json.JSONDecodeError:
+            _LOGGER.warning(
+                "Interpreting setting for %s as a string. Surround with quotes to avoid this warning.",
+                setting_path,
+            )
+            pass
+
+        _LOGGER.debug("Overriding %s with %s", setting_path, setting_value)
+        pydash.set_(profile, setting_path, setting_value)
+
+    return profile
+
+
 async def get_core(args: argparse.Namespace) -> Voice2JsonCore:
     """Load/download/train profile and create voice2json core."""
     profile_dir, profile_yaml, profile_name = get_profile_location(args)
 
     if profile_name is not None:
-        # Resolve aliases
-        profile_name = PROFILE_ALIASES.get(profile_name, profile_name)
-        assert profile_name is not None
-
         # May need to download files
         download_yaml = args.base_directory / "etc" / "profiles" / f"{profile_name}.yml"
         _LOGGER.debug("Trying to load download info from %s", download_yaml)
@@ -705,63 +783,7 @@ async def get_core(args: argparse.Namespace) -> Voice2JsonCore:
                         await done_task
                         pbar.update(1)
 
-    # Set environment variable usually referenced in profile
-    os.environ["profile_dir"] = str(profile_dir)
-
-    # x86_64, armv7l, aarch64, ...
-    os.environ["machine"] = args.machine
-
-    # Load profile defaults
-    defaults_yaml = args.base_directory / "etc" / "profile.defaults.yml"
-    if defaults_yaml.exists():
-        _LOGGER.debug("Loading profile defaults from %s", defaults_yaml)
-        with open(defaults_yaml, "r") as defaults_file:
-            profile = yaml.safe_load(defaults_file)
-    else:
-        # No defaults
-        profile = {}
-
-    # Load profile (YAML)
-    _LOGGER.debug("Loading profile from %s", profile_yaml)
-
-    if profile_yaml.exists():
-        os.environ["profile_file"] = str(profile_yaml)
-
-        with open(profile_yaml, "r") as profile_file:
-            recursive_update(profile, yaml.safe_load(profile_file) or {})
-    else:
-        _LOGGER.warning("%s does not exist. Using default settings.", profile_yaml)
-
-    # Override with platform-specific settings
-    platform_overrides = profile.get("platform", [])
-    for platform_settings in platform_overrides:
-        machines = platform_settings.get("machine")
-        machine_settings = platform_settings.get("settings", {})
-
-        if machines and machine_settings:
-            if isinstance(machines, str):
-                # Ensure list
-                machines = [machines]
-
-            if args.machine in machines:
-                # Machine match: override settings
-                for key, value in machine_settings.items():
-                    _LOGGER.debug("Overriding %s (machine=%s)", key, args.machine)
-                    recursive_update(profile[key], value)
-
-    # Override with user settings
-    for setting_path, setting_value in args.setting:
-        try:
-            setting_value = json.loads(setting_value)
-        except json.JSONDecodeError:
-            _LOGGER.warning(
-                "Interpreting setting for %s as a string. Surround with quotes to avoid this warning.",
-                setting_path,
-            )
-            pass
-
-        _LOGGER.debug("Overriding %s with %s", setting_path, setting_value)
-        pydash.set_(profile, setting_path, setting_value)
+    profile = load_profile(profile_dir, profile_yaml, args)
 
     # Create core
     core = Voice2JsonCore(
@@ -837,6 +859,12 @@ async def print_downloads(args: argparse.Namespace) -> None:
         _LOGGER.info("Listing available profiles from %s", profiles_dir)
         _LOGGER.info("Use voice2json -p <PROFILE_NAME> <COMMAND>")
 
+        # en-us_kaldi-zamia -> en
+        short_aliases = {}
+        for alias, full_name in PROFILE_ALIASES.items():
+            if "-" not in alias:
+                short_aliases[full_name] = alias
+
         # List profile names and exit
         profile_descriptions = {}
         for profile_path in profiles_dir.glob("*.yml"):
@@ -851,15 +879,20 @@ async def print_downloads(args: argparse.Namespace) -> None:
                 _LOGGER.exception(profile_path)
 
         for profile_name, description in sorted(profile_descriptions.items()):
-            print(profile_name, description, sep="\t")
+            print(
+                profile_name, short_aliases.get(profile_name, ""), description, sep="\t"
+            )
 
         return
 
     # Check profile files
-    profile_dir, _, _ = get_profile_location(args)
+    if "XDG_DATA_HOME" in os.environ:
+        share_home = Path(os.environ["XDG_DATA_HOME"])
+    else:
+        share_home = Path("~/.local/share/voice2json").expanduser()
 
     # Names of profiles to check
-    profile_names = set(args.profile_names)
+    profile_names = set(PROFILE_ALIASES.get(name) for name in args.profile_names)
 
     # Each YAML file is a profile name with required and optional files
     for yaml_path in profiles_dir.glob("*.yml"):
@@ -868,6 +901,8 @@ async def print_downloads(args: argparse.Namespace) -> None:
             # Skip file
             _LOGGER.debug("Skipping %s (not in %s)", yaml_path, profile_names)
             continue
+
+        profile_dir = share_home / profile_name
 
         # Load YAML
         _LOGGER.debug("Loading %s", yaml_path)
@@ -929,6 +964,7 @@ async def print_downloads(args: argparse.Namespace) -> None:
                         continue
 
                 # Add extra info to file info
+                file_info["condition"] = condition
                 file_info["file"] = file_path
                 file_info["profile"] = profile_name
                 file_info["url"] = args.url_format.format(
@@ -967,6 +1003,82 @@ async def show_documentation(args: argparse.Namespace, core: Voice2JsonCore) -> 
     print(f"Running HTTP server at http://127.0.0.1:{args.port}")
 
     httpd.serve_forever()
+
+
+# -----------------------------------------------------------------------------
+
+
+async def download_profile(args: argparse.Namespace) -> None:
+    """Download profile files."""
+    profile_dir, profile_yaml, profile_name = get_profile_location(args)
+
+    if profile_name is None:
+        _LOGGER.fatal("Can only download files for known profile names")
+        return
+
+    # May need to download files
+    download_yaml = args.base_directory / "etc" / "profiles" / f"{profile_name}.yml"
+    _LOGGER.debug("Trying to load download info from %s", download_yaml)
+    with open(download_yaml, "r") as download_yaml_file:
+        files_dict = yaml.safe_load(download_yaml_file)
+
+    # Create SSL context for file downloads
+    ssl_context = ssl.SSLContext()
+    if args.certfile:
+        # User-provided SSL certificate
+        ssl_context.load_cert_chain(args.certfile, args.keyfile)
+
+    conditions = set(args.conditions)
+
+    download_settings: typing.Dict[str, typing.Any] = {}
+    if (not conditions) or ("grapheme-to-phoneme" in conditions):
+        download_settings["grapheme_to_phoneme"] = True
+
+    if (not conditions) or ("text-to-speech" in conditions):
+        download_settings["text_to_speech"] = True
+
+    if (not conditions) or ("open-transcription" in conditions):
+        download_settings["open_transcription"] = True
+
+    # Don't automatically include mixed language model condition since its rarely used
+    if "mixed-language-model" in conditions:
+        download_settings["mixed_language_model"] = True
+
+    # Create asyncio download tasks for missing files
+    download_tasks = []
+    for download_info in get_profile_downloads(
+        profile_name, files_dict, profile_dir, **download_settings
+    ):
+        url = download_info["url"]
+        target_path = profile_dir / download_info["file"]
+        _LOGGER.debug("%s => %s", url, target_path)
+
+        download_tasks.append(
+            asyncio.create_task(
+                download_file(url, target_path, ssl_context=ssl_context)
+            )
+        )
+
+    if download_tasks:
+        # Download missing profile files with a progress bar
+        _LOGGER.info(
+            "Downloading %s file(s) for profile %s to %s",
+            len(download_tasks),
+            profile_name,
+            profile_dir,
+        )
+
+        with tqdm(total=len(download_tasks)) as pbar:
+            for done_task in asyncio.as_completed(download_tasks):
+                await done_task
+                pbar.update(1)
+
+    profile = load_profile(profile_dir, profile_yaml, args)
+
+    # Reassemble any large files that were downloaded
+    await reassemble_large_files(pydash.get(profile, "training.large-files", []))
+
+    print("Downloaded", len(download_tasks), "file(s) to", str(profile_dir))
 
 
 # -----------------------------------------------------------------------------

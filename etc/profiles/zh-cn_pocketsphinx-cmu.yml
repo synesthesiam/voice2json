@@ -1,4 +1,6 @@
 ---
+description: "Mandarin Pocketsphinx model"
+
 default:
   LICENSE:
     bytes: 1526
