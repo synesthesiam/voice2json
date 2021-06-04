@@ -51,6 +51,15 @@ default:
     platform:
     - machine: x86_64
     sha256: 10be806ae4fac1618ce8703f54a03549ffafc367e35fc2ceb19e1dffc32af61c
+  model/output_graph.tflite.gz:
+    bytes: 20296313
+    file-name: output_graph.tflite
+    platform:
+    - machine: armv6l
+    - machine: armv7l
+    - machine: arm64
+    - machine: aarch64
+    sha256: f5fed575e8f1a6244ad824a753e0803290e268dc19303140ac82e67528bdd8df
   profile.yml:
     bytes: 972
     sha256: fab1a8730a14ec1a743bc27506b841e785c761d01f24b1162f200a33912e295c
