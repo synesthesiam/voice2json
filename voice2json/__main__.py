@@ -887,7 +887,7 @@ async def print_downloads(args: argparse.Namespace) -> None:
 
     # Check profile files
     if "XDG_DATA_HOME" in os.environ:
-        share_home = Path(os.environ["XDG_DATA_HOME"])
+        share_home = Path(os.environ["XDG_DATA_HOME"]) / "voice2json"
     else:
         share_home = Path("~/.local/share/voice2json").expanduser()
 
