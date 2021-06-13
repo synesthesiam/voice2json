@@ -1,6 +1,6 @@
 ---
 description: "Spanish Kaldi model from https://github.com/rhasspy/rhasspy"
-url_format: "https://raw.githubusercontent.com/synesthesiam/{profile}/19998834bd0293404dbdf0a5187733138a8261db/{file}"
+url_format: "https://raw.githubusercontent.com/rhasspy/{profile}/19998834bd0293404dbdf0a5187733138a8261db/{file}"
 
 default:
   LICENSE:
