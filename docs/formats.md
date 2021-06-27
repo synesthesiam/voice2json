@@ -155,7 +155,7 @@ Text between slashes (`/`) will be interpreted as phonemes in the configured spe
 
 #### Word Segments
 
-If a grapheme-to-phoneme alignment crops is available (`training.grapheme-to-phoneme-corupus`), segments of words can also be used for pronunciations. Using the "hooiser" example above, we can replace the phonemes with:
+If a grapheme-to-phoneme alignment corpus is available (`training.grapheme-to-phoneme-corupus`), segments of words can also be used for pronunciations. Using the "hooiser" example above, we can replace the phonemes with:
 
 ```
 hooiser who a>zure<
