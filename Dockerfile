@@ -48,7 +48,7 @@ RUN --mount=type=cache,id=apt-run,target=/var/apt/cache \
         python3 \
         libportaudio2 libatlas3-base libgfortran4 \
         ca-certificates \
-        perl sox alsa-utils espeak jq
+        perl sox alsa-utils espeak-ng jq
 
 ENV APP_DIR=/usr/lib/voice2json
 COPY --from=build ${APP_DIR}/ ${APP_DIR}/
