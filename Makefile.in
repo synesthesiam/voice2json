@@ -355,7 +355,7 @@ install-kenlm:
 endif # ENABLE_KENLM
 
 $(KENLM_SRC_FILE):
-	$(DO_DOWNLOAD) "$(KENLM_SRC_FILE)" 'https://github.com/synesthesiam/docker-kenlm/raw/master/download/kenlm-20210107.tar.gz'
+	$(DO_DOWNLOAD) "$(KENLM_SRC_FILE)" 'https://github.com/synesthesiam/prebuilt-apps/releases/download/v1.0/kenlm-20210107.tar.gz'
 
 $(EIGEN_SRC_FILE):
 	$(DO_DOWNLOAD) "$(EIGEN_SRC_FILE)" 'https://github.com/synesthesiam/docker-kenlm/raw/master/download/eigen-3.2.8.tar.bz2'
