@@ -432,7 +432,7 @@ AS_IF([test "x${is_pocketsphinx_enabled}x${pocketsphinx_from}" = xyesxsource],
             AC_MSG_ERROR([C compiler is required for Pocketsphinx (build-essential package)])
         ])
 
-        AX_PKG_SWIG([3.0.0], [], [
+        AX_PKG_SWIG(["3.0.0"], [], [
             AC_MSG_ERROR([swig is required for Pocketsphinx (swig package)])
         ])
     ])
@@ -442,14 +442,6 @@ AS_IF([test "x${is_julius_enabled}x${julius_from}" = xyesxsource],
     [
         AS_IF([test "x$CC" = x], [
             AC_MSG_ERROR([C compiler is required for Julius (build-essential package)])
-        ])
-    ])
-
-dnl kaldi needs ATLAS
-AS_IF([test "x$is_kaldi_enabled" = xyes],
-    [
-        AC_CHECK_LIB(atlas, ATL_xerbla, [], [
-            AC_MSG_ERROR([ATLAS is required for Kaldi (libatlas-base-dev package)])
         ])
     ])
 
