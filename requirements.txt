@@ -1,6 +1,6 @@
 aioconsole==0.1.16
 aiofiles==0.4.0
-aiohttp==3.7.4
+aiohttp==3.8.5
 jsonlines==1.2.0
 networkx==2.4
 pydash==4.7.6
