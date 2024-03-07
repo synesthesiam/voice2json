@@ -110,7 +110,7 @@ Supported speech to text systems include:
 * Polish (`pl`)
     * [`pl_deepspeech-jaco`](https://github.com/rhasspy/pl_deepspeech-jaco) (default)
     * [`pl_julius-github`](https://github.com/synesthesiam/pl_julius-github)
-* Portuguese (`pt`)
+* Portuguese (Brazil) (`pt-br`)
     * [`pt-br_pocketsphinx-cmu`](https://github.com/synesthesiam/pt-br_pocketsphinx-cmu)
 * Russian (`ru`)
     * [`ru_kaldi-rhasspy`](https://github.com/rhasspy/ru_kaldi-rhasspy) (default)
